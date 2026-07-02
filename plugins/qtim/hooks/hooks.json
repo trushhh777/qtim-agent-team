@@ -1,5 +1,5 @@
 {
-  "description": "Универсальные Codex hooks-гейты команды qtim, активны только в проектах с .codex/team-charter.md: анонс команды при старте сессии и напоминание проверить артефакты завершившегося субагента.",
+  "description": "Универсальные Codex hooks-гейты команды qtim, активны только в проектах с .codex/team-charter.md: анонс команды и режимов (feature pipeline, team-up, team-lazy) при старте сессии и напоминание проверить артефакты завершившегося субагента.",
   "hooks": {
     "SessionStart": [
       {
@@ -7,7 +7,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "test -f .codex/team-charter.md && echo '[qtim] Команда Codex-агентов настроена. Используй $qtim-team-up для эпика, $qtim-team-lazy для точечной задачи, $qtim-team-down для завершения активных agent threads.' || true",
+            "command": "test -f .codex/team-charter.md && echo '[qtim] Команда Codex-агентов настроена. $qtim-feature — провести хотелку до PRD/оценки/плана, $qtim-team-up — эпик, $qtim-team-lazy — точечная задача, $qtim-team-down — завершение активных agent threads.' || true",
             "statusMessage": "Checking qtim charter",
             "timeout": 5
           }

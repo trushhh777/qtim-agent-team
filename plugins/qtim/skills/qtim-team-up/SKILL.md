@@ -17,6 +17,7 @@ Use Codex subagent threads and custom agents. Do not assume a hidden persistent 
    - `../../reference/intake-protocol.md`;
    - `../../reference/orchestration-patterns.md`;
    - `../../reference/independent-review.md`.
+4. Если задача ссылается на фичу из `docs/features/<slug>/`, прочитай её `plan.md` и `prd.md` как источник scope и acceptance criteria.
 
 ## Decision Matrix
 
@@ -94,6 +95,7 @@ Final report should be result-first:
 - gates run and status;
 - findings fixed or left open;
 - memory files updated;
+- если работа шла по фиче из `docs/features/<slug>/` — отмеченные пункты `plan.md` и обновлённый Status (`In Development` / `Done`);
 - active agent threads closed or still running.
 
 Do not report a raw transcript of agent chatter.

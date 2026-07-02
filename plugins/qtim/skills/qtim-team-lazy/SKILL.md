@@ -20,11 +20,12 @@ Use direct work for trivial tasks. Escalate to `$qtim-team-up` if feedback loops
 ## Steps
 
 1. Read `.codex/team-charter.md`. If missing, ask for `$qtim-setup`.
-2. Classify the task and choose only the needed role(s).
-3. Spawn the needed custom agents when available; otherwise use `worker` or `explorer` fallback with inline role instructions.
-4. Give each subagent a concrete scope and expected output.
-5. Wait only when the next step is blocked on the result.
-6. Integrate results locally, verify, and update `memory/` when durable knowledge was produced.
+2. Если задача ссылается на фичу из `docs/features/<slug>/`, прочитай её `plan.md` и `prd.md` как источник scope; по завершении обнови Status артефактов.
+3. Classify the task and choose only the needed role(s).
+4. Spawn the needed custom agents when available; otherwise use `worker` or `explorer` fallback with inline role instructions.
+5. Give each subagent a concrete scope and expected output.
+6. Wait only when the next step is blocked on the result.
+7. Integrate results locally, verify, and update `memory/` when durable knowledge was produced.
 
 ## Escalation
 

@@ -1,6 +1,6 @@
 ---
 name: qtim-setup
-description: Use when the user wants to install or bootstrap qtim for the current Codex project. Generates .codex/team-charter.md, .codex/agents/*.toml, optional .codex/hooks.json, memory files, and an AGENTS.md pointer after project discovery and user confirmation.
+description: Use when the user wants to install or bootstrap qtim for the current Codex project. Asks for the user role (Developer, PM/Analyst, or both), then generates .codex/team-charter.md with track blocks, .codex/agents/*.toml, optional .codex/hooks.json, memory files, and an AGENTS.md pointer after project discovery and user confirmation.
 ---
 
 # qtim Setup For Codex
@@ -13,8 +13,8 @@ description: Use when the user wants to install or bootstrap qtim for the curren
 
 Перед генерацией прочитай только нужные ресурсы:
 
-- Role templates: `../../agents/architect.toml`, `../../agents/database.toml`, `../../agents/frontend.toml`, `../../agents/testing.toml`, `../../agents/reviewer.toml`.
-- Shared mechanics: `../../reference/intake-protocol.md`, `../../reference/orchestration-patterns.md`, `../../reference/independent-review.md`.
+- Role templates: `../../agents/architect.toml`, `../../agents/database.toml`, `../../agents/frontend.toml`, `../../agents/testing.toml`, `../../agents/reviewer.toml`, `../../agents/product.toml`.
+- Shared mechanics: `../../reference/intake-protocol.md`, `../../reference/orchestration-patterns.md`, `../../reference/independent-review.md`, `../../reference/feature-pipeline.md`.
 
 ## Phase 1: Discovery
 
@@ -27,7 +27,8 @@ description: Use when the user wants to install or bootstrap qtim for the curren
 - package/workspace markers: `package.json`, `pyproject.toml`, `go.mod`, `Cargo.toml`, `Gemfile`, `composer.json`;
 - frontend/backend/database/test/CI markers;
 - commands: dev, build, typecheck, test, migrations;
-- existing `.codex/agents`, `.codex/hooks.json`, `.codex/team-charter.md`, `memory/`.
+- existing `.codex/agents`, `.codex/hooks.json`, `.codex/team-charter.md`, `memory/`;
+- existing `docs/features/` и track-маркеры `qtim:track:dev` / `qtim:track:pm` в существующем charter.
 
 Сведи placeholders role templates к фактам проекта:
 
@@ -60,15 +61,25 @@ description: Use when the user wants to install or bootstrap qtim for the curren
 
 Задай пользователю короткий набор вопросов. Если доступен структурированный question tool, используй его; иначе спроси обычным сообщением и дождись ответа.
 
-Нужные решения:
+**Первый вопрос — роль пользователя:**
+
+- **Developer** — команда разработки: architect/database/frontend/testing/reviewer, workflow `$qtim-team-up` / `$qtim-team-lazy`;
+- **PM/Analyst** — продуктовый трек: роль `qtim-product` и pipeline `$qtim-feature` (хотелка -> PRD -> декомпозиция -> оценка -> план) с артефактами в `docs/features/`;
+- **Оба** — обе дорожки в одном charter.
+
+Роль гейтит остальные вопросы. Если charter уже существует и содержит только другой track, предложи дописать недостающий track, не пересоздавая существующий.
+
+Нужные решения (Developer и Оба — полный набор; PM/Analyst — только project name, autonomy, memory baseline, hooks):
 
 - project name for charter;
-- team shape: Compact, Standard, Extended;
-- autonomy: design approval first, phase-by-phase confirmation, or full autonomy;
+- team shape: Compact, Standard, Extended (только dev track);
+- autonomy: design approval first, phase-by-phase confirmation, or full autonomy; для PM track это режим checkpoints конвейера;
 - memory baseline: project map, commands, safety, domain invariants;
-- independent review gate: enabled or disabled;
+- independent review gate: enabled or disabled (только dev track);
 - hooks: SessionStart, SubagentStop, optional PostToolUse reminder after edits;
 - skill recommendations: write selected skills into charter/agent instructions or keep roles standalone.
+
+PM/Analyst-состав команды не спрашивается — он определяется стеком: `qtim-product` + `qtim-architect` + профильные `qtim-database`/`qtim-frontend`/`qtim-testing` (какие есть в стеке) + built-in `explorer`. Dev-роли нужны PM-конвейеру как read-only консультанты для точной декомпозиции и оценки, даже если пользователь код не пишет. `qtim-reviewer` в PM-only setup не генерируется.
 
 Рекомендованный default для большинства fullstack проектов: Standard, design approval first, project map + commands + safety + invariants, independent review enabled, SessionStart + SubagentStop hooks enabled.
 
@@ -77,6 +88,7 @@ description: Use when the user wants to install or bootstrap qtim for the curren
 Покажи компактный план до записи файлов:
 
 - detected stack and project name;
+- selected tracks (dev / pm / оба) и что будет добавлено или обновлено между track-маркерами charter, а что останется нетронутым;
 - files to create or update;
 - selected roles and custom agent filenames;
 - memory files;
@@ -90,16 +102,31 @@ description: Use when the user wants to install or bootstrap qtim for the curren
 
 ### `.codex/team-charter.md`
 
-Создай проектный контракт команды. Обязательные секции:
+Создай проектный контракт команды. Общие секции (вне track-блоков):
 
 - purpose and project context;
 - fixed stack and commands;
 - roles table: role, Codex custom agent name, mission, triggers, do-not-touch, read-on-start, skills, mandatory practices;
-- intake/autonomy mode;
 - domain invariants;
 - independent review gates: перенеси в charter суть `../../reference/independent-review.md` (когда запускать, prompt shape, integration), чтобы сгенерированные агенты не зависели от файлов плагина;
 - working rules: Codex subagents are explicit, session-local agent threads; use custom agents when loaded, otherwise `worker`/`explorer` fallback with inline role instructions;
 - memory layout.
+
+Track-блоки — между HTML-маркерами, по выбранным ролям:
+
+```text
+<!-- qtim:track:dev:start -->
+...dev track: intake/autonomy mode, специфичные dev-правила...
+<!-- qtim:track:dev:end -->
+
+<!-- qtim:track:pm:start -->
+...pm track: feature pipeline...
+<!-- qtim:track:pm:end -->
+```
+
+PM track block должен содержать перенесённую суть `../../reference/feature-pipeline.md` (стадии и checkpoints, схема `docs/features/<slug>/` со статусами Draft -> Approved -> In Development -> Done, правило dev-consult на декомпозиции/оценке, правила grounded-оценки S/M/L/XL, handoff contract) — сгенерированные агенты не зависят от файлов плагина.
+
+Re-run rule: при повторном setup заменяй содержимое только между маркерами своего track; чужой track block и ручные правки пользователя вне маркеров не трогай. В общей roles table добавляй строки, не удаляя существующие.
 
 ### `.codex/agents/*.toml`
 
@@ -116,9 +143,10 @@ description: Use when the user wants to install or bootstrap qtim for the curren
 - `qtim-database`;
 - `qtim-frontend`;
 - `qtim-testing`;
-- `qtim-reviewer`.
+- `qtim-reviewer`;
+- `qtim-product` (PM track).
 
-Для `explorer` обычно используй встроенного Codex `explorer`, отдельный TOML не нужен. Для `devops`, `product`, `auditor` создай узкие custom agents только если пользователь выбрал Extended.
+Состав по трекам: Developer — architect/database/frontend/testing/reviewer по team shape; PM/Analyst — `qtim-product` + `qtim-architect` + профильные dev-роли по стеку (без reviewer); Оба — объединение. Для `explorer` обычно используй встроенного Codex `explorer`, отдельный TOML не нужен. Для `devops`, `auditor` создай узкие custom agents только если пользователь выбрал Extended.
 
 ### `.codex/hooks.json`
 
@@ -126,7 +154,7 @@ description: Use when the user wants to install or bootstrap qtim for the curren
 
 Рекомендуемые hooks:
 
-- `SessionStart`: если есть `.codex/team-charter.md`, напомнить про `$qtim-team-up` / `$qtim-team-lazy`;
+- `SessionStart`: если есть `.codex/team-charter.md`, напомнить про `$qtim-feature` / `$qtim-team-up` / `$qtim-team-lazy` (упоминай skills сгенерированных треков);
 - `SubagentStop`: напомнить main agent проверить реальные артефакты subagent thread;
 - optional `PostToolUse` matcher `Edit|Write|apply_patch`: короткое напоминание про typecheck/build, без долгого запуска.
 
@@ -144,9 +172,11 @@ Codex hooks требуют trust review через `/hooks`; упомяни эт
 - `memory/review-report.md`;
 - `memory/bug-log.md`.
 
+При PM track уточни в `MEMORY.md`, что `decisions.md` служит также реестром указателей на утверждённые фичи в `docs/features/<slug>/`. Саму директорию `docs/features/` setup не создаёт — её создаёт `$qtim-feature` per-slug.
+
 ### `AGENTS.md`
 
-Если `AGENTS.md` есть, добавь секцию `Команда qtim`. Если нет — создай. Секция должна ссылаться на `.codex/team-charter.md`, `.codex/agents/*.toml`, `$qtim-team-up`, `$qtim-team-lazy`, `$qtim-team-down`.
+Если `AGENTS.md` есть, добавь секцию `Команда qtim`. Если нет — создай. Секция должна ссылаться на `.codex/team-charter.md`, `.codex/agents/*.toml`, `$qtim-team-up`, `$qtim-team-lazy`, `$qtim-team-down`, а при PM track — на `$qtim-feature` и конвенцию `docs/features/<slug>/`.
 
 Если есть legacy `CLAUDE.md`, не переписывай его. Можно добавить в `AGENTS.md` заметку, что Codex читает `AGENTS.md`, а `CLAUDE.md` является legacy source only if the repo already uses it.
 
@@ -158,6 +188,7 @@ Codex hooks требуют trust review через `/hooks`; упомяни эт
 - TOML custom agents parse using Python `tomllib` if available;
 - generated files contain no unresolved qtim placeholders;
 - generated files do not reference plugin-internal paths (`../../reference/...`, `../../agents/...`) — вся нужная механика должна быть в charter или `memory/`;
+- track-маркеры `qtim:track:*` в charter парные; при re-run оба track block целы, PM block содержит механику pipeline;
 - links in `AGENTS.md` point to existing files.
 
 Финальный ответ: что создано, как пользоваться, какие hooks надо trust через `/hooks`, и что после создания custom agents лучше открыть новую Codex thread/session so Codex loads them cleanly.
@@ -168,4 +199,5 @@ Codex hooks требуют trust review через `/hooks`; упомяни эт
 - Do not use Claude-only tools or primitives: `Agent({ name })`, `SendMessage`, `TaskCreate`, `TaskUpdate`, `TeamCreate`, `TeamDelete`, `team_name`.
 - Codex subagents are explicit and session-local. Invocation of `$qtim-team-up` or `$qtim-team-lazy` counts as explicit user authorization for the subagent workflow described by that skill.
 - Generated project files (`.codex/*`, `memory/*`, `AGENTS.md`) must be self-contained: no relative paths into the installed plugin.
+- При повторном запуске обновляй только блок своего track между маркерами `qtim:track:*`; второй track и ручные правки пользователя сохраняются.
 - Preserve existing user files. On collisions, ask before overwrite, skip, or rename.

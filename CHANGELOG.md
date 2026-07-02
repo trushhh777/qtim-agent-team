@@ -2,6 +2,24 @@
 
 Версии соответствуют `version` в `plugins/qtim/.codex-plugin/plugin.json` (semver).
 
+## 2.1.0 — 2026-07-02
+
+### Добавлено
+
+- **Ролевой вход**: `$qtim-setup` первым вопросом спрашивает роль пользователя (Developer / PM-Analyst / Оба) и генерирует команду под неё; charter стал track-aware — dev и PM треки живут между маркерами `qtim:track:*`, повторный setup обновляет только свой трек.
+- **Skill `$qtim-feature`** — PM-конвейер: intake -> PRD -> декомпозиция -> оценка -> план -> handoff в `$qtim-team-up`/`$qtim-team-lazy`; checkpoints у пользователя на каждой стадии; resume по статусам артефактов при существующем slug.
+- **Шаблон `agents/product.toml`** (`qtim-product`) — product/analyst роль: PRD, декомпозиция, сведение оценок, план; production code не пишет.
+- **`reference/feature-pipeline.md`** — контракт конвейера: артефакты и статусная машина, правила grounded-оценки (S/M/L/XL + confidence + evidence, без выдуманных часов), handoff contract. Setup переносит суть в charter (self-contained).
+- **Конвенция `docs/features/<slug>/`** — intake/prd/decomposition/estimate/plan версионируются в docs; в `memory/decisions.md` — только строки-указатели.
+- **Dev-consult на декомпозиции и оценке**: точность описания задачи обеспечивают профильные dev-агенты (architect + database/frontend/testing по слоям, read-only) — размер work item даёт владелец слоя, PM-роль сводит; поэтому PM-only setup тоже генерирует dev-роли по стеку (без reviewer).
+
+### Изменено
+
+- SessionStart hook упоминает `$qtim-feature` (текст остался статическим: grep-условие по track-маркеру спрятало бы skill в charter'ах 2.0.0 без маркеров).
+- `$qtim-team-up` / `$qtim-team-lazy` читают `docs/features/<slug>/plan.md` и `prd.md` как источник scope и acceptance criteria и обновляют Status артефактов по завершении.
+- README и plugin.json переписаны под двух-ролевую концепцию; `defaultPrompt` включает feature pipeline.
+- Публичные repository/homepage/install-ссылки указывают на `trushhh777/qtim-agent-team`.
+
 ## 2.0.0 — 2026-07-02
 
 ### Исправлено (pre-release ревью)

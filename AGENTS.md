@@ -8,9 +8,9 @@ All content is primarily Russian. The repository has no build step and no applic
 
 - `.agents/plugins/marketplace.json` — Codex marketplace manifest exposing `plugins/qtim`.
 - `plugins/qtim/.codex-plugin/plugin.json` — Codex plugin manifest.
-- `plugins/qtim/skills/` — Codex skills: `qtim-setup`, `qtim-team-up`, `qtim-team-lazy`, `qtim-team-down`.
-- `plugins/qtim/agents/` — Codex custom agent TOML templates copied by `$qtim-setup` into target projects.
-- `plugins/qtim/reference/` — shared mechanics for intake, orchestration patterns, and independent review.
+- `plugins/qtim/skills/` — Codex skills: `qtim-setup`, `qtim-feature`, `qtim-team-up`, `qtim-team-lazy`, `qtim-team-down`.
+- `plugins/qtim/agents/` — Codex custom agent TOML templates (dev roles + `product.toml` for the PM track) copied by `$qtim-setup` into target projects.
+- `plugins/qtim/reference/` — shared mechanics for intake, orchestration patterns, independent review, and the PM feature pipeline.
 - `plugins/qtim/hooks/hooks.json` — optional plugin-bundled Codex lifecycle hooks.
 
 ## Architecture Rules
@@ -18,6 +18,7 @@ All content is primarily Russian. The repository has no build step and no applic
 - This is Codex-native. Do not add `.claude/*`, `.claude-plugin/*`, Claude slash commands, or Claude Agent Teams primitives.
 - Use Codex skills instead of slash commands.
 - Use `.codex/team-charter.md` and `.codex/agents/*.toml` for generated target-project state.
+- Charter is track-aware: dev and PM tracks live between `qtim:track:*` markers; generation must never clobber the other track.
 - Codex subagents are explicit and session-local. Do not imply hidden persistent team state.
 - Main thread is the team lead; subagent outputs are advisory until checked.
 - Durable project decisions belong in `memory/`, not only in chat.

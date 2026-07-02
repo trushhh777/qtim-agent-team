@@ -1,12 +1,12 @@
 {
   "name": "qtim",
-  "version": "2.0.0",
-  "description": "Codex-native bootstrap and orchestration kit for project-specific subagent teams. Includes setup, team-up, team-lazy, team-down skills, custom agent templates, intake rules, orchestration patterns, independent review gates, and lifecycle hooks.",
+  "version": "2.1.0",
+  "description": "Codex-native bootstrap and orchestration kit for project-specific subagent teams. Role-aware setup for developers and PM/analysts. Includes setup, feature pipeline (idea to PRD, decomposition, estimate, plan), team-up, team-lazy, team-down skills, custom agent templates, intake rules, orchestration patterns, independent review gates, and lifecycle hooks.",
   "author": {
     "name": "Антон Фокин"
   },
-  "homepage": "https://github.com/toiiia/qtim-agent-team",
-  "repository": "https://github.com/toiiia/qtim-agent-team",
+  "homepage": "https://github.com/trushhh777/qtim-agent-team",
+  "repository": "https://github.com/trushhh777/qtim-agent-team",
   "license": "MIT",
   "keywords": [
     "codex",
@@ -21,7 +21,7 @@
   "interface": {
     "displayName": "qtim",
     "shortDescription": "Bootstrap project-specific Codex subagent teams",
-    "longDescription": "qtim adapts a project into a Codex-native team workflow: it generates .codex/team-charter.md, custom .codex/agents/*.toml roles, project memory, hooks, and reusable skills for full-team, lazy-team, and teardown flows.",
+    "longDescription": "qtim adapts a project into a Codex-native team workflow for two roles. Developers get a full subagent team with implement/test/review loops; PM/analysts get a feature pipeline that turns a raw idea into a PRD, grounded decomposition, relative estimates, and an implementation plan documented in docs/features/. Setup asks for the role and generates .codex/team-charter.md with track blocks, custom .codex/agents/*.toml roles, project memory, hooks, and reusable skills.",
     "developerName": "Антон Фокин",
     "category": "Developer Tools",
     "capabilities": [
@@ -30,8 +30,8 @@
     ],
     "defaultPrompt": [
       "Set up qtim for this project",
-      "Run qtim team-up for this epic",
-      "Use qtim team-lazy for this task"
+      "Run the qtim feature pipeline for this idea",
+      "Run qtim team-up for this epic"
     ],
     "brandColor": "#2563EB",
     "screenshots": []
