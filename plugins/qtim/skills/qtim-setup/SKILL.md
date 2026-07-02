@@ -15,6 +15,7 @@ description: Use when the user wants to install or bootstrap qtim for the curren
 
 - Role templates: `../../agents/architect.toml`, `../../agents/database.toml`, `../../agents/frontend.toml`, `../../agents/testing.toml`, `../../agents/reviewer.toml`, `../../agents/product.toml`.
 - Shared mechanics: `../../reference/intake-protocol.md`, `../../reference/orchestration-patterns.md`, `../../reference/independent-review.md`, `../../reference/feature-pipeline.md`.
+- Plugin version для stamps: поле `version` из `../../.codex-plugin/plugin.json`.
 
 ## Phase 1: Discovery
 
@@ -102,6 +103,8 @@ PM/Analyst-состав команды не спрашивается — он о
 
 ### `.codex/team-charter.md`
 
+Первой строкой charter поставь version stamp с версией плагина: `<!-- qtim-version: X.Y.Z -->`. По нему `$qtim-update` и SessionStart hook определяют версию команды.
+
 Создай проектный контракт команды. Общие секции (вне track-блоков):
 
 - purpose and project context;
@@ -130,7 +133,7 @@ Re-run rule: при повторном setup заменяй содержимое
 
 ### `.codex/agents/*.toml`
 
-Для каждой выбранной роли создай custom agent TOML из template. Каждый файл должен иметь:
+Для каждой выбранной роли создай custom agent TOML из template. Первой строкой каждого сгенерированного файла добавь комментарий `# qtim-version: X.Y.Z` с версией плагина. Каждый файл должен иметь:
 
 - `name`;
 - `description`;
@@ -154,7 +157,7 @@ Re-run rule: при повторном setup заменяй содержимое
 
 Рекомендуемые hooks:
 
-- `SessionStart`: если есть `.codex/team-charter.md`, напомнить про `$qtim-feature` / `$qtim-team-up` / `$qtim-team-lazy` (упоминай skills сгенерированных треков);
+- `SessionStart`: если есть `.codex/team-charter.md`, показать версию команды из stamp и напомнить про `$qtim-feature` / `$qtim-team-up` / `$qtim-team-lazy` / `$qtim-update` (упоминай skills сгенерированных треков; образец команды — в hooks.json плагина);
 - `SubagentStop`: напомнить main agent проверить реальные артефакты subagent thread;
 - optional `PostToolUse` matcher `Edit|Write|apply_patch`: короткое напоминание про typecheck/build, без долгого запуска.
 
@@ -176,7 +179,7 @@ Codex hooks требуют trust review через `/hooks`; упомяни эт
 
 ### `AGENTS.md`
 
-Если `AGENTS.md` есть, добавь секцию `Команда qtim`. Если нет — создай. Секция должна ссылаться на `.codex/team-charter.md`, `.codex/agents/*.toml`, `$qtim-team-up`, `$qtim-team-lazy`, `$qtim-team-down`, а при PM track — на `$qtim-feature` и конвенцию `docs/features/<slug>/`.
+Если `AGENTS.md` есть, добавь секцию `Команда qtim`. Если нет — создай. Секция должна ссылаться на `.codex/team-charter.md`, `.codex/agents/*.toml`, `$qtim-team-up`, `$qtim-team-lazy`, `$qtim-team-down`, `$qtim-update` (проверка версии и обновление команды), а при PM track — на `$qtim-feature` и конвенцию `docs/features/<slug>/`.
 
 Если есть legacy `CLAUDE.md`, не переписывай его. Можно добавить в `AGENTS.md` заметку, что Codex читает `AGENTS.md`, а `CLAUDE.md` является legacy source only if the repo already uses it.
 
@@ -189,6 +192,7 @@ Codex hooks требуют trust review через `/hooks`; упомяни эт
 - generated files contain no unresolved qtim placeholders;
 - generated files do not reference plugin-internal paths (`../../reference/...`, `../../agents/...`) — вся нужная механика должна быть в charter или `memory/`;
 - track-маркеры `qtim:track:*` в charter парные; при re-run оба track block целы, PM block содержит механику pipeline;
+- version stamps на месте: `<!-- qtim-version: ... -->` в charter, `# qtim-version: ...` в каждом сгенерированном TOML, версия совпадает с `../../.codex-plugin/plugin.json`;
 - links in `AGENTS.md` point to existing files.
 
 Финальный ответ: что создано, как пользоваться, какие hooks надо trust через `/hooks`, и что после создания custom agents лучше открыть новую Codex thread/session so Codex loads them cleanly.

@@ -1,7 +1,7 @@
 {
   "name": "qtim",
-  "version": "2.1.0",
-  "description": "Codex-native bootstrap and orchestration kit for project-specific subagent teams. Role-aware setup for developers and PM/analysts. Includes setup, feature pipeline (idea to PRD, decomposition, estimate, plan), team-up, team-lazy, team-down skills, custom agent templates, intake rules, orchestration patterns, independent review gates, and lifecycle hooks.",
+  "version": "2.2.0",
+  "description": "Codex-native bootstrap and orchestration kit for project-specific subagent teams. Role-aware setup for developers and PM/analysts. Includes setup, feature pipeline (idea to PRD, decomposition, estimate, plan), team-up, team-lazy, team-down and update skills, versioned generated state, custom agent templates, intake rules, orchestration patterns, independent review gates, and lifecycle hooks.",
   "author": {
     "name": "Антон Фокин"
   },
@@ -21,7 +21,7 @@
   "interface": {
     "displayName": "qtim",
     "shortDescription": "Bootstrap project-specific Codex subagent teams",
-    "longDescription": "qtim adapts a project into a Codex-native team workflow for two roles. Developers get a full subagent team with implement/test/review loops; PM/analysts get a feature pipeline that turns a raw idea into a PRD, grounded decomposition, relative estimates, and an implementation plan documented in docs/features/. Setup asks for the role and generates .codex/team-charter.md with track blocks, custom .codex/agents/*.toml roles, project memory, hooks, and reusable skills.",
+    "longDescription": "qtim adapts a project into a Codex-native team workflow for two roles. Developers get a full subagent team with implement/test/review loops; PM/analysts get a feature pipeline that turns a raw idea into a PRD, grounded decomposition, relative estimates, and an implementation plan documented in docs/features/. Setup asks for the role and generates .codex/team-charter.md with track blocks, custom .codex/agents/*.toml roles, project memory, hooks, and reusable skills. Generated state is version-stamped, and the update skill migrates a project team to the current plugin version.",
     "developerName": "Антон Фокин",
     "category": "Developer Tools",
     "capabilities": [

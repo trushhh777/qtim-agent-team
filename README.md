@@ -39,6 +39,25 @@ codex plugin add qtim@qtim-agent-team
 
 После установки открой новую Codex thread/session, чтобы Codex подхватил skills плагина.
 
+## Обновление и версии
+
+Обновить сам плагин (Git-marketplace):
+
+```bash
+codex plugin marketplace upgrade qtim-agent-team   # обновить snapshot маркетплейса
+codex plugin add qtim@qtim-agent-team              # переустановить плагин
+```
+
+После переустановки открой новую Codex thread — только она подхватит обновлённые skills.
+
+Обновить команду в проекте: `$qtim-update` — сверяет версию установленного плагина с версией сгенерированной команды и мигрирует `.codex/team-charter.md`, `.codex/agents/*.toml` и hooks по upgrade notes, не затирая твои правки.
+
+Где смотреть версии:
+
+- плагин — `codex plugin list`;
+- команда в проекте — stamp `<!-- qtim-version: ... -->` первой строкой `.codex/team-charter.md` (SessionStart hook показывает её при старте сессии);
+- `$qtim-update` печатает обе версии и вердикт.
+
 ## Быстрый старт
 
 1. Открой Codex в корне своего проекта.
@@ -66,6 +85,7 @@ codex plugin add qtim@qtim-agent-team
 | `$qtim-team-up` | Крупная задача/эпик с обратной связью между implement/test/review |
 | `$qtim-team-lazy` | Быстрая или средняя задача без полного прогрева команды |
 | `$qtim-team-down` | Завершить активные agent threads и сохранить durable state |
+| `$qtim-update` | Проверить версии плагина/команды и мигрировать сгенерированные файлы на текущую версию |
 
 ## Что появится в проекте после setup
 
