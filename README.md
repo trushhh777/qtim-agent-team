@@ -10,6 +10,7 @@ qtim подстраивается под стек проекта: анализи
 
 - **Разделение труда** — роли отвечают за свои слои: архитектура, данные, UI, тесты, ревью.
 - **PM-трек** — `$qtim-feature` проводит хотелку через PRD -> декомпозицию -> оценку (S/M/L с evidence из кода) -> план; артефакты версионируются в `docs/features/<slug>/`, декомпозицию и оценку дают профильные dev-агенты.
+- **Продуктовая память** — `$qtim-product-onboard` собирает из кодовой базы карту разделов, модель акторов, словарь домена и реестр событий аналитики (плюс материалы ПМа из `docs/product-context/`, если есть) — intake и PRD опираются на факты, а не на пересказ.
 - **Codex-native упаковка** — плагин состоит из `.codex-plugin/plugin.json`, `skills/`, custom-agent templates и Codex hooks.
 - **Подстройка под стек** — setup создаёт `.codex/team-charter.md` и `.codex/agents/*.toml` под проект.
 - **Контроль качества** — встроены gates: typecheck/build/tests, real-browser evidence, independent review для рискованных изменений.
@@ -70,10 +71,13 @@ codex plugin add qtim@qtim-agent-team              # переустановит�
 3. После setup используй режим под задачу:
 
    ```text
-   $qtim-feature      # PM/аналитик: хотелка -> PRD -> декомпозиция -> оценка -> план
-   $qtim-team-up      # полный эпик с циклами implement -> test -> review
-   $qtim-team-lazy    # роли по мере надобности
-   $qtim-team-down    # закрыть активные agent threads и зафиксировать память
+   $qtim-onboard          # dev: один раз наполнить память картой, инвариантами и конвенциями
+   $qtim-product-onboard  # PM: один раз собрать продуктовую память из кода
+   $qtim-feature          # PM/аналитик: хотелка -> PRD -> декомпозиция -> оценка -> план
+   $qtim-team-up          # полный эпик с циклами implement -> test -> review
+   $qtim-team-lazy        # роли по мере надобности
+   $qtim-team-retro       # после эпика: дистиллировать уроки в память
+   $qtim-team-down        # закрыть активные agent threads и зафиксировать память
    ```
 
 ## Skills
@@ -84,7 +88,11 @@ codex plugin add qtim@qtim-agent-team              # переустановит�
 | `$qtim-feature` | PM/аналитик: провести хотелку от идеи до плана — PRD, декомпозиция, оценка, handoff в реализацию |
 | `$qtim-team-up` | Крупная задача/эпик с обратной связью между implement/test/review |
 | `$qtim-team-lazy` | Быстрая или средняя задача без полного прогрева команды |
-| `$qtim-team-down` | Завершить активные agent threads и сохранить durable state |
+| `$qtim-onboard` | После setup на существующей кодовой базе: наполнить dev-память картой, инвариантами и конвенциями с `file:line` |
+| `$qtim-product-onboard` | После setup с PM-дорожкой: собрать продуктовую память из кода — разделы, акторы, словарь домена, события аналитики |
+| `$qtim-team-retro` | После завершённого эпика (до team-down): дистиллировать уроки «триггер -> действие» в память проекта и ролей |
+| `$qtim-team-down` | Завершить активные agent threads и сохранить durable state; незавершённый эпик фиксируется в `memory/epic-state.md` |
+| `$qtim-doctor` | «Что-то не работает» или после обновления: read-only диагностика charter/агентов/hooks/памяти с таблицей фиксов |
 | `$qtim-update` | Проверить версии плагина/команды и мигрировать сгенерированные файлы на текущую версию |
 
 ## Что появится в проекте после setup
@@ -92,7 +100,7 @@ codex plugin add qtim@qtim-agent-team              # переустановит�
 - `.codex/team-charter.md` — контракт команды с track-блоками под выбранные роли, инварианты и правила работы.
 - `.codex/agents/*.toml` — Codex custom agents под стек проекта (включая `qtim-product` для PM-трека).
 - `.codex/hooks.json` — опциональные reminders для SessionStart/SubagentStop/PostToolUse.
-- `memory/` — карта проекта, команды, решения, инварианты, баги и review reports.
+- `memory/` — карта проекта, команды, решения, инварианты, баги и review reports; при работе команды сюда добавляются `epic-state.md` (handoff незавершённого эпика между сессиями), `retro-log.md` и `lessons.md` (уроки ретроспектив).
 - `AGENTS.md` — указатель для Codex на qtim-команду и локальные правила проекта.
 - `docs/features/<slug>/` — появляется при работе `$qtim-feature`: intake, PRD, декомпозиция, оценка, план.
 

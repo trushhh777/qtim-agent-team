@@ -63,6 +63,13 @@ for path in sorted(root.glob("*.toml")):
             "где внутренние пути плагина не резолвятся; ссылайся на charter или memory/"
         )
 
+    m = re.search(r'^model\s*=\s*"([^"]*)"', text, re.MULTILINE)
+    if m and not re.fullmatch(r"gpt-\d+\.\d+(-[a-z0-9-]+)?", m.group(1)):
+        bad.append(
+            f"{path}: `model = \"{m.group(1)}\"` — слаг без минорной версии или не gpt-семейство; "
+            "боевой инцидент: `gpt-5` не существует, субагенты не стартуют"
+        )
+
 if not list(root.glob("*.toml")):
     bad.append(f"{root}: no Codex custom agent templates found")
 

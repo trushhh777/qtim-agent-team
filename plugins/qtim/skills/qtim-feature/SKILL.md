@@ -22,6 +22,8 @@ Production code из этого skill не пишется — выход кон�
 
 ## Stage 1: Intake
 
+Перед вопросами прочитай продуктовую память, если она создана (`memory/product-map.md`, `product-actors.md`, `product-glossary.md`, `product-metrics.md` — их наполняет `$qtim-product-onboard`): говори с пользователем в терминах его продукта и не спрашивай то, что уже известно из памяти. Если памяти нет и кодовая база существует — предложи прогнать `$qtim-product-onboard` (не блокирует: можно продолжать без него).
+
 Задай пользователю структурированные вопросы (одним компактным блоком, не по одному):
 
 - какую проблему решаем и кто её испытывает;
@@ -36,7 +38,7 @@ Production code из этого skill не пишется — выход кон�
 
 Spawn `qtim-product` (fallback: `worker` с inline-инструкциями PM-роли из charter) с компактным prompt по шаблону team-up: read first AGENTS.md, charter PM track, `intake.md`.
 
-Выход — `prd.md`: цели, не-цели, сценарии с acceptance criteria, UX-заметки, метрики, риски, open questions. **Checkpoint:** пользователь утверждает или правит; Status -> Approved.
+Выход — `prd.md`: цели, не-цели, сценарии с acceptance criteria, UX-заметки, метрики, риски, open questions. Метрики успеха привязывай к реальным событиям аналитики из `memory/product-metrics.md`, когда память создана; отсутствующее событие фиксируй как задачу на трекинг, а не как факт. **Checkpoint:** пользователь утверждает или правит; Status -> Approved.
 
 ## Stage 3: Decomposition (grounded)
 

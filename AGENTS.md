@@ -8,10 +8,11 @@ All content is primarily Russian. The repository has no build step and no applic
 
 - `.agents/plugins/marketplace.json` — Codex marketplace manifest exposing `plugins/qtim`.
 - `plugins/qtim/.codex-plugin/plugin.json` — Codex plugin manifest.
-- `plugins/qtim/skills/` — Codex skills: `qtim-setup`, `qtim-feature`, `qtim-team-up`, `qtim-team-lazy`, `qtim-team-down`, `qtim-update`.
+- `plugins/qtim/skills/` — Codex skills: `qtim-setup`, `qtim-feature`, `qtim-onboard`, `qtim-product-onboard`, `qtim-team-up`, `qtim-team-lazy`, `qtim-team-retro`, `qtim-team-down`, `qtim-doctor`, `qtim-update`.
 - `plugins/qtim/agents/` — Codex custom agent TOML templates (dev roles + `product.toml` for the PM track) copied by `$qtim-setup` into target projects.
 - `plugins/qtim/reference/` — shared mechanics for intake, orchestration patterns, independent review, the PM feature pipeline, and upgrade notes for generated-state migrations.
 - `plugins/qtim/hooks/hooks.json` — optional plugin-bundled Codex lifecycle hooks.
+- `docs/pm-track-backlog.md` — prioritized improvement backlog for the PM track (research-based, ICE-scored); start here when planning PM-track work.
 
 ## Architecture Rules
 

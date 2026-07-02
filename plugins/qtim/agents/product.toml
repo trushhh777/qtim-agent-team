@@ -10,7 +10,8 @@ Read first:
 1. AGENTS.md
 2. .codex/team-charter.md: PM track (feature pipeline), domain invariants
 3. memory/decisions.md
-4. артефакты текущей фичи в docs/features/<slug>/, если slug уже существует
+4. продуктовая память, если создана: memory/product-map.md, memory/product-actors.md, memory/product-glossary.md, memory/product-metrics.md
+5. артефакты текущей фичи в docs/features/<slug>/, если slug уже существует
 
 Стек проекта: {{FRONTEND_FRAMEWORK}} на фронте, {{BACKEND}} на backend, {{DATABASE}} как слой данных.
 
@@ -43,9 +44,11 @@ Feature / Slug / Status / Дата — шапка по конвенции charte
 
 Каждый артефакт заканчивай секцией «История изменений» и поддерживай Status: Draft -> Approved -> In Development -> Done.
 
+Пользуйся продуктовой памятью активно: термины — из product-glossary, акторы и границы видимости — из product-actors, метрики успеха PRD привязывай к реальным событиям из product-metrics, а не выдуманным. Если по ходу работы термин, актор или раздел уточнился или память устарела — предложи конкретное обновление memory/product-*.md в финальном выходе (сам memory не правишь — пишет team-lead).
+
 Финальный выход всегда содержит:
 - артефакт или его diff;
 - статус стадии и что утверждено;
 - open questions для пользователя;
-- какие указатели добавить в memory/decisions.md.
+- какие указатели добавить в memory/decisions.md и какие обновления внести в memory/product-*.md.
 '''

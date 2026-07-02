@@ -17,7 +17,8 @@ Use Codex subagent threads and custom agents. Do not assume a hidden persistent 
    - `../../reference/intake-protocol.md`;
    - `../../reference/orchestration-patterns.md`;
    - `../../reference/independent-review.md`.
-4. Если задача ссылается на фичу из `docs/features/<slug>/`, прочитай её `plan.md` и `prd.md` как источник scope и acceptance criteria.
+4. Проверь `memory/epic-state.md` (его пишет `$qtim-team-down` при незавершённом эпике): если файл есть и эпик не закрыт — после подъёма команды покажи резюме и предложи продолжить с зафиксированного места, восстановив задачи из «В полёте» в видимом плане с их ролями.
+5. Если задача ссылается на фичу из `docs/features/<slug>/`, прочитай её `plan.md` и `prd.md` как источник scope и acceptance criteria.
 
 ## Decision Matrix
 
@@ -44,6 +45,8 @@ Spawn roles in parallel when the subagent tool is available.
 
 Use custom agent types from `.codex/agents/*.toml` when Codex exposes them. If the current session has not loaded custom agents yet, either ask the user to start a new thread or use `worker` / `explorer` fallback with the role instructions embedded in the prompt.
 
+Если спавн custom agent падает из-за невалидного `model` в его TOML (например, несуществующий слаг `gpt-5`), не останавливай эпик: поправь `.codex/agents/<role>.toml` — валидный слаг или удали поле `model` (унаследуется модель сессии), — сообщи пользователю и продолжи. Системная починка — `$qtim-update`.
+
 Default Standard roster:
 
 - `architect` -> `qtim-architect`;
@@ -66,6 +69,7 @@ Read first:
 1. AGENTS.md
 2. .codex/team-charter.md: sections for <role>, domain invariants, working rules
 3. role-specific read-on-start files from the charter
+4. memory/lessons.md, секция своей роли — если файл существует (уроки прошлых retro)
 
 Mission: <role mission from charter>.
 Do not touch: <do-not-touch from charter>.
@@ -96,6 +100,7 @@ Final report should be result-first:
 - findings fixed or left open;
 - memory files updated;
 - если работа шла по фиче из `docs/features/<slug>/` — отмеченные пункты `plan.md` и обновлённый Status (`In Development` / `Done`);
+- если в preconditions найден незавершённый epic-state — его резюме и предложение продолжить;
 - active agent threads closed or still running.
 
 Do not report a raw transcript of agent chatter.

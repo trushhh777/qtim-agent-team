@@ -2,6 +2,33 @@
 
 Версии соответствуют `version` в `plugins/qtim/.codex-plugin/plugin.json` (semver).
 
+## 2.4.0 — 2026-07-02
+
+Порт dev-улучшений Claude Code-версии плагина 1.3.0–1.4.0 ([toiiia/qtim-agent-team](https://github.com/toiiia/qtim-agent-team)) под Codex-конвенции. Аналоги `/qtim:team-sync` и `reference/migrations.md` не портировались — их роль уже закрывают `$qtim-update` и `reference/upgrade-notes.md` (2.2.0).
+
+### Добавлено
+
+- **Skill `$qtim-team-retro`** — ретроспектива эпика (порт `/qtim:team-retro`): анализ петель/блокеров/повторяющихся классов проблем по фактам сессии и дистилляция уроков «триггер -> действие» в `memory/retro-log.md` и в секции ролей `memory/lessons.md`. Вместо Claude agent-memory (в Codex нет per-role памяти) уроки ролей живут в `memory/lessons.md`, а prompt template `$qtim-team-up` включает секцию роли в read-first — уроки доживают до следующей сессии, хотя agent threads — нет.
+- **Epic-state / handoff между сессиями** (порт из 1.4.0): `$qtim-team-down` при незавершённом эпике пишет `memory/epic-state.md` (фаза, сделано, «в полёте», следующий шаг) и удаляет его после завершённого; `$qtim-team-up` в новой сессии читает его и предлагает продолжить. Team-down перед сворачиванием напоминает про `$qtim-team-retro`.
+- **Skill `$qtim-onboard`** — глубокий онбординг dev-памяти (порт `/qtim:onboard`): план -> подтверждение объёма -> fan-out read-only исследователей по подсистемам -> синтез карты/инвариантов/конвенций в `memory/` с прецедентами `file:line`. Дополняет `$qtim-product-onboard`: тот смотрит глазами пользователя, этот — инженера.
+- **Skill `$qtim-doctor`** — read-only диагностика (порт `/qtim:doctor`, чеклист переписан под Codex): манифест плагина, stamp и track-маркеры charter, целостность `.codex/agents/*.toml` (TOML parse, плейсхолдеры, plugin-internal пути), hooks.json и trust, память и устаревший epic-state, артефакты PM-трека, доступность skills из charter. Вывод — таблица pass/warn/fail с конкретными фиксами; безопасные фиксы по подтверждению.
+- **Рецепты оркестрации** в `reference/orchestration-patterns.md` (адаптация Workflow-скриптов 1.4.0 — в Codex нет Workflow-движка, рецепты исполняет main thread явными subagent threads): Ensemble Review (линзы -> скептик-верификация каждого finding -> синтез-вердикт), Access Audit (fan-out по сущностям -> карта видимости + щели на стыках), Flaky Hunt (loop-until-trace со stop-условиями).
+- Setup: working rules charter описывают session handoff (epic-state, retro-log, lessons); генерируемая секция `AGENTS.md` и handoff упоминают новые skills; на существующей кодовой базе рекомендуется `$qtim-onboard` / `$qtim-product-onboard`, при проблемах — `$qtim-doctor`.
+- Запись `-> 2.4.0` в upgrade-notes.
+
+### Исправлено
+
+- **Setup мог сгенерировать несуществующий `model` в агентах** (боевой инцидент: `model = "gpt-5"` — субагенты не стартовали, в шаблонах при этом корректный `gpt-5.5`/`gpt-5.4`): setup теперь обязан копировать `model` из template дословно, при сомнении в доступности слага — удалять поле (наследуется модель сессии); Phase 5 проверяет совпадение с template. `$qtim-team-up` при падении спавна из-за невалидной модели чинит TOML и продолжает эпик; `$qtim-update` проверяет слаги при миграции; CI (`check_codex_agents.py`) отклоняет слаги без минорной версии в шаблонах.
+
+## 2.3.0 — 2026-07-02
+
+### Добавлено
+
+- **Skill `$qtim-product-onboard`** — глубокое наполнение продуктовой памяти из кодовой базы: fan-out read-only исследователей (разделы/экраны из роутера, акторы/права из auth, словарь домена из схемы, события аналитики и фичефлаги) + синтез материалов ПМа из опциональной `docs/product-context/` (интервью, тикеты, метрики — каждый вывод со ссылкой на источник). Выход: `memory/product-map.md`, `product-actors.md`, `product-glossary.md`, `product-metrics.md`; пишет только main thread, факты с прецедентами `file:line`, гипотезы помечаются.
+- **Роль `product` использует и пополняет память**: продуктовая память в Read first; термины из глоссария, метрики PRD привязываются к реальным событиям из `product-metrics.md` (отсутствующее событие — задача на трекинг, не факт); обновления памяти — через предложения в финальном выходе, пишет team-lead.
+- **Интеграция с конвейером**: `$qtim-feature` Stage 1 читает продуктовую память до вопросов пользователю и предлагает прогнать `$qtim-product-onboard`, если памяти нет; setup рекомендует его после генерации PM-дорожки.
+- Запись `-> 2.3.0` в upgrade-notes (миграция только для команд с PM track; dev-only не затронуты).
+
 ## 2.2.0 — 2026-07-02
 
 ### Добавлено

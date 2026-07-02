@@ -112,7 +112,7 @@ PM/Analyst-состав команды не спрашивается — он о
 - roles table: role, Codex custom agent name, mission, triggers, do-not-touch, read-on-start, skills, mandatory practices;
 - domain invariants;
 - independent review gates: перенеси в charter суть `../../reference/independent-review.md` (когда запускать, prompt shape, integration), чтобы сгенерированные агенты не зависели от файлов плагина;
-- working rules: Codex subagents are explicit, session-local agent threads; use custom agents when loaded, otherwise `worker`/`explorer` fallback with inline role instructions;
+- working rules: Codex subagents are explicit, session-local agent threads; use custom agents when loaded, otherwise `worker`/`explorer` fallback with inline role instructions; session handoff: незавершённый эпик фиксируется в `memory/epic-state.md` (`$qtim-team-down` пишет, `$qtim-team-up` читает и предлагает продолжить), уроки retro — в `memory/retro-log.md` и `memory/lessons.md`;
 - memory layout.
 
 Track-блоки — между HTML-маркерами, по выбранным ролям:
@@ -139,6 +139,8 @@ Re-run rule: при повторном setup заменяй содержимое
 - `description`;
 - `developer_instructions`;
 - optional `model`, `model_reasoning_effort`, `nickname_candidates`.
+
+**`model` копируй из template дословно — не подставляй слаг из собственных знаний** (боевой инцидент: сгенерированный `model = "gpt-5"` не существует, и все субагенты не стартовали). Переопределяй только по явному выбору пользователя. Если сомневаешься, что слаг из template доступен в этом окружении, — **удали поле `model` целиком**: агент унаследует модель сессии, это всегда безопасно.
 
 Имена по умолчанию:
 
@@ -175,11 +177,13 @@ Codex hooks требуют trust review через `/hooks`; упомяни эт
 - `memory/review-report.md`;
 - `memory/bug-log.md`.
 
-При PM track уточни в `MEMORY.md`, что `decisions.md` служит также реестром указателей на утверждённые фичи в `docs/features/<slug>/`. Саму директорию `docs/features/` setup не создаёт — её создаёт `$qtim-feature` per-slug.
+Файлы `memory/epic-state.md`, `memory/retro-log.md` и `memory/lessons.md` setup не создаёт — их создают `$qtim-team-down` и `$qtim-team-retro` по мере надобности; упомяни их назначение в `MEMORY.md`.
+
+При PM track уточни в `MEMORY.md`, что `decisions.md` служит также реестром указателей на утверждённые фичи в `docs/features/<slug>/`. Саму директорию `docs/features/` setup не создаёт — её создаёт `$qtim-feature` per-slug. Продуктовую память (`memory/product-map.md`, `product-actors.md`, `product-glossary.md`, `product-metrics.md`) setup тоже не создаёт — её наполняет `$qtim-product-onboard`; упомяни эти файлы в PM track block charter как read-on-start роли `product` («если созданы»).
 
 ### `AGENTS.md`
 
-Если `AGENTS.md` есть, добавь секцию `Команда qtim`. Если нет — создай. Секция должна ссылаться на `.codex/team-charter.md`, `.codex/agents/*.toml`, `$qtim-team-up`, `$qtim-team-lazy`, `$qtim-team-down`, `$qtim-update` (проверка версии и обновление команды), а при PM track — на `$qtim-feature` и конвенцию `docs/features/<slug>/`.
+Если `AGENTS.md` есть, добавь секцию `Команда qtim`. Если нет — создай. Секция должна ссылаться на `.codex/team-charter.md`, `.codex/agents/*.toml`, `$qtim-team-up`, `$qtim-team-lazy`, `$qtim-team-down`, `$qtim-team-retro` (ретроспектива эпика до team-down), `$qtim-update` (проверка версии и обновление команды), `$qtim-onboard` (глубокий онбординг dev-памяти) и `$qtim-doctor` (диагностика), а при PM track — на `$qtim-feature` и конвенцию `docs/features/<slug>/`.
 
 Если есть legacy `CLAUDE.md`, не переписывай его. Можно добавить в `AGENTS.md` заметку, что Codex читает `AGENTS.md`, а `CLAUDE.md` является legacy source only if the repo already uses it.
 
@@ -189,13 +193,14 @@ Codex hooks требуют trust review через `/hooks`; упомяни эт
 
 - JSON files parse: `python3 -m json.tool .codex/hooks.json` when created;
 - TOML custom agents parse using Python `tomllib` if available;
+- `model` каждого сгенерированного TOML совпадает со значением из template (или поле удалено); слаг вида `gpt-5` без минорной версии — ошибка;
 - generated files contain no unresolved qtim placeholders;
 - generated files do not reference plugin-internal paths (`../../reference/...`, `../../agents/...`) — вся нужная механика должна быть в charter или `memory/`;
 - track-маркеры `qtim:track:*` в charter парные; при re-run оба track block целы, PM block содержит механику pipeline;
 - version stamps на месте: `<!-- qtim-version: ... -->` в charter, `# qtim-version: ...` в каждом сгенерированном TOML, версия совпадает с `../../.codex-plugin/plugin.json`;
 - links in `AGENTS.md` point to existing files.
 
-Финальный ответ: что создано, как пользоваться, какие hooks надо trust через `/hooks`, и что после создания custom agents лучше открыть новую Codex thread/session so Codex loads them cleanly.
+Финальный ответ: что создано, как пользоваться, какие hooks надо trust через `/hooks`, и что после создания custom agents лучше открыть новую Codex thread/session so Codex loads them cleanly. На существующей кодовой базе порекомендуй следом прогнать `$qtim-onboard` (dev track) — глубокое наполнение `memory/` картой, инвариантами и конвенциями, а при PM track — `$qtim-product-onboard`, который наполнит продуктовую память (разделы, акторы, словарь, аналитика), без которой intake/PRD опираются только на ответы пользователя. Упомяни `$qtim-doctor` как первый шаг при «что-то не работает».
 
 ## Critical Rules
 
