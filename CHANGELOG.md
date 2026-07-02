@@ -1,6 +1,34 @@
 # Changelog
 
-Версии соответствуют `version` в `plugins/qtim/.claude-plugin/plugin.json` (semver).
+Версии соответствуют `version` в `plugins/qtim/.codex-plugin/plugin.json` (semver).
+
+## 2.0.0 — 2026-07-02
+
+### Исправлено (pre-release ревью)
+
+- **Невалидный YAML frontmatter `qtim-team-lazy`** — незакавыченное `description` с `:` внутри роняло ingestion-валидатор Codex; значение взято в кавычки.
+- **`reviewer.toml` ссылался на `../../reference/independent-review.md`** — шаблон копируется setup'ом в `.codex/agents/` целевого проекта, где внутренние пути плагина не резолвятся (регрессия бага, чинившегося в 1.2.0); теперь ссылка на independent review gates в `.codex/team-charter.md`. В `qtim-setup` добавлено требование самодостаточности генерируемых файлов (Phase 4, Phase 5, Critical Rules).
+- **CI не ловил оба класса багов**: добавлен `check_skills.py` (frontmatter всех SKILL.md, PyYAML с fallback-парсером), `check_codex_agents.py` теперь парсит TOML через `tomllib` (Python 3.11+) и запрещает `../`-пути в шаблонах агентов.
+
+### Изменено
+
+- Плагин полностью перенесён на Codex packaging: `.agents/plugins/marketplace.json` + `plugins/qtim/.codex-plugin/plugin.json`.
+- Claude slash-команды `/qtim:*` заменены на Codex skills: `$qtim-setup`, `$qtim-team-up`, `$qtim-team-lazy`, `$qtim-team-down`.
+- Claude Agent Teams runtime заменён на Codex subagent workflow: explicit spawn, session-local agent threads, custom agents в `.codex/agents/*.toml`.
+- Шаблоны ролей перенесены из Claude agent Markdown/frontmatter в Codex custom agent TOML templates.
+- `codex-consult.md` заменён на `independent-review.md`: в Codex больше нет внешнего "Codex second-opinion", review делает отдельный read-only agent thread.
+- Generated project state теперь живёт в `.codex/team-charter.md`, `.codex/agents`, `.codex/hooks.json`, `memory/` и `AGENTS.md`; `.claude/*` больше не генерируется.
+- README и repo instructions переписаны под Codex install/use flow.
+
+### Удалено
+
+- `.claude-plugin/*`, `plugins/qtim/.claude-plugin/*`, `plugins/qtim/commands/*` и Claude-only role templates.
+
+### Добавлено
+
+- Codex plugin manifest validation target.
+- CI-проверка Codex custom agent TOML templates.
+- Repo `AGENTS.md` с правилами поддержки Codex-native версии.
 
 ## 1.2.0 — 2026-07-02
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Плейсхолдеры {{...}} в plugins/ должны входить в белый список из commands/setup.md.
+"""Плейсхолдеры {{...}} в plugins/ должны входить в белый список qtim setup.
 
 Дополнительно ловит деформированные плейсхолдеры ({{ BUILD_CMD }}, {{build_cmd}}),
 которые строгий паттерн молча пропустил бы. Литерал-иллюстрация `{{...}}` допустим.
@@ -22,7 +22,11 @@ ALLOWED = {
 STRICT = re.compile(r"^\{\{([A-Z0-9_]+)\}\}$")
 
 bad = []
-for path in sorted(pathlib.Path("plugins").rglob("*.md")):
+paths = [
+    *pathlib.Path("plugins").rglob("*.md"),
+    *pathlib.Path("plugins").rglob("*.toml"),
+]
+for path in sorted(paths):
     for m in re.finditer(r"\{\{[^{}]*\}\}", path.read_text(encoding="utf-8")):
         token = m.group(0)
         strict = STRICT.match(token)
@@ -33,7 +37,7 @@ for path in sorted(pathlib.Path("plugins").rglob("*.md")):
             bad.append(f"{path}: {token} — деформированный плейсхолдер (пробелы/регистр?)")
 
 if bad:
-    print("Проблемные плейсхолдеры (обнови белый список в setup.md и в этом скрипте — или шаблон):")
+    print("Проблемные плейсхолдеры (обнови белый список в qtim-setup и в этом скрипте — или шаблон):")
     print("\n".join(bad))
     sys.exit(1)
 

@@ -13,20 +13,31 @@ jobs:
 
       - name: JSON-манифесты валидны
         run: |
-          python3 -m json.tool .claude-plugin/marketplace.json > /dev/null
-          python3 -m json.tool plugins/qtim/.claude-plugin/plugin.json > /dev/null
+          python3 -m json.tool .agents/plugins/marketplace.json > /dev/null
+          python3 -m json.tool plugins/qtim/.codex-plugin/plugin.json > /dev/null
           python3 -m json.tool plugins/qtim/hooks/hooks.json > /dev/null
 
-      - name: Канон рантайма — call-синтаксис упразднённых примитивов запрещён
+      - name: Codex-native runtime — Claude-only примитивы запрещены
         run: |
-          if grep -rnE 'TeamCreate\(|TeamDelete\(|team_name\s*:' plugins/; then
-            echo 'Найден call-синтаксис упразднённых примитивов (TeamCreate(/TeamDelete(/team_name:)' >&2
+          test ! -e .claude-plugin
+          test ! -e plugins/qtim/.claude-plugin
+          test ! -d plugins/qtim/commands
+          if grep -rnE 'TeamCreate\(|TeamDelete\(|team_name\s*:|CLAUDE_PLUGIN_ROOT' plugins/qtim README.md AGENTS.md; then
+            echo 'Найден Claude-only call-синтаксис или plugin-root token в Codex-native версии' >&2
             exit 1
           fi
-          echo 'OK: call-синтаксис упразднённых примитивов не встречается'
+          echo 'OK: Claude-only артефакты и call-синтаксис не встречаются'
 
       - name: Плейсхолдеры шаблонов из белого списка
         run: python3 .github/scripts/check_placeholders.py
+
+      - name: Frontmatter skills валиден
+        run: |
+          python3 -m pip install --quiet pyyaml || true
+          python3 .github/scripts/check_skills.py
+
+      - name: Codex custom agents валидны
+        run: python3 .github/scripts/check_codex_agents.py
 
       - name: Относительные ссылки в plugins/ не биты
         run: python3 .github/scripts/check_links.py

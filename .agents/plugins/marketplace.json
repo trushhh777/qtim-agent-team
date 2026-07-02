@@ -1,0 +1,20 @@
+{
+  "name": "qtim-agent-team",
+  "interface": {
+    "displayName": "qtim Agent Team"
+  },
+  "plugins": [
+    {
+      "name": "qtim",
+      "source": {
+        "source": "local",
+        "path": "./plugins/qtim"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}
