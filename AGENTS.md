@@ -13,6 +13,7 @@ All content is primarily Russian. The repository has no build step and no applic
 - `plugins/qtim/reference/` — shared mechanics for intake, orchestration patterns, independent review, the PM feature pipeline, and upgrade notes for generated-state migrations.
 - `plugins/qtim/hooks/hooks.json` — optional plugin-bundled Codex lifecycle hooks.
 - `docs/pm-track-backlog.md` — prioritized improvement backlog for the PM track (research-based, ICE-scored); start here when planning PM-track work.
+- `docs/claude-port-map.md` — porting map to the Claude Code sibling project (toiiia/qtim-agent-team): conventions table, process, feature parity; read before porting features either way. The Claude working clone lives at `../qtim-agent-team-claude`.
 
 ## Architecture Rules
 
@@ -24,6 +25,13 @@ All content is primarily Russian. The repository has no build step and no applic
 - Main thread is the team lead; subagent outputs are advisory until checked.
 - Durable project decisions belong in `memory/`, not only in chat.
 - Independent review is a separate read-only Codex agent thread, not "Codex as an external consultant".
+
+## Workspace And Deploy
+
+- This folder (`outputs/qtim-agent-team-codex`) is the single source of truth and the deploy point. Deploy = conventional commit + `git push origin main` (`origin` = `trushhh777/qtim-agent-team`). No intermediate copies, zips, or deploy folders.
+- After deploy, plugin users update via `codex plugin marketplace upgrade qtim-agent-team` + `codex plugin add qtim@qtim-agent-team` + new thread; project teams migrate with `$qtim-update`.
+- `.claude/` is local session state, gitignored — never commit it.
+- The Claude Code sibling project lives at `../qtim-agent-team-claude` (separate git: `upstream` = toiiia/qtim-agent-team for pulling, `origin` = the trushhh777 fork for PR branches). Features are born and proven here, then ported there semantically per `docs/claude-port-map.md` — never by copying text. Its local working rules live in its own `CLAUDE.local.md`.
 
 ## Validation
 
