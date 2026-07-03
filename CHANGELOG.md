@@ -2,6 +2,35 @@
 
 Версии соответствуют `version` в `plugins/qtim/.codex-plugin/plugin.json` (semver).
 
+## 2.5.0 — 2026-07-03
+
+Порт аудит-фиксов Claude Code-версии 1.6.0 ([toiiia/qtim-agent-team](https://github.com/toiiia/qtim-agent-team), коммит 92985d1) под Codex-конвенции + выравнивание с 1.5.0-адаптацией владельца (режим UX-AUDIT). Миграция сгенерированного состояния — `reference/upgrade-notes.md`, запись «2.5.0».
+
+### Исправлено
+
+- **Рецепты оркестрации стали fail-closed** (`reference/orchestration-patterns.md`, аналог их правок `ensemble-review.mjs`/`flaky-hunt.mjs` — у нас рецепты текстовые, исполняет main thread): в Ensemble Review сбой скептика или целой линзы больше не читается как «дефекта нет» — неопровергнутые findings идут в отчёт блоком «требуют ручной проверки», findings сверх лимита верификации не выбрасываются, а правило вердикта main thread применяет детерминированно сам (NOT APPROVED при любом подтверждённом **или неверифицированном** P0/P1 и при упавшей линзе — синтез может только ужесточить); в Flaky Hunt сбой прогона считается отдельно от зелёных, серия сбоев даёт честное «ни один прогон не состоялся» вместо ложного «стабильно».
+- **Канон оси A/B/C/D**: Execution Depth явно меряется глубиной координации (петли implement -> test -> review), выбор режима подсчётом ролей — anti-pattern; в Classify And Act зафиксировано, что классификатору делегируется только слой/severity/владелец, а выбор execution depth — работа main thread (матрица субагенту недоступна).
+- **Screenshots-gate различает tester и front**: self-check-скриншоты frontend получили префикс `front-selfcheck-`, tester именует sweep-скриншоты `<epic>-<phase>-<viewport>-<screen>` (падения — `-FAIL`), reviewer закрывает гейт только tester-скриншотами; маршрутизация блокеров reviewer'а явно ограничена ролями, реально существующими в charter (database/frontend/testing/devops при наличии).
+- **Выключенный independent review согласован по конвейеру** (аналог их Q5=No): setup при disabled пишет в charter секцию-заглушку «выключен» и вырезает independent-review-требования из генерируемых агентов (reviewer/architect/database) как gate-условные блоки; `$qtim-team-up` не требует гейт при заглушке; `$qtim-doctor` ловит рассинхрон (заглушка в charter + требования гейта в TOML); Phase 5 setup проверяет согласованность.
+- **PM-состав честен про реализацию**: setup и PM track block charter помечают, что PM-состав (без `qtim-reviewer`) рассчитан на конвейер документов — перед запуском handoff-плана в разработку состав дополняется dev-дорожкой повторным `$qtim-setup`; предупреждение продублировано в handoff `$qtim-feature` (Stage 6).
+- **Реестр решений и фич канонизирован до конца**: `$qtim-onboard` (синтез) и `reference/intake-protocol.md` (шаг 8) ссылаются на `memory/decisions.md` по имени, как остальные потребители.
+- **CI**: `check_placeholders.py` ловит несбалансированные скобки плейсхолдеров (`{{FOO}` / `{FOO}}`) в `*.md` и `*.toml`.
+- **README**: шкала оценок PM-конвейера — S/M/L/XL (была занижена до S/M/L).
+
+### Добавлено
+
+- **Режим UX-AUDIT у роли `product`** (выравнивание с их 1.5.0: владелец сохранил UX-аудит из Extended-каркаса при слиянии PR #1): пост-релизный аудит UX и discoverability — findings P0-P3 в финальном отчёте, задачи исполнителям раздаёт team-lead (в Codex субагент не создаёт задачи сам).
+- Запись «2.5.0» в upgrade-notes (миграция шаблонов ролей; для PM-only и disabled-review команд — правки charter).
+
+### Не портировано (Codex-специфика)
+
+- Правки Workflow-скриптов как код и CI-запреты `Date.now()`/`Math.random()` — в Codex нет Workflow-движка, семантика перенесена в текстовые рецепты (см. «Исправлено»).
+- Standalone-ветки doctor/team-sync, локализация командных имён, Q7-дубли hooks — в Codex-версии нет standalone-режима.
+- Проверка резолвинга абсолютных путей протоколов при переносе проекта — Codex-charter самодостаточен (протоколы инлайнятся, путей в charter нет).
+- Якорение hooks на каталог проекта (`$CLAUDE_PROJECT_DIR`) — у Codex-рантайма нет подтверждённого аналога переменной; hooks остаются advisory echo и при запуске не из корня просто молчат.
+- `sh -n` hook-скрипта и канон-grep по `examples/` — hooks инлайновые, каталога examples нет.
+- `color: cyan` у tester — в Codex agent TOML нет поля `color`.
+
 ## 2.4.0 — 2026-07-02
 
 Порт dev-улучшений Claude Code-версии плагина 1.3.0–1.4.0 ([toiiia/qtim-agent-team](https://github.com/toiiia/qtim-agent-team)) под Codex-конвенции. Аналоги `/qtim:team-sync` и `reference/migrations.md` не портировались — их роль уже закрывают `$qtim-update` и `reference/upgrade-notes.md` (2.2.0).

@@ -37,7 +37,7 @@ Before handoff:
 1. Run {{TYPECHECK_CMD}} when available.
 2. Run {{BUILD_CMD}} for substantial UI changes when feasible.
 3. Perform a real-browser self-check through {{E2E_TOOL}} when UI changed.
-4. Save or describe screenshots/test artifacts according to project memory conventions.
+4. Save self-check screenshots with the `front-selfcheck-` prefix (e.g. `front-selfcheck-<screen>-<viewport>`) following project memory conventions. Reviewer tells them apart by prefix: the screenshots gate is closed only by tester's sweep shots, self-check does not replace it.
 
 Если другие agents работают параллельно, не откатывай их изменения. Ограничь write scope своей задачей.
 

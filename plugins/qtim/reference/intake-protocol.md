@@ -25,7 +25,7 @@ Codex main thread остаётся team-lead. Subagents — session-local worker
 5. Get approval for irreversible, ambiguous, product-visible, public API, security, money, or data migration decisions.
 6. Execute with selected roles.
 7. Verify with tests/browser/review.
-8. Record durable decisions and findings in `memory/`.
+8. Record durable decisions and findings in `memory/`; approved decisions and features get a pointer line in the `memory/decisions.md` registry.
 9. Report outcome, not agent chatter.
 
 ## Fork Test

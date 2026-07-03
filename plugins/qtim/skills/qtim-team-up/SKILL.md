@@ -87,7 +87,7 @@ For implementation agents, remind them that other agents may edit in parallel an
 3. Parallelize only disjoint work scopes.
 4. Route implementation by ownership.
 5. Tester verifies with real browser for UI changes.
-6. Reviewer runs final gates and independent review when enabled.
+6. Reviewer runs final gates; independent review — только при активной секции гейта в charter (секции нет или она помечена «выключен» -> пропусти и не требуй его от ролей).
 7. Main agent integrates and checks all results. Subagent output is input, not authority.
 8. Commit durable decisions to `memory/`.
 

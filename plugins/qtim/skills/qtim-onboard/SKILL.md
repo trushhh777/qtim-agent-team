@@ -34,7 +34,7 @@ Invocation of this skill is explicit permission to spawn the read-only researche
 
 ### 4. Синтез (main thread)
 
-Сведи отчёты в файлы `memory/` по layout из charter (`project-map.md`, `invariants.md`, `commands.md`, при необходимости topic-файлы). Конфликт между отчётами — проверь сам по коду. Каждый инвариант — с прецедентом `file:line`; гипотезы помечай как гипотезы.
+Сведи отчёты в файлы `memory/` по layout из charter (`project-map.md`, `invariants.md`, `commands.md`, реестр решений и фич `decisions.md`, при необходимости topic-файлы). Конфликт между отчётами — проверь сам по коду. Каждый инвариант — с прецедентом `file:line`; гипотезы помечай как гипотезы.
 
 ### 5. Индекс и отчёт
 

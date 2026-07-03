@@ -76,11 +76,11 @@ description: Use when the user wants to install or bootstrap qtim for the curren
 - team shape: Compact, Standard, Extended (только dev track);
 - autonomy: design approval first, phase-by-phase confirmation, or full autonomy; для PM track это режим checkpoints конвейера;
 - memory baseline: project map, commands, safety, domain invariants;
-- independent review gate: enabled or disabled (только dev track);
+- independent review gate: enabled or disabled (только dev track; при disabled charter получает секцию-заглушку «выключен», а independent-review-требования шаблонов вырезаются из генерируемых агентов — включить позже можно повторным `$qtim-setup`);
 - hooks: SessionStart, SubagentStop, optional PostToolUse reminder after edits;
 - skill recommendations: write selected skills into charter/agent instructions or keep roles standalone.
 
-PM/Analyst-состав команды не спрашивается — он определяется стеком: `qtim-product` + `qtim-architect` + профильные `qtim-database`/`qtim-frontend`/`qtim-testing` (какие есть в стеке) + built-in `explorer`. Dev-роли нужны PM-конвейеру как read-only консультанты для точной декомпозиции и оценки, даже если пользователь код не пишет. `qtim-reviewer` в PM-only setup не генерируется.
+PM/Analyst-состав команды не спрашивается — он определяется стеком: `qtim-product` + `qtim-architect` + профильные `qtim-database`/`qtim-frontend`/`qtim-testing` (какие есть в стеке) + built-in `explorer`. Dev-роли нужны PM-конвейеру как read-only консультанты для точной декомпозиции и оценки, даже если пользователь код не пишет. `qtim-reviewer` в PM-only setup не генерируется — поэтому PM-состав рассчитан на конвейер документов, не на реализацию: перед запуском handoff-плана в разработку (`$qtim-team-up`, режим D с петлёй через reviewer) состав дополняется dev-дорожкой повторным `$qtim-setup` (он дописывает, не пересоздаёт). Эту пометку зафиксируй в PM track block charter.
 
 Рекомендованный default для большинства fullstack проектов: Standard, design approval first, project map + commands + safety + invariants, independent review enabled, SessionStart + SubagentStop hooks enabled.
 
@@ -111,7 +111,7 @@ PM/Analyst-состав команды не спрашивается — он о
 - fixed stack and commands;
 - roles table: role, Codex custom agent name, mission, triggers, do-not-touch, read-on-start, skills, mandatory practices;
 - domain invariants;
-- independent review gates: перенеси в charter суть `../../reference/independent-review.md` (когда запускать, prompt shape, integration), чтобы сгенерированные агенты не зависели от файлов плагина;
+- independent review gates — при включённом гейте перенеси в charter суть `../../reference/independent-review.md` (когда запускать, prompt shape, integration), чтобы сгенерированные агенты не зависели от файлов плагина; при выключенном — секция из одной строки-заглушки «independent review выключен (выбор setup); включить — повторный `$qtim-setup`», по ней `$qtim-team-up` и роли понимают, что гейт не настроен;
 - working rules: Codex subagents are explicit, session-local agent threads; use custom agents when loaded, otherwise `worker`/`explorer` fallback with inline role instructions; session handoff: незавершённый эпик фиксируется в `memory/epic-state.md` (`$qtim-team-down` пишет, `$qtim-team-up` читает и предлагает продолжить), уроки retro — в `memory/retro-log.md` и `memory/lessons.md`;
 - memory layout.
 
@@ -127,7 +127,7 @@ Track-блоки — между HTML-маркерами, по выбранным
 <!-- qtim:track:pm:end -->
 ```
 
-PM track block должен содержать перенесённую суть `../../reference/feature-pipeline.md` (стадии и checkpoints, схема `docs/features/<slug>/` со статусами Draft -> Approved -> In Development -> Done, правило dev-consult на декомпозиции/оценке, правила grounded-оценки S/M/L/XL, handoff contract) — сгенерированные агенты не зависят от файлов плагина.
+PM track block должен содержать перенесённую суть `../../reference/feature-pipeline.md` (стадии и checkpoints, схема `docs/features/<slug>/` со статусами Draft -> Approved -> In Development -> Done, правило dev-consult на декомпозиции/оценке, правила grounded-оценки S/M/L/XL, handoff contract) — сгенерированные агенты не зависят от файлов плагина. При PM-only составе — также пометку из Phase 2: перед реализацией handoff-плана состав дополняется dev-дорожкой повторным `$qtim-setup`.
 
 Re-run rule: при повторном setup заменяй содержимое только между маркерами своего track; чужой track block и ручные правки пользователя вне маркеров не трогай. В общей roles table добавляй строки, не удаляя существующие.
 
@@ -141,6 +141,8 @@ Re-run rule: при повторном setup заменяй содержимое
 - optional `model`, `model_reasoning_effort`, `nickname_candidates`.
 
 **`model` копируй из template дословно — не подставляй слаг из собственных знаний** (боевой инцидент: сгенерированный `model = "gpt-5"` не существует, и все субагенты не стартовали). Переопределяй только по явному выбору пользователя. Если сомневаешься, что слаг из template доступен в этом окружении, — **удали поле `model` целиком**: агент унаследует модель сессии, это всегда безопасно.
+
+**Gate-условные блоки шаблонов:** требования independent review gate у reviewer/architect/database (блок «Independent review gate», пункты чеклистов про independent review, секция отчёта «Independent review») переноси только при включённом гейте; при выключенном вырезай целиком, как стек-условные — роли не должны требовать гейт, от которого пользователь отказался.
 
 Имена по умолчанию:
 
@@ -197,6 +199,7 @@ Codex hooks требуют trust review через `/hooks`; упомяни эт
 - generated files contain no unresolved qtim placeholders;
 - generated files do not reference plugin-internal paths (`../../reference/...`, `../../agents/...`) — вся нужная механика должна быть в charter или `memory/`;
 - track-маркеры `qtim:track:*` в charter парные; при re-run оба track block целы, PM block содержит механику pipeline;
+- при выключенном independent review: charter содержит секцию-заглушку «выключен», в сгенерированных TOML нет требований independent review gate;
 - version stamps на месте: `<!-- qtim-version: ... -->` в charter, `# qtim-version: ...` в каждом сгенерированном TOML, версия совпадает с `../../.codex-plugin/plugin.json`;
 - links in `AGENTS.md` point to existing files.
 

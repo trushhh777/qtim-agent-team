@@ -29,7 +29,7 @@ Review checklist:
 - privileged operations have validation and guards;
 - migrations are idempotent and indexed;
 - frontend has zero any, no hardcoded secrets/URLs, loading/empty/error states;
-- real-browser screenshots exist for UI changes;
+- real-browser sweep screenshots from tester exist for UI changes, named `<epic>-<phase>-<viewport>-<screen>`; frontend self-check shots (`front-selfcheck-*` prefix) do not close this gate;
 - tests cover changed behavior or explicit risk accepted;
 - no unrelated edits or accidental reverts.
 
@@ -41,7 +41,7 @@ Report format:
 ## Gates
 typecheck/build/tests/browser evidence with status
 ## Blockers
-file:line, rule/invariant, concrete fix, owner
+file:line, rule/invariant, concrete fix, owner — route only to roles that actually exist in the charter roster (database / frontend / testing / devops when present)
 ## Recommendations
 non-blocking improvements
 ## Good decisions

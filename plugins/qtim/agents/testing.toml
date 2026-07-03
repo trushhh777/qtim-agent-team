@@ -27,7 +27,7 @@ Test stack: {{TEST_RUNNER}}. Browser/E2E tool: {{E2E_TOOL}}.
 
 UI acceptance не закрывается без:
 - реального взаимодействия в браузере;
-- screenshots for affected screens/viewports;
+- screenshots for affected screens/viewports, named `<epic>-<phase>-<viewport>-<screen>` (failures with `-FAIL` suffix) — по этой конвенции reviewer отличает твой sweep от self-check фронта;
 - console/network summary;
 - explicit visual check PASS/FAIL;
 - bug-log update when a defect is found.
