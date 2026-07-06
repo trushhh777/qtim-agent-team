@@ -20,7 +20,7 @@ Use direct work for trivial tasks. Escalate to `$qtim-team-up` if feedback loops
 ## Steps
 
 1. Read `.codex/team-charter.md`. If missing, ask for `$qtim-setup`.
-2. Если задача ссылается на фичу из `docs/features/<slug>/`, прочитай её `plan.md` и `prd.md` как источник scope; по завершении обнови Status артефактов.
+2. Если задача ссылается на фичу из `docs/features/<slug>/`, прочитай её `plan.md` и `prd.md` как источник scope; по завершении обнови Status артефактов, а отклонения от плана с обоснованием и всплывшие edge cases зафиксируй строкой в «Истории изменений» `plan.md`.
 3. Classify the task and choose only the needed role(s).
 4. Spawn the needed custom agents when available; otherwise use `worker` or `explorer` fallback with inline role instructions.
 5. Give each subagent a concrete scope and expected output.

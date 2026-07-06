@@ -18,7 +18,7 @@ Use Codex subagent threads and custom agents. Do not assume a hidden persistent 
    - `../../reference/orchestration-patterns.md`;
    - `../../reference/independent-review.md`.
 4. Проверь `memory/epic-state.md` (его пишет `$qtim-team-down` при незавершённом эпике): если файл есть и эпик не закрыт — после подъёма команды покажи резюме и предложи продолжить с зафиксированного места, восстановив задачи из «В полёте» в видимом плане с их ролями.
-5. Если задача ссылается на фичу из `docs/features/<slug>/`, прочитай её `plan.md` и `prd.md` как источник scope и acceptance criteria.
+5. Если задача ссылается на фичу из `docs/features/<slug>/`, прочитай её `plan.md` и `prd.md` как источник scope и acceptance criteria; отклонения от плана с обоснованием и всплывшие edge cases фиксируй строкой в «Истории изменений» `plan.md`.
 
 ## Decision Matrix
 
@@ -99,7 +99,7 @@ Final report should be result-first:
 - gates run and status;
 - findings fixed or left open;
 - memory files updated;
-- если работа шла по фиче из `docs/features/<slug>/` — отмеченные пункты `plan.md` и обновлённый Status (`In Development` / `Done`);
+- если работа шла по фиче из `docs/features/<slug>/` — отмеченные пункты `plan.md`, обновлённый Status (`In Development` / `Done`) и зафиксированные в «Истории изменений» отклонения от плана;
 - если в preconditions найден незавершённый epic-state — его резюме и предложение продолжить;
 - active agent threads closed or still running.
 

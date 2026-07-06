@@ -1,6 +1,6 @@
 {
   "name": "qtim",
-  "version": "2.5.0",
+  "version": "2.6.0",
   "description": "Codex-native bootstrap and orchestration kit for project-specific subagent teams. Role-aware setup for developers and PM/analysts. Includes setup, feature pipeline (idea to PRD, decomposition, estimate, plan), team-up, team-lazy, team-down, team-retro, onboard, product-onboard, doctor and update skills, versioned generated state, custom agent templates, intake rules, orchestration patterns and recipes, independent review gates, epic-state session handoff, and lifecycle hooks.",
   "author": {
     "name": "Антон Фокин"
