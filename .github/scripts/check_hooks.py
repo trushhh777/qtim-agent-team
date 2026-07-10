@@ -1,0 +1,424 @@
+#!/usr/bin/env python3
+"""Validate qtim Codex hook schemas and event-specific output contracts."""
+
+import json
+import os
+import pathlib
+import subprocess
+import sys
+import tempfile
+
+
+ALLOWED_EVENTS = {
+    "SessionStart",
+    "SubagentStart",
+    "PreToolUse",
+    "PermissionRequest",
+    "PostToolUse",
+    "PreCompact",
+    "PostCompact",
+    "UserPromptSubmit",
+    "SubagentStop",
+    "Stop",
+}
+ROOT_KEYS = {"description", "hooks"}
+GROUP_KEYS = {"matcher", "hooks"}
+HANDLER_KEYS = {
+    "type",
+    "command",
+    "commandWindows",
+    "timeout",
+    "statusMessage",
+    "async",
+}
+FILES = {
+    pathlib.Path("plugins/qtim/hooks/hooks.json"): {"SessionStart", "SubagentStop"},
+    pathlib.Path("plugins/qtim/reference/project-hooks.json"): {"PostToolUse"},
+}
+EXPECTED_MATCHERS = {
+    pathlib.Path("plugins/qtim/hooks/hooks.json"): {
+        "SessionStart": "startup|resume|clear|compact",
+        "SubagentStop": "*",
+    },
+    pathlib.Path("plugins/qtim/reference/project-hooks.json"): {
+        "PostToolUse": "Edit|Write|apply_patch",
+    },
+}
+
+bad = []
+loaded = {}
+
+
+def fail(path, message):
+    bad.append(f"{path}: {message}")
+
+
+for path, expected_events in FILES.items():
+    if not path.is_file():
+        fail(path, "файл отсутствует")
+        continue
+
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as err:
+        fail(path, f"невалидный JSON: {err}")
+        continue
+
+    loaded[path] = payload
+    if not isinstance(payload, dict):
+        fail(path, "корень должен быть JSON-объектом")
+        continue
+
+    unknown_root = sorted(set(payload) - ROOT_KEYS)
+    if unknown_root:
+        fail(path, f"неподдерживаемые top-level поля: {', '.join(unknown_root)}")
+
+    description = payload.get("description")
+    if description is not None and (
+        not isinstance(description, str) or not description.strip()
+    ):
+        fail(path, "description должен быть непустой строкой")
+
+    events = payload.get("hooks")
+    if not isinstance(events, dict):
+        fail(path, "обязательное поле hooks должно быть объектом")
+        continue
+
+    actual_events = set(events)
+    if actual_events != expected_events:
+        fail(
+            path,
+            "ожидались события "
+            f"{sorted(expected_events)}, получены {sorted(actual_events)}",
+        )
+
+    for event, groups in events.items():
+        if event not in ALLOWED_EVENTS:
+            fail(path, f"неподдерживаемое событие {event}")
+        if not isinstance(groups, list) or not groups:
+            fail(path, f"{event} должен содержать непустой массив matcher groups")
+            continue
+        if len(groups) != 1:
+            fail(path, f"{event} canonical template должен содержать ровно один group")
+
+        for group_index, group in enumerate(groups):
+            location = f"{event}[{group_index}]"
+            if not isinstance(group, dict):
+                fail(path, f"{location} должен быть объектом")
+                continue
+            unknown_group = sorted(set(group) - GROUP_KEYS)
+            if unknown_group:
+                fail(
+                    path,
+                    f"{location}: неподдерживаемые поля: {', '.join(unknown_group)}",
+                )
+
+            matcher = group.get("matcher")
+            if matcher is not None and not isinstance(matcher, str):
+                fail(path, f"{location}.matcher должен быть строкой")
+            expected_matcher = EXPECTED_MATCHERS[path].get(event)
+            if matcher != expected_matcher:
+                fail(
+                    path,
+                    f"{location}.matcher должен быть {expected_matcher!r}, "
+                    f"получен {matcher!r}",
+                )
+
+            handlers = group.get("hooks")
+            if not isinstance(handlers, list) or not handlers:
+                fail(path, f"{location}.hooks должен быть непустым массивом")
+                continue
+            if len(handlers) != 1:
+                fail(path, f"{location}.hooks должен содержать ровно один handler")
+
+            for handler_index, handler in enumerate(handlers):
+                handler_location = f"{location}.hooks[{handler_index}]"
+                if not isinstance(handler, dict):
+                    fail(path, f"{handler_location} должен быть объектом")
+                    continue
+                unknown_handler = sorted(set(handler) - HANDLER_KEYS)
+                if unknown_handler:
+                    fail(
+                        path,
+                        f"{handler_location}: неподдерживаемые поля: "
+                        f"{', '.join(unknown_handler)}",
+                    )
+                if handler.get("type") != "command":
+                    fail(path, f'{handler_location}.type должен быть "command"')
+                command = handler.get("command")
+                if not isinstance(command, str) or not command.strip():
+                    fail(path, f"{handler_location}.command должен быть непустой строкой")
+                elif ".claude/" in command:
+                    fail(path, f"{handler_location}.command содержит Claude-only путь")
+
+                command_windows = handler.get("commandWindows")
+                if not isinstance(command_windows, str) or not command_windows.strip():
+                    fail(
+                        path,
+                        f"{handler_location}.commandWindows обязателен для qtim hooks",
+                    )
+
+                timeout = handler.get("timeout")
+                if timeout is not None and (
+                    isinstance(timeout, bool)
+                    or not isinstance(timeout, int)
+                    or timeout <= 0
+                ):
+                    fail(
+                        path,
+                        f"{handler_location}.timeout должен быть целым числом > 0",
+                    )
+
+                if "async" in handler and handler["async"] is not False:
+                    fail(
+                        path,
+                        f"{handler_location}.async должен отсутствовать или быть false",
+                    )
+
+                for key in ("statusMessage", "commandWindows"):
+                    value = handler.get(key)
+                    if value is not None and (
+                        not isinstance(value, str) or not value.strip()
+                    ):
+                        fail(path, f"{handler_location}.{key} должен быть строкой")
+
+
+bundled_path = pathlib.Path("plugins/qtim/hooks/hooks.json")
+bundled = loaded.get(bundled_path, {}).get("hooks", {})
+for event in ("SessionStart", "SubagentStop"):
+    groups = bundled.get(event, [])
+    for group in groups if isinstance(groups, list) else []:
+        for handler in group.get("hooks", []) if isinstance(group, dict) else []:
+            command = handler.get("command", "") if isinstance(handler, dict) else ""
+            command_windows = (
+                handler.get("commandWindows", "") if isinstance(handler, dict) else ""
+            )
+            if "git rev-parse --show-toplevel" not in command:
+                fail(bundled_path, f"{event} не резолвит charter от git root")
+            if "git rev-parse --show-toplevel" not in command_windows:
+                fail(bundled_path, f"{event}.commandWindows не резолвит git root")
+            if "Test-Path -LiteralPath" not in command_windows:
+                fail(bundled_path, f"{event}.commandWindows не использует literal path")
+            if "-PathType Leaf" not in command_windows:
+                fail(
+                    bundled_path,
+                    f"{event}.commandWindows не проверяет charter как файл",
+                )
+            if "OutputEncoding" not in command_windows:
+                fail(bundled_path, f"{event}.commandWindows не фиксирует UTF-8")
+            if event == "SessionStart" and "Select-String -LiteralPath" not in command_windows:
+                fail(
+                    bundled_path,
+                    "SessionStart.commandWindows читает charter не через LiteralPath",
+                )
+            if event == "SubagentStop" and '"systemMessage"' not in command:
+                fail(
+                    bundled_path,
+                    "SubagentStop должен печатать JSON systemMessage, а не plain stdout",
+                )
+            if event == "SubagentStop" and "systemMessage" not in command_windows:
+                fail(
+                    bundled_path,
+                    "SubagentStop.commandWindows должен печатать JSON systemMessage",
+                )
+
+project_path = pathlib.Path("plugins/qtim/reference/project-hooks.json")
+project = loaded.get(project_path, {}).get("hooks", {})
+groups = project.get("PostToolUse", []) if isinstance(project, dict) else []
+for group in groups if isinstance(groups, list) else []:
+    matcher = group.get("matcher") if isinstance(group, dict) else None
+    if matcher != "Edit|Write|apply_patch":
+        fail(project_path, "PostToolUse matcher должен быть Edit|Write|apply_patch")
+    for handler in group.get("hooks", []) if isinstance(group, dict) else []:
+        command = handler.get("command", "") if isinstance(handler, dict) else ""
+        command_windows = (
+            handler.get("commandWindows", "") if isinstance(handler, dict) else ""
+        )
+        for marker in (
+            '"hookSpecificOutput"',
+            '"hookEventName":"PostToolUse"',
+            '"additionalContext"',
+        ):
+            if marker not in command:
+                fail(
+                    project_path,
+                    f"PostToolUse command не содержит JSON marker {marker}",
+                )
+        for marker in ("hookSpecificOutput", "PostToolUse", "additionalContext"):
+            if marker not in command_windows:
+                fail(
+                    project_path,
+                    f"PostToolUse.commandWindows не содержит JSON marker {marker}",
+                )
+        if "OutputEncoding" not in command_windows:
+            fail(project_path, "PostToolUse.commandWindows не фиксирует UTF-8")
+
+setup_path = pathlib.Path("plugins/qtim/skills/qtim-setup/SKILL.md")
+setup = setup_path.read_text(encoding="utf-8")
+if "../../reference/project-hooks.json" not in setup:
+    fail(setup_path, "setup не ссылается на канонический project hooks template")
+for legacy in (
+    "- hooks: SessionStart, SubagentStop, optional PostToolUse reminder after edits;",
+    "- `SessionStart`: если есть `.codex/team-charter.md`",
+    "- `SubagentStop`: напомнить main agent",
+):
+    if legacy in setup:
+        fail(setup_path, f"setup всё ещё предлагает project-level дубль: {legacy}")
+
+
+def first_command(payload, event):
+    key = "commandWindows" if os.name == "nt" else "command"
+    return payload["hooks"][event][0]["hooks"][0][key]
+
+
+def run_command(command, cwd, payload):
+    argv = (
+        ["cmd.exe", "/d", "/c", command]
+        if os.name == "nt"
+        else ["/bin/sh", "-c", command]
+    )
+    return subprocess.run(
+        argv,
+        cwd=cwd,
+        input=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        timeout=5,
+        check=False,
+    )
+
+
+if not bad:
+    with tempfile.TemporaryDirectory(prefix="qtim-хуки-[literal]-") as temp_dir:
+        root = pathlib.Path(temp_dir)
+        init = subprocess.run(
+            ["git", "init", "-q"],
+            cwd=root,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+        if init.returncode != 0:
+            fail("runtime", f"не удалось создать temp git repo: {init.stderr!r}")
+        nested = root / "nested" / "cwd"
+        nested.mkdir(parents=True)
+
+        session_payload = {
+            "session_id": "session-test",
+            "transcript_path": None,
+            "cwd": str(nested),
+            "hook_event_name": "SessionStart",
+            "model": "test-model",
+            "permission_mode": "default",
+            "source": "startup",
+        }
+        subagent_payload = {
+            "session_id": "session-test",
+            "transcript_path": None,
+            "cwd": str(nested),
+            "hook_event_name": "SubagentStop",
+            "model": "test-model",
+            "permission_mode": "default",
+            "turn_id": "turn-test",
+            "agent_id": "agent-test",
+            "agent_type": "reviewer",
+            "agent_transcript_path": None,
+            "stop_hook_active": False,
+            "last_assistant_message": "Проверка завершена.",
+        }
+
+        commands = {
+            "SessionStart": first_command(loaded[bundled_path], "SessionStart"),
+            "SubagentStop": first_command(loaded[bundled_path], "SubagentStop"),
+        }
+        for event, payload in (
+            ("SessionStart", session_payload),
+            ("SubagentStop", subagent_payload),
+        ):
+            result = run_command(commands[event], nested, payload)
+            if result.returncode != 0 or result.stdout or result.stderr:
+                fail(
+                    bundled_path,
+                    f"{event} без charter должен завершаться 0 без вывода: "
+                    f"rc={result.returncode}, stdout={result.stdout!r}, "
+                    f"stderr={result.stderr!r}",
+                )
+
+        charter = root / ".codex" / "team-charter.md"
+        charter.parent.mkdir()
+        charter.write_text("<!-- qtim-version: 9.8.7 -->\n", encoding="utf-8")
+
+        session = run_command(commands["SessionStart"], nested, session_payload)
+        if session.returncode != 0 or session.stderr:
+            fail(
+                bundled_path,
+                "SessionStart с charter завершился ошибкой: "
+                f"rc={session.returncode}, stderr={session.stderr!r}",
+            )
+        elif "[qtim v9.8.7]" not in session.stdout.decode("utf-8"):
+            fail(bundled_path, "SessionStart не прочитал version stamp от git root")
+
+        subagent = run_command(commands["SubagentStop"], nested, subagent_payload)
+        if subagent.returncode != 0 or subagent.stderr:
+            fail(
+                bundled_path,
+                "SubagentStop с charter завершился ошибкой: "
+                f"rc={subagent.returncode}, stderr={subagent.stderr!r}",
+            )
+        else:
+            try:
+                output = json.loads(subagent.stdout.decode("utf-8"))
+            except (UnicodeDecodeError, json.JSONDecodeError) as err:
+                fail(bundled_path, f"SubagentStop stdout не JSON UTF-8: {err}")
+            else:
+                if set(output) != {"systemMessage"} or not output["systemMessage"]:
+                    fail(
+                        bundled_path,
+                        "SubagentStop должен вернуть только непустой systemMessage",
+                    )
+
+        post_payload = {
+            "session_id": "session-test",
+            "transcript_path": None,
+            "cwd": str(nested),
+            "hook_event_name": "PostToolUse",
+            "model": "test-model",
+            "permission_mode": "default",
+            "turn_id": "turn-test",
+            "tool_name": "apply_patch",
+            "tool_use_id": "tool-test",
+            "tool_input": {"command": "*** Begin Patch\n*** End Patch"},
+            "tool_response": {"output": "Done!"},
+        }
+        post = run_command(
+            first_command(loaded[project_path], "PostToolUse"), nested, post_payload
+        )
+        if post.returncode != 0 or post.stderr:
+            fail(
+                project_path,
+                "PostToolUse завершился ошибкой: "
+                f"rc={post.returncode}, stderr={post.stderr!r}",
+            )
+        else:
+            try:
+                output = json.loads(post.stdout.decode("utf-8"))
+            except (UnicodeDecodeError, json.JSONDecodeError) as err:
+                fail(project_path, f"PostToolUse stdout не JSON UTF-8: {err}")
+            else:
+                specific = output.get("hookSpecificOutput", {})
+                if (
+                    specific.get("hookEventName") != "PostToolUse"
+                    or not specific.get("additionalContext")
+                    or set(output) != {"hookSpecificOutput"}
+                ):
+                    fail(
+                        project_path,
+                        "PostToolUse должен вернуть только валидный additionalContext",
+                    )
+
+if bad:
+    print("Codex hooks validation failed:")
+    print("\n".join(bad))
+    sys.exit(1)
+
+print("OK: bundled и project hooks соответствуют Codex schema/output contract")

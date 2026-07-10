@@ -1,11 +1,11 @@
 ---
 name: qtim-setup
-description: Use when the user wants to install or bootstrap qtim for the current Codex project. Asks for the user role (Developer, PM/Analyst, or both), then generates .codex/team-charter.md with track blocks, .codex/agents/*.toml, optional .codex/hooks.json, memory files, and an AGENTS.md pointer after project discovery and user confirmation.
+description: Use when the user wants to install or bootstrap qtim for the current Codex project. Asks for the user role, then generates charter, custom agents, memory, an AGENTS.md pointer, and only when selected an optional project-local PostToolUse hook without duplicating plugin-bundled hooks.
 ---
 
 # qtim Setup For Codex
 
-Ты bootstrap-инженер qtim для Codex. Твоя задача — развернуть в текущем проекте Codex-native команду субагентов: charter, custom agents, memory baseline, hooks и указатель в `AGENTS.md`.
+Ты bootstrap-инженер qtim для Codex. Твоя задача — развернуть в текущем проекте Codex-native команду субагентов: charter, custom agents, memory baseline, optional project PostToolUse и указатель в `AGENTS.md`. Plugin-bundled lifecycle hooks не копируй.
 
 Не создавай legacy `.claude/*`, не пиши `CLAUDE.md`, не используй legacy Agent Teams primitives. Codex-цель — `.codex/*`, `AGENTS.md`, skills и Codex subagent workflows.
 
@@ -16,6 +16,7 @@ description: Use when the user wants to install or bootstrap qtim for the curren
 - Role templates: `../../agents/architect.toml`, `../../agents/database.toml`, `../../agents/frontend.toml`, `../../agents/testing.toml`, `../../agents/reviewer.toml`, `../../agents/product.toml`.
 - Model policy: `../../reference/model-profiles.md`.
 - Shared mechanics: `../../reference/intake-protocol.md`, `../../reference/orchestration-patterns.md`, `../../reference/independent-review.md`, `../../reference/feature-pipeline.md`.
+- Hooks: `../../hooks/hooks.json` для plugin-bundled событий; `../../reference/project-hooks.json` читай только при выборе project-level `PostToolUse`.
 - Plugin version для stamps: поле `version` из `../../.codex-plugin/plugin.json`.
 
 ## Phase 1: Discovery
@@ -29,7 +30,7 @@ description: Use when the user wants to install or bootstrap qtim for the curren
 - package/workspace markers: `package.json`, `pyproject.toml`, `go.mod`, `Cargo.toml`, `Gemfile`, `composer.json`;
 - frontend/backend/database/test/CI markers;
 - commands: dev, build, typecheck, test, migrations;
-- existing `.codex/agents`, `.codex/hooks.json`, `.codex/team-charter.md`, `memory/`;
+- existing `.codex/agents`, `.codex/hooks.json`, `.codex/team-charter.md`, `memory/`; существующий hooks-файл классифицируй как canonical, legacy qtim или foreign/mixed, ничего не исполняя;
 - existing `docs/features/` и track-маркеры `qtim:track:dev` / `qtim:track:pm` в существующем charter.
 
 Сведи placeholders role templates к фактам проекта:
@@ -80,12 +81,12 @@ Best-effort проверь пары role templates по локальному mod
 - autonomy: design approval first, phase-by-phase confirmation, or full autonomy; для PM track это режим checkpoints конвейера;
 - memory baseline: project map, commands, safety, domain invariants;
 - independent review gate: enabled or disabled (только dev track; при disabled charter получает секцию-заглушку «выключен», а independent-review-требования шаблонов вырезаются из генерируемых агентов — включить позже можно повторным `$qtim-setup`);
-- hooks: SessionStart, SubagentStop, optional PostToolUse reminder after edits;
+- hooks: plugin-bundled `SessionStart` / `SubagentStop` уже поставляются qtim и управляются через `/hooks`; спроси только про optional project-level `PostToolUse` reminder после edits;
 - skill recommendations: write selected skills into charter/agent instructions or keep roles standalone.
 
 PM/Analyst-состав команды не спрашивается — он определяется стеком: `qtim-product` + `qtim-architect` + профильные `qtim-database`/`qtim-frontend`/`qtim-testing` (какие есть в стеке) + built-in `explorer`. Dev-роли нужны PM-конвейеру как read-only консультанты для точной декомпозиции и оценки, даже если пользователь код не пишет. `qtim-reviewer` в PM-only setup не генерируется — поэтому PM-состав рассчитан на конвейер документов, не на реализацию: перед запуском handoff-плана в разработку (`$qtim-team-up`, режим D с петлёй через reviewer) состав дополняется dev-дорожкой повторным `$qtim-setup` (он дописывает, не пересоздаёт). Эту пометку зафиксируй в PM track block charter.
 
-Рекомендованный default для большинства fullstack проектов: Standard, design approval first, project map + commands + safety + invariants, independent review enabled, SessionStart + SubagentStop hooks enabled.
+Рекомендованный default для большинства fullstack проектов: Standard, design approval first, project map + commands + safety + invariants, independent review enabled, plugin-bundled SessionStart + SubagentStop enabled, project-level PostToolUse disabled.
 
 Модельный профиль не является отдельным обязательным вопросом: по умолчанию используй пары `model` + `model_reasoning_effort` из templates и покажи их в плане. Спрашивай только если пользователь просит override или точный slug недоступен. `Max`, `Ultra` и Fast — настройки главного task/session; setup не включает их сам.
 
@@ -99,7 +100,7 @@ PM/Analyst-состав команды не спрашивается — он о
 - selected roles and custom agent filenames;
 - model/reasoning profile каждой роли и fallback на наследование главного task, если точный slug недоступен;
 - memory files;
-- hooks;
+- plugin-bundled hooks и отдельно optional project `PostToolUse`;
 - selected skills per role;
 - any collisions in existing `.codex/agents` or `memory/`.
 
@@ -163,13 +164,17 @@ Re-run rule: при повторном setup заменяй содержимое
 
 ### `.codex/hooks.json`
 
-Создай или смержи осторожно. Не затирай чужие hooks.
+Plugin-bundled `SessionStart` и `SubagentStop` не дублируй: Codex складывает plugin и project hook layers, поэтому копия даст двойной анонс/ремайндер. Их канон — `../../hooks/hooks.json`.
 
-Рекомендуемые hooks:
+Project `.codex/hooks.json` создавай только если пользователь выбрал optional `PostToolUse` или файл уже содержит пользовательские hooks. Для qtim `PostToolUse` дословно возьми matcher group из `../../reference/project-hooks.json`: это nested Codex schema `hooks -> PostToolUse[] -> hooks[] -> type: command`, а команда возвращает JSON `hookSpecificOutput.additionalContext`. Plain stdout у `PostToolUse` игнорируется.
 
-- `SessionStart`: если есть `.codex/team-charter.md`, показать версию команды из stamp и напомнить про `$qtim-feature` / `$qtim-team-up` / `$qtim-team-lazy` / `$qtim-update` (упоминай skills сгенерированных треков; образец команды — в hooks.json плагина);
-- `SubagentStop`: напомнить main agent проверить реальные артефакты subagent thread;
-- optional `PostToolUse` matcher `Edit|Write|apply_patch`: короткое напоминание про typecheck/build, без долгого запуска.
+При merge:
+
+- сохраняй `description`, порядок и содержимое всех пользовательских events/groups/handlers;
+- добавляй только отсутствующий qtim `PostToolUse` group, не заменяй весь event;
+- не создавай `type: reminder`, поле `message` или плоский event array — Codex исполняет `type: command` внутри matcher group;
+- legacy top-level events или qtim `type: reminder` нормализуй только после показанного в Phase 3 diff; неоднозначные пользовательские entries не переписывай без подтверждения;
+- если optional `PostToolUse` не выбран и project hooks отсутствуют, `.codex/hooks.json` не создавай.
 
 Codex hooks требуют trust review через `/hooks`; упомяни это в handoff.
 
@@ -199,7 +204,7 @@ Codex hooks требуют trust review через `/hooks`; упомяни эт
 
 Проверь:
 
-- JSON files parse: `python3 -m json.tool .codex/hooks.json` when created;
+- `.codex/hooks.json`, если создан: JSON парсится; корень содержит `hooks`; каждый event содержит matcher groups с вложенным `hooks`; qtim handlers имеют `type: command` и `commandWindows`; qtim `PostToolUse` возвращает JSON `hookSpecificOutput.additionalContext`, а project layer не дублирует qtim `SessionStart` / `SubagentStop`;
 - TOML custom agents parse using Python `tomllib` if available;
 - пара `model` + `model_reasoning_effort` каждого сгенерированного TOML совпадает с template, является явно подтверждённым пользователем catalog-supported override или оба поля удалены; одинокое поле, неподтверждённый догаданный alias или слаг вида `gpt-5` без минорной версии — ошибка;
 - generated files contain no unresolved qtim placeholders;
@@ -209,7 +214,7 @@ Codex hooks требуют trust review через `/hooks`; упомяни эт
 - version stamps на месте: `<!-- qtim-version: ... -->` в charter, `# qtim-version: ...` в каждом сгенерированном TOML, версия совпадает с `../../.codex-plugin/plugin.json`;
 - links in `AGENTS.md` point to existing files.
 
-Финальный ответ: что создано, как пользоваться, какие hooks надо trust через `/hooks`, и что после создания custom agents лучше открыть новую задачу Codex, чтобы она загрузила их чисто. На существующей кодовой базе порекомендуй следом прогнать `$qtim-onboard` (dev track) — глубокое наполнение `memory/` картой, инвариантами и конвенциями, а при PM track — `$qtim-product-onboard`, который наполнит продуктовую память (разделы, акторы, словарь, аналитика), без которой intake/PRD опираются только на ответы пользователя. Упомяни `$qtim-doctor` как первый шаг при «что-то не работает».
+Финальный ответ: что создано, как пользоваться, какие plugin/local hooks надо trust через `/hooks` (и что `.codex/hooks.json` не создан, если optional `PostToolUse` не выбран), и что после создания custom agents лучше открыть новую задачу Codex, чтобы она загрузила их чисто. На существующей кодовой базе порекомендуй следом прогнать `$qtim-onboard` (dev track) — глубокое наполнение `memory/` картой, инвариантами и конвенциями, а при PM track — `$qtim-product-onboard`, который наполнит продуктовую память (разделы, акторы, словарь, аналитика), без которой intake/PRD опираются только на ответы пользователя. Упомяни `$qtim-doctor` как первый шаг при «что-то не работает».
 
 ## Critical Rules
 

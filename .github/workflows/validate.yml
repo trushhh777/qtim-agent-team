@@ -16,6 +16,7 @@ jobs:
           python3 -m json.tool .agents/plugins/marketplace.json > /dev/null
           python3 -m json.tool plugins/qtim/.codex-plugin/plugin.json > /dev/null
           python3 -m json.tool plugins/qtim/hooks/hooks.json > /dev/null
+          python3 -m json.tool plugins/qtim/reference/project-hooks.json > /dev/null
 
       - name: Codex-native runtime — Claude-only примитивы запрещены
         run: |
@@ -31,6 +32,9 @@ jobs:
       - name: Плейсхолдеры шаблонов из белого списка
         run: python3 .github/scripts/check_placeholders.py
 
+      - name: Codex hooks schema и output contract валидны
+        run: python3 .github/scripts/check_hooks.py
+
       - name: Frontmatter skills валиден
         run: |
           python3 -m pip install --quiet pyyaml || true
@@ -41,3 +45,11 @@ jobs:
 
       - name: Относительные ссылки в plugins/ не биты
         run: python3 .github/scripts/check_links.py
+
+  validate-windows-hooks:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Windows commandWindows hooks исполняются
+        run: python .github/scripts/check_hooks.py

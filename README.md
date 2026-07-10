@@ -11,7 +11,7 @@ qtim подстраивается под стек проекта: анализи
 - **Разделение труда** — роли отвечают за свои слои: архитектура, данные, UI, тесты, ревью.
 - **PM-трек** — `$qtim-feature` проводит хотелку через PRD -> декомпозицию -> оценку (S/M/L/XL с evidence из кода) -> план; артефакты версионируются в `docs/features/<slug>/`, декомпозицию и оценку дают профильные dev-агенты.
 - **Продуктовая память** — `$qtim-product-onboard` собирает из кодовой базы карту разделов, модель акторов, словарь домена и реестр событий аналитики (плюс материалы ПМа из `docs/product-context/`, если есть) — intake и PRD опираются на факты, а не на пересказ.
-- **Codex-native упаковка** — плагин состоит из `.codex-plugin/plugin.json`, `skills/`, custom-agent templates и Codex hooks.
+- **Codex-native упаковка** — плагин состоит из `.codex-plugin/plugin.json`, `skills/`, custom-agent templates и plugin-bundled Codex hooks; project `PostToolUse` остаётся опциональным.
 - **Подстройка под стек** — setup создаёт `.codex/team-charter.md` и `.codex/agents/*.toml` под проект.
 - **Контроль качества** — встроены gates: typecheck/build/tests, real-browser evidence, independent review для рискованных изменений.
 - **Гибкие режимы** — `$qtim-team-lazy` для точечных задач и `$qtim-team-up` для эпиков с циклами implement -> test -> review.
@@ -63,14 +63,16 @@ codex plugin add qtim@qtim-agent-team              # переустановит�
 
 После переустановки открой новую задачу Codex — только она подхватит обновлённые skills.
 
-Обновить команду в проекте: `$qtim-update` — сверяет версию установленного плагина с версией сгенерированной команды и мигрирует `.codex/team-charter.md`, `.codex/agents/*.toml` и hooks по upgrade notes, не затирая твои правки.
+Обновить команду в проекте: `$qtim-update` — сверяет версию установленного плагина с версией сгенерированной команды и мигрирует `.codex/team-charter.md`, `.codex/agents/*.toml` и qtim-owned hooks по upgrade notes, сохраняя пользовательские hook groups и остальные правки.
 
 Если `$qtim-update` изменил `.codex/agents/*.toml`, после миграции открой ещё одну новую задачу Codex перед `$qtim-team-up`, `$qtim-team-lazy` или `$qtim-feature`: уже открытая задача не перезагружает custom-agent definitions на лету.
+
+Если изменились hooks, открой `/hooks` и заново review/trust изменённые definitions.
 
 Где смотреть версии:
 
 - плагин — `codex plugin list`;
-- команда в проекте — stamp `<!-- qtim-version: ... -->` первой строкой `.codex/team-charter.md` (SessionStart hook показывает её при старте сессии);
+- команда в проекте — stamp `<!-- qtim-version: ... -->` первой строкой `.codex/team-charter.md` (plugin-bundled SessionStart показывает её при старте сессии);
 - `$qtim-update` печатает обе версии и вердикт.
 
 ## Быстрый старт
@@ -98,7 +100,7 @@ codex plugin add qtim@qtim-agent-team              # переустановит�
 
 | Skill | Когда использовать |
 |---|---|
-| `$qtim-setup` | Один раз в новом проекте: выбрать роль, сгенерировать charter, custom agents, hooks и memory |
+| `$qtim-setup` | Один раз в новом проекте: выбрать роль, сгенерировать charter, custom agents и memory; при выборе добавить optional project PostToolUse |
 | `$qtim-feature` | PM/аналитик: провести хотелку от идеи до плана — PRD, декомпозиция, оценка, handoff в реализацию |
 | `$qtim-team-up` | Крупная задача/эпик с обратной связью между implement/test/review |
 | `$qtim-team-lazy` | Быстрая или средняя задача без полного прогрева команды |
@@ -106,14 +108,14 @@ codex plugin add qtim@qtim-agent-team              # переустановит�
 | `$qtim-product-onboard` | После setup с PM-дорожкой: собрать продуктовую память из кода — разделы, акторы, словарь домена, события аналитики |
 | `$qtim-team-retro` | После завершённого эпика (до team-down): дистиллировать уроки «триггер -> действие» в память проекта и ролей |
 | `$qtim-team-down` | Завершить активные agent threads и сохранить durable state; незавершённый эпик фиксируется в `memory/epic-state.md` |
-| `$qtim-doctor` | «Что-то не работает» или после обновления: read-only диагностика charter/агентов/hooks/памяти с таблицей фиксов |
+| `$qtim-doctor` | «Что-то не работает» или после обновления: read-only диагностика charter/агентов, hook schema/ownership/output и памяти с таблицей фиксов |
 | `$qtim-update` | Проверить версии плагина/команды и мигрировать сгенерированные файлы на текущую версию |
 
 ## Что появится в проекте после setup
 
 - `.codex/team-charter.md` — контракт команды с track-блоками под выбранные роли, инварианты и правила работы.
 - `.codex/agents/*.toml` — Codex custom agents под стек проекта (включая `qtim-product` для PM-трека).
-- `.codex/hooks.json` — опциональные reminders для SessionStart/SubagentStop/PostToolUse.
+- `.codex/hooks.json` — создаётся только для явно выбранного project `PostToolUse` или сохраняет уже существующие пользовательские hooks; `SessionStart` / `SubagentStop` поставляет плагин.
 - `memory/` — карта проекта, команды, решения, инварианты, баги и review reports; при работе команды сюда добавляются `epic-state.md` (handoff незавершённого эпика между сессиями), `retro-log.md` и `lessons.md` (уроки ретроспектив).
 - `AGENTS.md` — указатель для Codex на qtim-команду и локальные правила проекта.
 - `docs/features/<slug>/` — появляется при работе `$qtim-feature`: intake, PRD, декомпозиция, оценка, план.

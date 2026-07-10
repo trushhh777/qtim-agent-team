@@ -2,6 +2,25 @@
 
 Версии соответствуют `version` в `plugins/qtim/.codex-plugin/plugin.json` (semver).
 
+## 2.8.0 — 2026-07-10
+
+Исправлен Codex hook-контракт после Claude-порта. Bundled `hooks.json` уже имел правильную вложенную форму, но setup мог генерировать project-level `type: reminder`, дублировать bundled events, а event-specific stdout не соответствовал текущему runtime. Основание — официальная документация [Hooks](https://learn.chatgpt.com/docs/hooks): hook layers складываются, `PostToolUse` игнорирует plain stdout, `SubagentStop` при exit 0 ожидает JSON.
+
+Сгенерированное состояние меняется — миграция описана в `reference/upgrade-notes.md`, запись «2.8.0».
+
+### Исправлено
+
+- **Bundled hooks**: `SubagentStop` теперь возвращает JSON `systemMessage`, не меняя continuation flow; обе команды находят charter от git root, поэтому работают при запуске Codex из подкаталога.
+- **Windows**: для bundled и project hooks добавлены `commandWindows` с PowerShell/UTF-8 вместо POSIX-команд, которые не исполнялись в `cmd.exe`.
+- **Разделение слоёв**: `$qtim-setup` больше не копирует `SessionStart` / `SubagentStop` в `.codex/hooks.json`; эти события принадлежат plugin layer, project layer содержит только явно выбранный `PostToolUse`.
+- **Рабочий PostToolUse**: plain reminder заменён на JSON `hookSpecificOutput.additionalContext`, который действительно попадает в model-visible context.
+
+### Добавлено
+
+- `reference/project-hooks.json` — machine-readable канон optional project hook, который setup мержит без перезаписи пользовательских groups.
+- `$qtim-doctor` проверяет schema, ownership и event-specific output; `$qtim-update` безопасно мигрирует только распознанные qtim handlers через показанный diff.
+- `check_hooks.py` валидирует schema и выполняет POSIX/Windows-команды в temp git-проекте (включая путь с кириллицей и `[]`): no-charter no-op, versioned `SessionStart`, JSON `SubagentStop` и JSON `PostToolUse`; workflow запускает отдельный `windows-latest` job.
+
 ## 2.7.0 — 2026-07-10
 
 Адаптация qtim под Codex CLI 0.144.1 и новый модельный/runtime-контракт: GPT-5.6 Sol/Terra/Luna, reasoning `Max`/`Ultra`, proactive delegation и task-scoped descendant threads. Основание — официальные [Models](https://developers.openai.com/codex/models), [Subagents](https://developers.openai.com/codex/subagents) и [Codex changelog](https://developers.openai.com/codex/changelog); точные пары дополнительно сверены с локальным model catalog Codex 0.144.1. Сгенерированное состояние меняется — миграция описана в `reference/upgrade-notes.md`, запись «2.7.0».

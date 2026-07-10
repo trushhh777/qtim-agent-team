@@ -1,0 +1,19 @@
+{
+  "description": "Локальный qtim PostToolUse reminder проекта; plugin-bundled SessionStart и SubagentStop здесь не дублируются.",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|apply_patch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "printf '%s\\n' '{\"hookSpecificOutput\":{\"hookEventName\":\"PostToolUse\",\"additionalContext\":\"qtim: после изменений проверь затронутый слой и запусти релевантные typecheck/build/test перед handoff; не запускай долгие проверки автоматически.\"}}'",
+            "commandWindows": "powershell -NoProfile -Command \"$utf8=[System.Text.UTF8Encoding]::new($false); [Console]::OutputEncoding=$utf8; $OutputEncoding=$utf8; @{hookSpecificOutput=@{hookEventName='PostToolUse'; additionalContext='qtim: после изменений проверь затронутый слой и запусти релевантные typecheck/build/test перед handoff; не запускай долгие проверки автоматически.'}} | ConvertTo-Json -Compress -Depth 3\"",
+            "statusMessage": "Checking qtim verification reminder",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

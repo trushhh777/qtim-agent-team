@@ -4,6 +4,26 @@
 
 Правило ведения: при каждом релизе, меняющем сгенерированное состояние, добавляй секцию сверху. Если релиз не меняет сгенерированное состояние, добавляй секцию с пометкой «миграция не требуется».
 
+## 2.8.0
+
+Что нового в сгенерированном состоянии:
+
+- plugin-bundled `SessionStart` / `SubagentStop` больше не копируются в project `.codex/hooks.json`, потому что Codex складывает оба hook layers и запускает дубли;
+- optional project `PostToolUse` использует canonical nested command schema из `reference/project-hooks.json` и возвращает JSON `hookSpecificOutput.additionalContext` вместо игнорируемого plain stdout;
+- hook definitions получили отдельные POSIX/Windows commands; изменённые definitions нужно заново review/trust через `/hooks`.
+
+Миграция с 2.7.0 и более ранних версий:
+
+1. Если `.codex/hooks.json` отсутствует, не создавай его: исправленные `SessionStart` / `SubagentStop` придут из plugin layer.
+2. Если файл есть, сначала сохрани его порядок и классифицируй каждый handler. qtim ownership определяй по совокупности fingerprints: guard `.codex/team-charter.md`; `[qtim` / `$qtim-*`; `qtim-version:`; тексты про реальные артефакты, затронутый слой или typecheck/build/test. Одного event name недостаточно.
+3. Удали распознанные qtim `SessionStart` / `SubagentStop` из project layer как bundled-дубли. Если в matcher group есть пользовательские handlers, сохрани group и удали только qtim handler. Неоднозначные entries покажи пользователю и не меняй без решения.
+4. Распознанный qtim `PostToolUse` в legacy top-level форме, с `type: reminder` / `message` или plain `echo` / `printf` замени handler из соседнего [project-hooks.json](project-hooks.json). Если он находится внутри matcher group с пользовательскими handlers, замени только qtim handler; group удаляй лишь когда после удаления qtim entries в нём ничего не осталось. Остальные handlers, PostToolUse groups и events сохрани без изменений.
+5. Если после удаления qtim-дублей файл пуст и optional `PostToolUse` не выбран, предложи удалить `.codex/hooks.json`, покажи diff и дождись подтверждения. Не удаляй пустой файл молча.
+6. Проверь canonical schema (`hooks -> Event[] -> hooks[] -> type: command`) и JSON output qtim `PostToolUse`; открой `/hooks` и заново review/trust изменённые definitions.
+7. Обнови stamps charter и всех qtim TOML до `2.8.0`. Содержимое agent TOML, track blocks, `memory/`, `docs/features/` и секцию qtim в project `AGENTS.md` не меняй.
+
+При прямой миграции с версии ниже 2.8.0 исторический шаг 2.2.0 про добавление project `SessionStart` пропусти: его заменяет plugin-bundled hook 2.8.0.
+
 ## 2.7.0
 
 Что нового в сгенерированном состоянии:
@@ -85,7 +105,7 @@ Dev-only команды миграции не требуют.
 1. Добавь `<!-- qtim-version: 2.2.0 -->` первой строкой `.codex/team-charter.md`.
 2. Добавь `# qtim-version: 2.2.0` первой строкой каждого `.codex/agents/qtim-*.toml`.
 3. Добавь `$qtim-update` в секцию `Команда qtim` в `AGENTS.md`.
-4. Предложи обновить SessionStart hook на версионированный вариант (см. hooks плагина); пользовательские hooks не затирай.
+4. Только при target-версии ниже 2.8.0 предложи обновить project SessionStart на версионированный вариант. При target 2.8.0+ этот шаг superseded: project-дубль удаляется, версионированный SessionStart поставляет плагин.
 
 ## 2.1.0
 
@@ -111,5 +131,6 @@ Baseline Codex-native упаковки: `.codex/team-charter.md`, `.codex/agents
 - Не даунгрейдить: если stamp проекта новее версии установленного плагина, обнови сам плагин, а не проект.
 - `memory/` и `docs/features/` при миграции не переписываются.
 - Изменённые пользователем файлы не перезаписывать молча: показать diff и спросить.
+- Пользовательские hook events/groups/handlers не удалять и не переупорядочивать; менять только распознанные qtim entries после показанного diff.
 - После миграции обнови оба stamp (charter и TOML) на текущую версию плагина.
 - При любой миграции проверяй атомарную пару `model` + `model_reasoning_effort` в сгенерированных `.codex/agents/*.toml`: это текущий template, явный пользовательский override, подтверждённый локальным catalog, либо оба поля отсутствуют для наследования main profile. Боевой инцидент: setup сгенерировал несуществующий `model = "gpt-5"` (слаг без минорной версии), и все субагенты не стартовали. Фикс: доступная pair из template/подтверждённого override или удалить **оба** поля; одинокий pinned model/reasoning не оставлять.

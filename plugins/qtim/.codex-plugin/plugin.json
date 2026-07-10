@@ -1,6 +1,6 @@
 {
   "name": "qtim",
-  "version": "2.7.0",
+  "version": "2.8.0",
   "description": "Codex-native bootstrap and orchestration kit for project-specific subagent teams. Role-aware setup for developers and PM/analysts. Includes GPT-5.6 Sol/Terra role profiles, reasoning-aware Ultra orchestration, setup, feature pipeline (idea to PRD, decomposition, estimate, plan), team-up, team-lazy, team-down, team-retro, onboard, product-onboard, doctor and update skills, versioned generated state, custom agent templates, intake rules, orchestration patterns and recipes, independent review gates, epic-state session handoff, and lifecycle hooks.",
   "author": {
     "name": "Антон Фокин"
@@ -21,7 +21,7 @@
   "interface": {
     "displayName": "qtim",
     "shortDescription": "Bootstrap project-specific Codex subagent teams",
-    "longDescription": "qtim adapts a project into a Codex-native team workflow for two roles. Developers get a full subagent team with implement/test/review loops; PM/analysts get a feature pipeline that turns a raw idea into a PRD, grounded decomposition, relative estimates, and an implementation plan documented in docs/features/. GPT-5.6 Sol/Terra role profiles balance deep work and bounded QA, while Max, Ultra, and Fast remain explicit controls of the main task. Setup asks for the role and generates .codex/team-charter.md with track blocks, custom .codex/agents/*.toml roles, project memory, hooks, and reusable skills. Generated state is version-stamped, and the update skill migrates a project team to the current plugin version.",
+    "longDescription": "qtim adapts a project into a Codex-native team workflow for two roles. Developers get a full subagent team with implement/test/review loops; PM/analysts get a feature pipeline that turns a raw idea into a PRD, grounded decomposition, relative estimates, and an implementation plan documented in docs/features/. GPT-5.6 Sol/Terra role profiles balance deep work and bounded QA, while Max, Ultra, and Fast remain explicit controls of the main task. Setup asks for the role and generates .codex/team-charter.md with track blocks, custom .codex/agents/*.toml roles, project memory, and reusable skills; lifecycle reminders are plugin-bundled, while project PostToolUse remains optional. Generated state is version-stamped, and the update skill migrates a project team to the current plugin version.",
     "developerName": "Антон Фокин",
     "category": "Developer Tools",
     "capabilities": [
