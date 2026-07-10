@@ -10,6 +10,24 @@ except ImportError:
     tomllib = None
 
 REQUIRED = {"name", "description", "developer_instructions"}
+EXPECTED_PROFILES = {
+    "architect.toml": ("gpt-5.6-sol", "high"),
+    "database.toml": ("gpt-5.6-sol", "high"),
+    "frontend.toml": ("gpt-5.6-sol", "medium"),
+    "product.toml": ("gpt-5.6-sol", "high"),
+    "reviewer.toml": ("gpt-5.6-sol", "high"),
+    "testing.toml": ("gpt-5.6-terra", "medium"),
+}
+REASONING_EFFORTS = {"none", "minimal", "low", "medium", "high", "xhigh", "max", "ultra"}
+MODEL_REASONING_EFFORTS = {
+    "gpt-5.6-sol": {"low", "medium", "high", "xhigh", "max", "ultra"},
+    "gpt-5.6-terra": {"low", "medium", "high", "xhigh", "max", "ultra"},
+    "gpt-5.6-luna": {"low", "medium", "high", "xhigh", "max"},
+    "gpt-5.5": {"low", "medium", "high", "xhigh"},
+    "gpt-5.4": {"low", "medium", "high", "xhigh"},
+    "gpt-5.4-mini": {"low", "medium", "high", "xhigh"},
+    "gpt-5.3-codex-spark": {"low", "medium", "high", "xhigh"},
+}
 FORBIDDEN = [
     ".claude",
     "CLAUDE_PLUGIN_ROOT",
@@ -23,8 +41,9 @@ FORBIDDEN = [
 
 bad = []
 root = pathlib.Path("plugins/qtim/agents")
+paths = sorted(root.glob("*.toml"))
 
-for path in sorted(root.glob("*.toml")):
+for path in paths:
     text = path.read_text(encoding="utf-8")
 
     if tomllib is not None:
@@ -70,8 +89,39 @@ for path in sorted(root.glob("*.toml")):
             "боевой инцидент: `gpt-5` не существует, субагенты не стартуют"
         )
 
-if not list(root.glob("*.toml")):
+    reasoning = re.search(
+        r'^model_reasoning_effort\s*=\s*"([^"]*)"', text, re.MULTILINE
+    )
+    if reasoning and reasoning.group(1) not in REASONING_EFFORTS:
+        bad.append(
+            f"{path}: unsupported `model_reasoning_effort = \"{reasoning.group(1)}\"`"
+        )
+
+    supported_efforts = MODEL_REASONING_EFFORTS.get(m.group(1)) if m else None
+    if reasoning and supported_efforts and reasoning.group(1) not in supported_efforts:
+        bad.append(
+            f"{path}: `{m.group(1)}` does not support reasoning effort "
+            f"`{reasoning.group(1)}`"
+        )
+
+    expected = EXPECTED_PROFILES.get(path.name)
+    if expected:
+        actual = (
+            m.group(1) if m else None,
+            reasoning.group(1) if reasoning else None,
+        )
+        if actual != expected:
+            bad.append(
+                f"{path}: expected qtim model profile {expected[0]}/{expected[1]}, "
+                f"found {actual[0]}/{actual[1]}"
+            )
+
+if not paths:
     bad.append(f"{root}: no Codex custom agent templates found")
+
+missing_templates = sorted(set(EXPECTED_PROFILES) - {path.name for path in paths})
+if missing_templates:
+    bad.append(f"{root}: missing expected templates: {', '.join(missing_templates)}")
 
 if bad:
     print("Codex agent template validation failed:")

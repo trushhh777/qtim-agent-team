@@ -10,7 +10,7 @@
 - реализация, тесты и ревью — автопилот после approval;
 - необратимые или неоднозначные развилки возвращаются пользователю даже во время реализации.
 
-Codex main thread остаётся team-lead. Subagents — session-local worker threads, которых Codex запускает только по явной просьбе пользователя или явному вызову qtim skills.
+Codex main thread остаётся team-lead. qtim subagent workflow авторизуется явной просьбой пользователя или вызовом qtim skill. Agent threads живут в scope текущего task и могут быть восстановлены только когда runtime их показывает; скрытой постоянной команды нет. Если пользователь выбрал `Ultra`, Codex может proactively делегировать внутри уже разрешённого scope, но это не расширяет задачу и не выбирает execution depth вместо main thread.
 
 ## Pipeline
 

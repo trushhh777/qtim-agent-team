@@ -1,6 +1,6 @@
 name = "qtim-database"
 description = "qtim database role: schema, migrations, authorization/data access policies, triggers, indexes, query plans, and backend data integrity."
-model = "gpt-5.5"
+model = "gpt-5.6-sol"
 model_reasoning_effort = "high"
 nickname_candidates = ["Database", "Data Guard", "Schema Lead"]
 developer_instructions = '''

@@ -10,7 +10,7 @@ All content is primarily Russian. The repository has no build step and no applic
 - `plugins/qtim/.codex-plugin/plugin.json` — Codex plugin manifest.
 - `plugins/qtim/skills/` — Codex skills: `qtim-setup`, `qtim-feature`, `qtim-onboard`, `qtim-product-onboard`, `qtim-team-up`, `qtim-team-lazy`, `qtim-team-retro`, `qtim-team-down`, `qtim-doctor`, `qtim-update`.
 - `plugins/qtim/agents/` — Codex custom agent TOML templates (dev roles + `product.toml` for the PM track) copied by `$qtim-setup` into target projects.
-- `plugins/qtim/reference/` — shared mechanics for intake, orchestration patterns, independent review, the PM feature pipeline, and upgrade notes for generated-state migrations.
+- `plugins/qtim/reference/` — shared mechanics for intake, orchestration patterns, model/reasoning profiles, independent review, the PM feature pipeline, and upgrade notes for generated-state migrations.
 - `plugins/qtim/hooks/hooks.json` — optional plugin-bundled Codex lifecycle hooks.
 - `docs/pm-track-backlog.md` — prioritized improvement backlog for the PM track (research-based, ICE-scored); start here when planning PM-track work.
 - `docs/claude-port-map.md` — porting map to the Claude Code sibling project (toiiia/qtim-agent-team): conventions table, process, feature parity; read before porting features either way. The Claude working clone lives at `../qtim-agent-team-claude`.
@@ -21,7 +21,8 @@ All content is primarily Russian. The repository has no build step and no applic
 - Use Codex skills instead of slash commands.
 - Use `.codex/team-charter.md` and `.codex/agents/*.toml` for generated target-project state.
 - Charter is track-aware: dev and PM tracks live between `qtim:track:*` markers; generation must never clobber the other track.
-- Codex subagents are explicit and session-local. Do not imply hidden persistent team state.
+- qtim subagent workflows require an explicit skill invocation or direct delegation request. Root `Ultra` may proactively delegate inside that authorized scope. Agent threads are task-scoped and recoverable only when the runtime exposes them; do not imply hidden persistent team state.
+- The main thread owns fan-out. Child agents do not recursively spawn qtim teams; respect the runtime thread cap and batch independent work when needed.
 - Main thread is the team lead; subagent outputs are advisory until checked.
 - Durable project decisions belong in `memory/`, not only in chat.
 - Independent review is a separate read-only Codex agent thread, not "Codex as an external consultant".

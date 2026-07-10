@@ -2,7 +2,7 @@
 
 > Этот файл читает team-lead. Subagents получают только свой bounded prompt и ссылки на `.codex/team-charter.md` / `memory/`.
 
-Codex subagents запускаются явно. Вызов `$qtim-team-up` или `$qtim-team-lazy` является явной просьбой пользователя на соответствующий subagent workflow.
+qtim subagent workflow запускается по явному вызову skill или прямой просьбе пользователя. Root `Ultra` может proactively делегировать внутри этого разрешённого scope, но qtim не включает `Ultra` сам и не расширяет им задачу.
 
 ## Execution Depth
 
@@ -11,9 +11,17 @@ Codex subagents запускаются явно. Вызов `$qtim-team-up` ил
 | A Direct | простая правка, вопрос, небольшой поиск | main thread |
 | B Single subagent | изоляция контекста или одна bounded работа | один `explorer`/`worker`/custom agent |
 | C Lazy team | несколько ролей, один проход без петель | spawn нужных ролей по мере необходимости |
-| D Full team-up | implement -> test -> fix -> retest -> review | параллельный warm-up ролей + циклы |
+| D Full team-up | implement -> test -> fix -> retest -> review | staged fan-out нужных ролей + циклы |
 
 Ось A/B/C/D меряется **глубиной координации** — наличием петель implement -> test -> fix -> review, — а не числом ролей: выбор режима подсчётом ролей — anti-pattern (одна роль с петлёй доводки ближе к D, чем три роли в один проход). При сомнении стартуй дешевле и эскалируй вверх.
+
+## Model, Reasoning And Concurrency
+
+- Модель/reasoning/Fast главного task выбирает пользователь; qtim их не переключает. Role defaults и fallback описаны в `model-profiles.md`.
+- `Max` увеличивает reasoning одного task. `Ultra` может добавить proactive delegation, но не означает mode D, не отменяет disjoint write scopes и не является причиной спавнить весь roster.
+- Main thread владеет agent graph: спавнит дополнительные роли, проверяет descendants перед повторным spawn, переиспользует доступные threads и закрывает завершённые.
+- Child agents возвращают запрос на дополнительную роль main thread, а не спавнят qtim descendants сами.
+- Учитывай фактический thread cap runtime. Если независимых работ больше свободных slots, запускай batches; сначала закрывай больше не нужные Done threads. Не повышай nesting depth ради удобства — рекурсивный fan-out повышает расход и ухудшает предсказуемость.
 
 ## Patterns
 
@@ -80,7 +88,7 @@ Rules:
 
 ## Готовые рецепты
 
-Конкретизация паттернов выше под три частых кейса. В Codex нет отдельного workflow-движка: рецепт исполняет main thread, явно спавня subagent threads по стадиям. Запуск — только по opt-in пользователя; итог main thread коммитит в `memory/` сам (subagent threads эфемерны).
+Конкретизация паттернов выше под три частых кейса. В Codex нет отдельного workflow-движка: рецепт исполняет main thread, запуская bounded agent threads по стадиям. Запуск qtim — только по opt-in пользователя; итог main thread коммитит в `memory/` сам (agent threads не являются постоянной командой).
 
 ### Recipe: Ensemble Review (паттерны 4 + 5)
 
@@ -115,9 +123,10 @@ Rules:
 
 ## Global Rules
 
-- Do not spawn subagents unless the user explicitly asked via qtim skill or direct delegation request.
+- Do not start a qtim subagent workflow unless the user explicitly asked via qtim skill or direct delegation request. With root `Ultra`, proactive delegation stays inside that authorized workflow and its bounded scopes.
 - Do not paste full orchestration rules into subagent prompts.
 - Do not run parallel writers over overlapping files.
+- Do not ask child agents to recursively spawn qtim roles; route that request to main thread.
 - Subagent output is evidence, not truth.
 - Durable decisions go into `memory/`.
 - Close completed threads when they are no longer needed.

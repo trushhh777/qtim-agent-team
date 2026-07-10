@@ -14,6 +14,7 @@ description: Use when the user wants to install or bootstrap qtim for the curren
 Перед генерацией прочитай только нужные ресурсы:
 
 - Role templates: `../../agents/architect.toml`, `../../agents/database.toml`, `../../agents/frontend.toml`, `../../agents/testing.toml`, `../../agents/reviewer.toml`, `../../agents/product.toml`.
+- Model policy: `../../reference/model-profiles.md`.
 - Shared mechanics: `../../reference/intake-protocol.md`, `../../reference/orchestration-patterns.md`, `../../reference/independent-review.md`, `../../reference/feature-pipeline.md`.
 - Plugin version для stamps: поле `version` из `../../.codex-plugin/plugin.json`.
 
@@ -58,6 +59,8 @@ description: Use when the user wants to install or bootstrap qtim for the curren
 
 Плагины и MCP только рекомендуй в финале. Для приватных систем и live-data источников предпочитай Codex connectors/MCP вместо веб-поиска.
 
+Best-effort проверь пары role templates по локальному model catalog, который показывает текущий Codex (`codex debug models`, если команда доступна, или model controls текущего runtime). Не делай сетевой lookup частью setup. Catalog доступен и пары нет -> предложи наследование; catalog недоступен -> пометь профиль unverified в плане и по умолчанию удали оба поля, если пользователь не подтвердил pin.
+
 ## Phase 2: Decisions
 
 Задай пользователю короткий набор вопросов. Если доступен структурированный question tool, используй его; иначе спроси обычным сообщением и дождись ответа.
@@ -84,6 +87,8 @@ PM/Analyst-состав команды не спрашивается — он о
 
 Рекомендованный default для большинства fullstack проектов: Standard, design approval first, project map + commands + safety + invariants, independent review enabled, SessionStart + SubagentStop hooks enabled.
 
+Модельный профиль не является отдельным обязательным вопросом: по умолчанию используй пары `model` + `model_reasoning_effort` из templates и покажи их в плане. Спрашивай только если пользователь просит override или точный slug недоступен. `Max`, `Ultra` и Fast — настройки главного task/session; setup не включает их сам.
+
 ## Phase 3: Plan Confirmation
 
 Покажи компактный план до записи файлов:
@@ -92,6 +97,7 @@ PM/Analyst-состав команды не спрашивается — он о
 - selected tracks (dev / pm / оба) и что будет добавлено или обновлено между track-маркерами charter, а что останется нетронутым;
 - files to create or update;
 - selected roles and custom agent filenames;
+- model/reasoning profile каждой роли и fallback на наследование главного task, если точный slug недоступен;
 - memory files;
 - hooks;
 - selected skills per role;
@@ -112,7 +118,7 @@ PM/Analyst-состав команды не спрашивается — он о
 - roles table: role, Codex custom agent name, mission, triggers, do-not-touch, read-on-start, skills, mandatory practices;
 - domain invariants;
 - independent review gates — при включённом гейте перенеси в charter суть `../../reference/independent-review.md` (когда запускать, prompt shape, integration), чтобы сгенерированные агенты не зависели от файлов плагина; при выключенном — секция из одной строки-заглушки «independent review выключен (выбор setup); включить — повторный `$qtim-setup`», по ней `$qtim-team-up` и роли понимают, что гейт не настроен;
-- working rules: Codex subagents are explicit, session-local agent threads; use custom agents when loaded, otherwise `worker`/`explorer` fallback with inline role instructions; session handoff: незавершённый эпик фиксируется в `memory/epic-state.md` (`$qtim-team-down` пишет, `$qtim-team-up` читает и предлагает продолжить), уроки retro — в `memory/retro-log.md` и `memory/lessons.md`;
+- working rules: qtim subagent workflows авторизуются явным вызовом skill или прямой просьбой, а сами subagents остаются task-scoped agent threads без скрытой постоянной команды; выбранный пользователем `Ultra` может делегировать внутри разрешённого scope, но не меняет execution depth A/B/C/D и не разрешает child agents рекурсивно поднимать команду; main thread проверяет доступные descendants перед повторным spawn и уважает runtime thread cap; модель/reasoning/Fast главного task qtim не переключает; use custom agents when loaded, otherwise `worker`/`explorer` fallback with inline role instructions; session handoff: незавершённый эпик фиксируется в `memory/epic-state.md` (`$qtim-team-down` пишет, `$qtim-team-up` читает и предлагает продолжить), уроки retro — в `memory/retro-log.md` и `memory/lessons.md`;
 - memory layout.
 
 Track-блоки — между HTML-маркерами, по выбранным ролям:
@@ -140,7 +146,7 @@ Re-run rule: при повторном setup заменяй содержимое
 - `developer_instructions`;
 - optional `model`, `model_reasoning_effort`, `nickname_candidates`.
 
-**`model` копируй из template дословно — не подставляй слаг из собственных знаний** (боевой инцидент: сгенерированный `model = "gpt-5"` не существует, и все субагенты не стартовали). Переопределяй только по явному выбору пользователя. Если сомневаешься, что слаг из template доступен в этом окружении, — **удали поле `model` целиком**: агент унаследует модель сессии, это всегда безопасно.
+**Пару `model` + `model_reasoning_effort` копируй из template дословно — не подставляй значения из собственных знаний** (боевой инцидент: сгенерированный `model = "gpt-5"` не существует, и все субагенты не стартовали). Переопределяй только по явному выбору пользователя. Если локальный catalog подтверждает, что точный slug/effort из template недоступен, либо catalog недоступен и пользователь не подтвердил pin, **удали оба поля**: агент унаследует модель и reasoning главного task. Не оставляй pinned reasoning без pinned model и не включай `max`, `ultra` или `service_tier = "fast"` без явного выбора пользователя.
 
 **Gate-условные блоки шаблонов:** требования independent review gate у reviewer/architect/database (блок «Independent review gate», пункты чеклистов про independent review, секция отчёта «Independent review») переноси только при включённом гейте; при выключенном вырезай целиком, как стек-условные — роли не должны требовать гейт, от которого пользователь отказался.
 
@@ -195,7 +201,7 @@ Codex hooks требуют trust review через `/hooks`; упомяни эт
 
 - JSON files parse: `python3 -m json.tool .codex/hooks.json` when created;
 - TOML custom agents parse using Python `tomllib` if available;
-- `model` каждого сгенерированного TOML совпадает со значением из template (или поле удалено); слаг вида `gpt-5` без минорной версии — ошибка;
+- пара `model` + `model_reasoning_effort` каждого сгенерированного TOML совпадает с template, является явно подтверждённым пользователем catalog-supported override или оба поля удалены; одинокое поле, неподтверждённый догаданный alias или слаг вида `gpt-5` без минорной версии — ошибка;
 - generated files contain no unresolved qtim placeholders;
 - generated files do not reference plugin-internal paths (`../../reference/...`, `../../agents/...`) — вся нужная механика должна быть в charter или `memory/`;
 - track-маркеры `qtim:track:*` в charter парные; при re-run оба track block целы, PM block содержит механику pipeline;
@@ -203,13 +209,13 @@ Codex hooks требуют trust review через `/hooks`; упомяни эт
 - version stamps на месте: `<!-- qtim-version: ... -->` в charter, `# qtim-version: ...` в каждом сгенерированном TOML, версия совпадает с `../../.codex-plugin/plugin.json`;
 - links in `AGENTS.md` point to existing files.
 
-Финальный ответ: что создано, как пользоваться, какие hooks надо trust через `/hooks`, и что после создания custom agents лучше открыть новую Codex thread/session so Codex loads them cleanly. На существующей кодовой базе порекомендуй следом прогнать `$qtim-onboard` (dev track) — глубокое наполнение `memory/` картой, инвариантами и конвенциями, а при PM track — `$qtim-product-onboard`, который наполнит продуктовую память (разделы, акторы, словарь, аналитика), без которой intake/PRD опираются только на ответы пользователя. Упомяни `$qtim-doctor` как первый шаг при «что-то не работает».
+Финальный ответ: что создано, как пользоваться, какие hooks надо trust через `/hooks`, и что после создания custom agents лучше открыть новую задачу Codex, чтобы она загрузила их чисто. На существующей кодовой базе порекомендуй следом прогнать `$qtim-onboard` (dev track) — глубокое наполнение `memory/` картой, инвариантами и конвенциями, а при PM track — `$qtim-product-onboard`, который наполнит продуктовую память (разделы, акторы, словарь, аналитика), без которой intake/PRD опираются только на ответы пользователя. Упомяни `$qtim-doctor` как первый шаг при «что-то не работает».
 
 ## Critical Rules
 
 - Do not generate `.claude/*`.
 - Do not use Claude-only tools or primitives: `Agent({ name })`, `SendMessage`, `TaskCreate`, `TaskUpdate`, `TeamCreate`, `TeamDelete`, `team_name`.
-- Codex subagents are explicit and session-local. Invocation of `$qtim-team-up` or `$qtim-team-lazy` counts as explicit user authorization for the subagent workflow described by that skill.
+- qtim subagent workflows require explicit user authorization through the skill or a direct delegation request. Root `Ultra` may proactively delegate only inside that authorized scope. Agent threads are task-scoped; verify runtime descendants before reuse, and never imply a hidden persistent team.
 - Generated project files (`.codex/*`, `memory/*`, `AGENTS.md`) must be self-contained: no relative paths into the installed plugin.
 - При повторном запуске обновляй только блок своего track между маркерами `qtim:track:*`; второй track и ручные правки пользователя сохраняются.
 - Preserve existing user files. On collisions, ask before overwrite, skip, or rename.

@@ -17,8 +17,8 @@
 |---|---|---|---|
 | Упаковка | `.codex-plugin/plugin.json`, marketplace `.agents/plugins/` | `.claude-plugin/plugin.json`, marketplace `.claude-plugin/` | у Claude нет `interface`-блока и строгого ingestion-валидатора |
 | Команды пользователя | skills `plugins/qtim/skills/<имя>/SKILL.md`, вызов `$qtim-<имя>` | slash-команды `plugins/qtim/commands/<имя>.md`, вызов `/qtim:<имя>` | frontmatter: у skills `name`+`description` (кавычки при `:` внутри), у commands `description`+`argument-hint` |
-| Шаблоны ролей | `agents/*.toml`: `name`, `description`, `model` (слаг `gpt-X.Y`), `model_reasoning_effort`, `developer_instructions ='''…'''` | `agents/*-agent.md`: frontmatter `name`, `description` c `<example>`-блоками, `model` (алиас `opus`/`sonnet`), `color`, `memory`, `tools`; тело — markdown | в Claude у роли есть persistent agent-memory (`.claude/agent-memory/<role>-agent/`) — личные наблюдения роли туда; в Codex — только общий `memory/` |
-| Оркестрация | Codex subagent threads: explicit spawn, session-local, custom agents из `.codex/agents` | рантайм Agent Teams: `Agent({name, subagent_type, prompt})`, `SendMessage`, `Task*`; `TeamCreate`/`team_name` упразднены — не употреблять | канон описан в их `commands/team-up.md` («Модель оркестрации») |
+| Шаблоны ролей | `agents/*.toml`: `name`, `description`, точный model slug `gpt-X.Y[-variant]` + совместимый `model_reasoning_effort` как одна пара, `developer_instructions ='''…'''` | `agents/*-agent.md`: frontmatter `name`, `description` c `<example>`-блоками, `model` (алиас `opus`/`sonnet`), `color`, `memory`, `tools`; тело — markdown | в Claude у роли есть persistent agent-memory (`.claude/agent-memory/<role>-agent/`) — личные наблюдения роли туда; в Codex — только общий `memory/`; GPT-5.6/Max/Ultra — Codex-специфика |
+| Оркестрация | qtim workflow авторизуется skill/direct request; root `Ultra` может proactive delegation внутри scope; task-scoped agent threads, custom agents из `.codex/agents`, fan-out принадлежит main thread | рантайм Agent Teams: `Agent({name, subagent_type, prompt})`, `SendMessage`, `Task*`; `TeamCreate`/`team_name` упразднены — не употреблять | Codex descendants можно восстановить, только если их показывает runtime; скрытой persistent-команды нет; канон Claude описан в их `commands/team-up.md` («Модель оркестрации») |
 | Сгенерированное состояние | `.codex/team-charter.md` (track-маркеры `qtim:track:*`), `.codex/agents/*.toml`, `.codex/hooks.json`, `memory/`, `AGENTS.md` | `.claude/team-charter.md`, `.claude/agents/*-agent.md`, `.claude/settings.local.json`, `memory/`, `CLAUDE.md` | у Claude нет track-маркеров — PM-дорожка просто секция «PM-конвейер»; есть Standalone-режим (Q6) с копированием движка |
 | Версионный штамп | `<!-- qtim-version: X.Y.Z -->` в charter, `# qtim-version:` в TOML | `generated-by: qtim vX.Y.Z · mode: <plugin-linked\|standalone>` в шапке charter | формат строки — контракт с их hook и team-sync, не менять |
 | Миграции | `reference/upgrade-notes.md` + skill `$qtim-update` | `reference/migrations.md` + `/qtim:team-sync` | у Claude контракт maintainer'а описан в их CLAUDE.md § Версионирование |
@@ -27,7 +27,7 @@
 | CI | `.github/scripts/`: check_placeholders, check_skills, check_links, check_codex_agents (+ model-слаг) | check_placeholders (+ examples/), check_links, check_workflows.mjs, grep канона | белый список плейсхолдеров `{{...}}` одинаковый (8 имён) |
 | Golden-пример | нет | `examples/nuxt-supabase/` — при правке шаблонов/структуры charter обновить эталон | CI проверяет отсутствие плейсхолдеров в examples |
 
-## Соответствие фич (состояние на 2026-07-06)
+## Соответствие фич (состояние на 2026-07-10)
 
 | Фича | Codex | Claude | Статус |
 |---|---|---|---|
@@ -40,6 +40,7 @@
 | Режим UX-AUDIT у product | 2.5.0 | 1.5.0 (адаптация владельца при слиянии PR #1) | выровнено с отставанием в один релиз |
 | Doctor: проверка продуктовой памяти при PM-дорожке | 2.6.0 (порт ИЗ Claude) | 1.7.1 (оригинал, 1b122b6 — финдинг ревью PR #3) | обратное направление; в Codex — пункт «PM-трек» doctor (он условный), у Claude — пункт «Память» |
 | PM-конвейер: intake-интервью, фиксация отклонений от plan.md, порядок фаз по неопределённости | 2.6.0 (порт ИЗ Claude) | 1.8.0 (оригинал, 6c4608f) | обратное направление; бамп golden-примера не портирован (нет examples/); цитата канона intake — своя в каждой версии |
+| GPT-5.6 Sol/Terra profiles, Max/Ultra-aware orchestration, task-scoped descendants и pair fallback | 2.7.0 | — | Codex-специфика: в Claude нет GPT-5.6 slugs/reasoning controls и другой runtime Agent Teams; семантически портировать нечего |
 
 ## Правила
 

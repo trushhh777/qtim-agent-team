@@ -20,7 +20,19 @@ qtim подстраивается под стек проекта: анализи
 
 Нужен Codex с поддержкой plugins, skills и subagents. Отдельный флаг Claude Agent Teams не нужен.
 
-Codex subagents запускаются только по явной просьбе. Вызов `$qtim-feature`, `$qtim-team-up` или `$qtim-team-lazy` считается явным запросом на соответствующий subagent workflow.
+qtim запускает subagent workflow только по явной просьбе или вызову соответствующего skill. Если в главном task выбран `Ultra`, Codex может proactively делегировать внутри уже разрешённого scope; qtim не включает `Ultra` сам, не расширяет им задачу и не поднимает рекурсивные команды из child agents.
+
+## Модели и reasoning
+
+В qtim 2.7.0 роли используют точные GPT-5.6 profiles из актуального Codex catalog:
+
+| Роли | Model | Reasoning |
+|---|---|---|
+| architect, database, reviewer, product | `gpt-5.6-sol` | `high` |
+| frontend | `gpt-5.6-sol` | `medium` |
+| testing | `gpt-5.6-terra` | `medium` |
+
+Модель и reasoning главного task, включая `Max`, `Ultra` и Fast, выбирает пользователь в Codex. qtim не меняет эти controls и не закрепляет `max`/`ultra` в дочерних ролях. Если точный GPT-5.6 slug недоступен в окружении, setup/update удаляет из role TOML оба поля `model` + `model_reasoning_effort`, чтобы безопасно унаследовать профиль main task; явные пользовательские overrides сохраняются через diff-подтверждение.
 
 ## Установка
 
@@ -38,7 +50,7 @@ codex plugin marketplace add .
 codex plugin add qtim@qtim-agent-team
 ```
 
-После установки открой новую Codex thread/session, чтобы Codex подхватил skills плагина.
+После установки открой новую задачу Codex, чтобы она подхватила skills плагина.
 
 ## Обновление и версии
 
@@ -49,9 +61,11 @@ codex plugin marketplace upgrade qtim-agent-team   # обновить snapshot �
 codex plugin add qtim@qtim-agent-team              # переустановить плагин
 ```
 
-После переустановки открой новую Codex thread — только она подхватит обновлённые skills.
+После переустановки открой новую задачу Codex — только она подхватит обновлённые skills.
 
 Обновить команду в проекте: `$qtim-update` — сверяет версию установленного плагина с версией сгенерированной команды и мигрирует `.codex/team-charter.md`, `.codex/agents/*.toml` и hooks по upgrade notes, не затирая твои правки.
+
+Если `$qtim-update` изменил `.codex/agents/*.toml`, после миграции открой ещё одну новую задачу Codex перед `$qtim-team-up`, `$qtim-team-lazy` или `$qtim-feature`: уже открытая задача не перезагружает custom-agent definitions на лету.
 
 Где смотреть версии:
 
@@ -61,7 +75,7 @@ codex plugin add qtim@qtim-agent-team              # переустановит�
 
 ## Быстрый старт
 
-1. Открой Codex в корне своего проекта.
+1. Открой Codex в корне своего проекта — в ChatGPT desktop app, CLI или IDE extension.
 2. Разверни команду (первым вопросом setup спросит твою роль: Developer, PM/Analyst или обе):
 
    ```text

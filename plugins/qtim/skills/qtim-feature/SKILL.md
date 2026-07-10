@@ -13,8 +13,11 @@ Production code из этого skill не пишется — выход кон�
 
 1. Read `.codex/team-charter.md`. Если файла нет или в нём нет PM track (маркер `<!-- qtim:track:pm:start -->`), stop and ask the user to run `$qtim-setup`.
 2. Read `../../reference/feature-pipeline.md` for shared mechanics.
-3. Определи slug фичи: kebab-case от короткого имени.
-4. Если `docs/features/<slug>/` уже существует, прочитай Status всех артефактов и **продолжи с первой стадии, чей артефакт не Approved**. Не перезапускай конвейер с нуля.
+3. Read `../../reference/model-profiles.md` for role model/reasoning policy. Не переключай controls главного task; root `Ultra` не расширяет scope конвейера и не отменяет checkpoints.
+4. Определи slug фичи: kebab-case от короткого имени.
+5. Если `docs/features/<slug>/` уже существует, прочитай Status всех артефактов и **продолжи с первой стадии, чей артефакт не Approved**. Не перезапускай конвейер с нуля.
+
+Если spawn custom agent падает именно из-за model pair, автоудаление пары допустимо только для доказанно неизменённого qtim-default, отсутствующего в локальном catalog, после сообщения пользователю. Отличающуюся/непроверенную пару сохрани и продолжи через `worker` / `explorer` с inline role instructions; покажи diff для отдельного подтверждения или отправь в `$qtim-update`. Не угадывай другой slug и не считай транзиентную auth/network ошибку недоступной моделью.
 
 ## Artifacts
 
@@ -43,14 +46,14 @@ Spawn `qtim-product` (fallback: `worker` с inline-инструкциями PM-�
 
 Точность описания важнее скорости — декомпозиция строится на consult dev-команды, не на предположениях:
 
-1. Fan-out read-only consult по затронутым слоям: `qtim-architect` (слои, data flow, инварианты) и профильные `qtim-database` / `qtim-frontend` / `qtim-testing` — каждый возвращает по своему слою затронутые файлы, интеграционные точки, похожие существующие фичи и риски. `explorer` — для broad-поиска. Consult-агенты не редактируют файлы.
+1. Fan-out read-only consult по затронутым слоям в пределах доступных runtime slots: `qtim-architect` (слои, data flow, инварианты) и профильные `qtim-database` / `qtim-frontend` / `qtim-testing` — каждый возвращает по своему слою затронутые файлы, интеграционные точки, похожие существующие фичи и риски. `explorer` — для broad-поиска. Consult-агенты не редактируют файлы; если ролей больше cap, запускай batches и закрывай завершённые threads перед следующим.
 2. `qtim-product` агрегирует `decomposition.md`: таблица work items `id | название | слой/роль | зависимости | grounding (файлы)`.
 
 **Checkpoint:** пользователь утверждает состав work items.
 
 ## Stage 4: Estimation (grounded)
 
-Размер каждого work item даёт профильный dev-агент — владелец слоя: S / M / L / XL + confidence + риск-факторы, каждая оценка с evidence (файлы, покрытие тестами, интеграционные точки, reference class из git log / `memory/decisions.md`). Оценка без evidence не принимается. XL = разрезать work item и вернуться к декомпозиции.
+Размер каждого work item даёт профильный dev-агент — владелец слоя: S / M / L / XL + confidence + риск-факторы, каждая оценка с evidence (файлы, покрытие тестами, интеграционные точки, reference class из git log / `memory/decisions.md`). Оценка без evidence не принимается. XL = разрезать work item и вернуться к декомпозиции. Независимые оценки запускай batches по свободным runtime slots; не проси child agents делегировать дальше.
 
 `qtim-product` сводит `estimate.md` с итоговой таблицей и суммарным риском. **Checkpoint:** пользователь принимает оценки.
 
@@ -82,7 +85,7 @@ PRD и acceptance criteria: docs/features/<slug>/prd.md.
 
 3. Рекомендация: многофазные фичи — `$qtim-team-up`; S/M в одну фазу — `$qtim-team-lazy`.
    Если charter содержит только PM track (нет dev-маркеров, в составе нет `qtim-reviewer`) — предупреди прямо в handoff: перед реализацией состав дополняется dev-дорожкой повторным `$qtim-setup` (он дописывает, не пересоздаёт), иначе петля режима D останется без финального гейта.
-4. Если реализацию запускает не пользователь-PM, сообщи, что разработчик вызывает этот prompt в новой Codex thread.
+4. Если реализацию запускает не пользователь-PM, сообщи, что разработчик вызывает этот prompt в новой задаче Codex.
 
 ## Anti-Patterns
 

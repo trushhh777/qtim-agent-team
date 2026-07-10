@@ -27,6 +27,8 @@ Use direct work for trivial tasks. Escalate to `$qtim-team-up` if feedback loops
 6. Wait only when the next step is blocked on the result.
 7. Integrate results locally, verify, and update `memory/` when durable knowledge was produced.
 
+Модель, reasoning и Fast главного task не переключай. Используй role TOML как есть. Если spawn упал именно из-за model pair, автоудаление пары допустимо только для доказанно неизменённого qtim-default, отсутствующего в локальном catalog, после сообщения пользователю. Отличающуюся/непроверенную пару сохрани и продолжи через `worker` / `explorer` с inline role instructions; покажи diff для отдельного подтверждения или отправь в `$qtim-update`. Транзиентную auth/network ошибку не считай недоступной моделью. Выбранный пользователем `Ultra` не повышает режим C до full team-up и не является поводом спавнить лишние роли; child agents не делегируют рекурсивно.
+
 ## Escalation
 
 Escalate from lazy to full team-up when:

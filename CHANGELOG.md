@@ -2,6 +2,30 @@
 
 Версии соответствуют `version` в `plugins/qtim/.codex-plugin/plugin.json` (semver).
 
+## 2.7.0 — 2026-07-10
+
+Адаптация qtim под Codex CLI 0.144.1 и новый модельный/runtime-контракт: GPT-5.6 Sol/Terra/Luna, reasoning `Max`/`Ultra`, proactive delegation и task-scoped descendant threads. Основание — официальные [Models](https://developers.openai.com/codex/models), [Subagents](https://developers.openai.com/codex/subagents) и [Codex changelog](https://developers.openai.com/codex/changelog); точные пары дополнительно сверены с локальным model catalog Codex 0.144.1. Сгенерированное состояние меняется — миграция описана в `reference/upgrade-notes.md`, запись «2.7.0».
+
+### Изменено
+
+- **Ролевые модели обновлены до GPT-5.6**: architect/database/reviewer/product — `gpt-5.6-sol` + `high`, frontend — `gpt-5.6-sol` + `medium`, testing — `gpt-5.6-terra` + `medium`. Используются точные variant slugs из runtime catalog, чтобы не повторить инцидент с догаданным `gpt-5`.
+- **Root reasoning отделён от role profiles**: `Max`, `Ultra` и Fast остаются пользовательскими controls главного task; qtim их не включает скрыто и не закрепляет в child agents. `Ultra` может proactively делегировать только внутри scope явно вызванного qtim workflow и не выбирает execution depth A/B/C/D.
+- **Оркестрация учитывает новый agent graph**: main thread проверяет доступные Active/Done descendants перед повторным spawn, переиспользует reachable threads, владеет дополнительным fan-out и запускает batches при нехватке runtime slots. Child agents больше не должны рекурсивно поднимать qtim-команду; reviewer возвращает запрос на independent review main thread.
+- **Fallback модели стал атомарным**: при недоступном slug setup/update/team-up удаляют пару `model` + `model_reasoning_effort`, наследуя корректный профиль главного task, а не оставляют pinned reasoning на неизвестной модели. Явные пользовательские overrides сохраняются через diff-подтверждение.
+- **Терминология liveness уточнена**: agent threads task-scoped, но не являются скрытой постоянной командой; после resume сначала проверяется текущий runtime, и только затем спавнятся недостающие роли.
+
+### Добавлено
+
+- `reference/model-profiles.md` — единый контракт model/reasoning по ролям, правила `Max`/`Ultra`/Fast, pair fallback и связь с execution depth.
+- `$qtim-doctor` диагностирует устаревшие qtim defaults, отсутствующие/retired модели по фактическому runtime catalog, разорванную model/reasoning пару и неожиданные `max`/`ultra`/Fast overrides.
+- CI-проверка custom-agent templates теперь валидирует reasoning effort и точную матрицу профилей 2.7.0, а не только форму model slug.
+
+### Осознанно не включено
+
+- `max`, `ultra` и `service_tier = "fast"` не прописаны в role TOML: они меняют глубину/стоимость работы и требуют явного выбора пользователя.
+- `gpt-5.6-luna` не назначена постоянной роли: текущие роли qtim требуют более широкого tool use и проверки; Luna остаётся кандидатом для будущих узких повторяемых workers.
+- Рекурсивная делегация не включена: qtim сохраняет main-thread ownership agent graph и bounded fan-out.
+
 ## 2.6.0 — 2026-07-06
 
 Порт улучшений Claude Code-версии 1.7.1 и 1.8.0 ([toiiia/qtim-agent-team](https://github.com/toiiia/qtim-agent-team), коммиты 1b122b6 и 6c4608f) под Codex-конвенции. Сгенерированное состояние проектов не меняется — `reference/upgrade-notes.md`, запись «2.6.0» (миграция не требуется).

@@ -28,7 +28,7 @@ In Codex there is no persistent team object on disk; "down" means close active a
 
    Эпик завершён — **удали** устаревший `epic-state.md`, не оставляй ложного «в полёте».
 6. Mark any unfinished work clearly in the visible plan or final report.
-7. Tell the user what remains open and whether a new Codex thread/session is recommended.
+7. Tell the user what remains open and whether a new Codex task is recommended.
 
 ## Rules
 

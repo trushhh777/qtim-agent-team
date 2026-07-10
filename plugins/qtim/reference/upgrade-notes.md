@@ -4,6 +4,24 @@
 
 Правило ведения: при каждом релизе, меняющем сгенерированное состояние, добавляй секцию сверху. Если релиз не меняет сгенерированное состояние, добавляй секцию с пометкой «миграция не требуется».
 
+## 2.7.0
+
+Что нового в сгенерированном состоянии:
+
+- role profiles перешли на точные GPT-5.6 catalog slugs: architect/database/reviewer/product — `gpt-5.6-sol` + `high`, frontend — `gpt-5.6-sol` + `medium`, testing — `gpt-5.6-terra` + `medium`;
+- `model` + `model_reasoning_effort` теперь считаются одной парой: если точный профиль недоступен, оба поля удаляются и роль наследует профиль главного task;
+- working rules charter разделяют execution depth A/B/C/D и root reasoning: `Max`/`Ultra`/Fast выбирает пользователь, `Ultra` может делегировать только внутри разрешённого qtim scope, child agents не спавнят qtim descendants, main thread учитывает runtime thread cap и сначала проверяет доступные descendant threads;
+- reviewer просит main thread поднять independent review вместо попытки спавнить descendant самостоятельно.
+
+Миграция с 2.6.0:
+
+1. Для каждого `.codex/agents/qtim-*.toml` сравни текущую пару с прежним qtim-default. Если она не менялась пользователем, обнови: `qtim-architect` / `qtim-database` / `qtim-reviewer` / `qtim-product` с `gpt-5.5` + `high` на `gpt-5.6-sol` + `high`; `qtim-frontend` с `gpt-5.5` + `medium` на `gpt-5.6-sol` + `medium`; `qtim-testing` с `gpt-5.4` + `medium` на `gpt-5.6-terra` + `medium`.
+2. Если присутствует ровно одно из полей `model` / `model_reasoning_effort`, это broken half-pair (в том числе возможный legacy fallback 2.6.0), а не готовый override. Покажи diff и после подтверждения либо установи доступную template pair 2.7.0, либо удали оставшееся поле для полного наследования.
+3. Если **оба** поля присутствуют и пара отличается от прежнего qtim-default, считай её пользовательским override: проверь по локальному catalog, покажи diff и не перезаписывай без подтверждения. Если выбранный GPT-5.6 profile недоступен в текущем Codex, удали **оба** поля вместо догаданной замены.
+4. Обнови `qtim-reviewer` по template: independent review запрашивается у main thread; при выключенном гейте не возвращай вырезанный setup-ом gate-условный блок.
+5. В общей working-rules секции `.codex/team-charter.md` добавь правила root reasoning/Ultra, task-scoped descendants, main-owned fan-out и batching по runtime cap. Ручные правки и оба track-блока не перезаписывай.
+6. Обнови stamps charter и всех qtim TOML до `2.7.0`. `memory/`, `docs/features/` и секцию qtim в проектном `AGENTS.md` не меняй. Так как agent TOML изменились, перед qtim workflow обязательно открой новую задачу Codex.
+
 ## 2.6.0
 
 Миграция не требуется — правки только движка (skills `qtim-feature` / `qtim-team-up` / `qtim-team-lazy` / `qtim-team-retro` / `qtim-doctor` и `reference/feature-pipeline.md`): intake-интервью, фиксация отклонений от `plan.md` в «Истории изменений», порядок фаз плана по неопределённости, проверка продуктовой памяти в doctor. Проекты получают их автоматически при следующем вызове skills; charter, шаблоны ролей и `memory/` не меняются. PM track block новых charter впитает обновлённый handoff contract сам — setup переносит суть `feature-pipeline.md`; в существующих charter дописывать ничего не нужно (правила доставляются движком в рантайме).
@@ -94,4 +112,4 @@ Baseline Codex-native упаковки: `.codex/team-charter.md`, `.codex/agents
 - `memory/` и `docs/features/` при миграции не переписываются.
 - Изменённые пользователем файлы не перезаписывать молча: показать diff и спросить.
 - После миграции обнови оба stamp (charter и TOML) на текущую версию плагина.
-- При любой миграции проверяй `model` в сгенерированных `.codex/agents/*.toml`: слаг обязан совпадать с template или быть заведомо доступным в окружении. Боевой инцидент: setup сгенерировал несуществующий `model = "gpt-5"` (слаг без минорной версии), и все субагенты не стартовали. Фикс: валидный слаг из template или удалить поле `model` (агент унаследует модель сессии).
+- При любой миграции проверяй атомарную пару `model` + `model_reasoning_effort` в сгенерированных `.codex/agents/*.toml`: это текущий template, явный пользовательский override, подтверждённый локальным catalog, либо оба поля отсутствуют для наследования main profile. Боевой инцидент: setup сгенерировал несуществующий `model = "gpt-5"` (слаг без минорной версии), и все субагенты не стартовали. Фикс: доступная pair из template/подтверждённого override или удалить **оба** поля; одинокий pinned model/reasoning не оставлять.

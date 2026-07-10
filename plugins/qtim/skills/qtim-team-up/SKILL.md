@@ -16,7 +16,8 @@ Use Codex subagent threads and custom agents. Do not assume a hidden persistent 
 3. Read only the needed shared references:
    - `../../reference/intake-protocol.md`;
    - `../../reference/orchestration-patterns.md`;
-   - `../../reference/independent-review.md`.
+   - `../../reference/independent-review.md`;
+   - `../../reference/model-profiles.md`.
 4. Проверь `memory/epic-state.md` (его пишет `$qtim-team-down` при незавершённом эпике): если файл есть и эпик не закрыт — после подъёма команды покажи резюме и предложи продолжить с зафиксированного места, восстановив задачи из «В полёте» в видимом плане с их ролями.
 5. Если задача ссылается на фичу из `docs/features/<slug>/`, прочитай её `plan.md` и `prd.md` как источник scope и acceptance criteria; отклонения от плана с обоснованием и всплывшие edge cases фиксируй строкой в «Истории изменений» `plan.md`.
 
@@ -32,20 +33,28 @@ If the task is a single pass without feedback loops, switch to `$qtim-team-lazy`
 
 ## Liveness Model
 
-Codex subagents are agent threads, not durable named team members.
+Codex subagents are task-scoped agent threads, not durable named team members.
 
-- Track the current session roster in your own context: `role -> agent id`.
+- Track the current roster in your own context: `role -> agent id`.
+- Before spawning after resume or context loss, inspect descendants when the runtime exposes Active/Done agent threads; reuse the matching reachable thread and spawn only missing roles.
 - If you still have a live agent id, send follow-up input to that thread.
-- After restart or context loss, spawn again; do not assume old threads are reachable.
-- Close completed threads when no longer needed.
+- Never assume a remembered handle is live or a missing handle is gone: verify through the current runtime, then recover or respawn.
+- Close completed threads when no longer needed so the next batch has capacity.
 
 ## Spawning
 
-Spawn roles in parallel when the subagent tool is available.
+Spawn only currently needed roles in parallel when the subagent tool is available; batch the roster when independent work exceeds the available thread slots.
 
-Use custom agent types from `.codex/agents/*.toml` when Codex exposes them. If the current session has not loaded custom agents yet, either ask the user to start a new thread or use `worker` / `explorer` fallback with the role instructions embedded in the prompt.
+Use custom agent types from `.codex/agents/*.toml` when Codex exposes them. If the current task has not loaded custom agents yet, either ask the user to start a new Codex task or use `worker` / `explorer` fallback with the role instructions embedded in the prompt.
 
-Если спавн custom agent падает из-за невалидного `model` в его TOML (например, несуществующий слаг `gpt-5`), не останавливай эпик: поправь `.codex/agents/<role>.toml` — валидный слаг или удали поле `model` (унаследуется модель сессии), — сообщи пользователю и продолжи. Системная починка — `$qtim-update`.
+Если spawn custom agent падает именно из-за model pair, не останавливай эпик и не стирай override вслепую. Сравни пару с template и локальным catalog. Только когда это доказанно неизменённый qtim-default, которого нет в catalog, сообщи пользователю, удали **оба** поля `model` + `model_reasoning_effort` и повтори с наследованием main profile. Любую отличающуюся/непроверенную пару сохрани: используй `worker` / `explorer` fallback с inline role instructions, покажи нужный diff и отправь системную починку в `$qtim-update`. Транзиентную auth/network ошибку не классифицируй как недоступную модель.
+
+## Model And Reasoning Policy
+
+- Не переключай модель, reasoning или Fast главного task: это пользовательские controls.
+- Используй role profiles из загруженных TOML. Не повышай child agents до `max`/`ultra` без прямой просьбы пользователя.
+- `Ultra` у main task разрешает Codex proactively делегировать внутри scope этого вызова, но не означает «спавнить все роли». Execution depth A/B/C/D, roster и write scopes по-прежнему определяет main thread.
+- Child agents не спавнят qtim-команду рекурсивно. Дополнительные роли спавнит main thread; fan-out ограничивай доступными slots и разбивай на batches, если независимых работ больше.
 
 Default Standard roster:
 
@@ -84,7 +93,7 @@ For implementation agents, remind them that other agents may edit in parallel an
 
 1. Run design first for non-trivial work: architect produces brief/ADR and open questions.
 2. Ask for user approval before irreversible or ambiguous work, following `intake-protocol.md`.
-3. Parallelize only disjoint work scopes.
+3. Parallelize only disjoint work scopes; `Ultra` не отменяет этот gate и не является причиной увеличить fan-out.
 4. Route implementation by ownership.
 5. Tester verifies with real browser for UI changes.
 6. Reviewer runs final gates; independent review — только при активной секции гейта в charter (секции нет или она помечена «выключен» -> пропусти и не требуй его от ролей).
