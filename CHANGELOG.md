@@ -2,6 +2,37 @@
 
 Версии соответствуют `version` в `plugins/qtim/.codex-plugin/plugin.json` (semver).
 
+## 2.9.0 — 2026-07-21
+
+Семантический Codex-порт Claude-релизов 1.9.0 + 1.10.0 из upstream-коммита [`fc0f8e9`](https://github.com/toiiia/qtim-agent-team/commit/fc0f8e9b7a1bb2d9c4ab27f2dd14cef72331833a): frontier-model policy, риск-пропорциональный PM-конвейер и четыре собственные дисциплины qtim. Сгенерированное состояние меняется — миграция описана в `reference/upgrade-notes.md`, запись «2.9.0».
+
+### Добавлено
+
+- **`$qtim-debug-loop`** — красный автоматический feedback loop до гипотез, минимизация repro, 3-5 фальсифицируемых гипотез до первой проверки, один probe за раз, `[DEBUG-*]` cleanup, регрессионный тест до фикса. Database/frontend/testing templates используют дисциплину для нетривиальных и flaky-багов.
+- **`$qtim-prototype`** — одноразовый terminal/UI prototype для конкретной design-развилки; решение фиксируется в design artifact, production-код реализуется заново, throwaway-код в main не остаётся.
+- **`$qtim-brainstorm`** — обязательный разбор до ADR: минимум две интерпретации, факты из окружения, 2-3 жизнеспособных варианта с trade-offs, open questions отдельно от assumptions.
+- **`$qtim-grill`** — stress-test плана по одному вопросу с рекомендуемым ответом; поддерживает жёсткий self-play.
+- Новые skills имеют Codex UI metadata `agents/openai.yaml`; repo CI валидирует обязательные поля, длину description и `$skill` в default prompt.
+- MIT notice источника входит в распространяемый plugin subtree как `THIRD_PARTY_NOTICES.md`.
+
+`debug-loop`, `prototype` и `grill` — Codex-адаптации дисциплин из [mattpocock/skills](https://github.com/mattpocock/skills), MIT; `brainstorm` — qtim-выжимка intake protocol.
+
+### Изменено
+
+- **`$qtim-feature` стал двухтрековым:** S/M одной фазы без Fork Test triggers идёт через `feature-brief.md` с одним checkpoint вместо стадий 2-5; многофазные/рискованные задачи сохраняют полный PRD -> decomposition/estimate -> plan. Resume, handoff, team-up, team-lazy, retro и doctor понимают оба трека.
+- **Полный трек компактнее:** decomposition и estimate утверждаются одним решением; consult запускается только для реально затронутых слоёв; production code/SQL/будущие диффы запрещены внутри PM-артефактов.
+- **Vertical slicing:** work item и фаза — проверяемый вертикальный срез с одним DRI и contributing roles; в полном треке роли оценивают layer slices, DRI синтезирует item estimate, а fast-path использует main-thread evidence fallback. Широкий механический rename/retype планируется expand-contract.
+- **Факт vs решение:** main thread и роли сами собирают факты из кода, `memory/`, git и документации; пользователю выносятся только решения, которые evidence не разрешает.
+- **Architect:** `$qtim-brainstorm` до ADR, `$qtim-prototype` для UX/behavior fork, `$qtim-grill` для stress-test; ADR пишется только при одновременных «дорого откатить» + «будущий читатель спросит почему» + реальном trade-off, иначе — строка в `memory/decisions.md`.
+- **Independent review пропорционален риску:** единая high-risk matrix покрывает security/auth/visibility, money/account state, documented invariants/public contracts, data-transform/destructive migrations, critical browser flows, high-risk performance/reliability и другие hard-to-rollback изменения; low-risk diff допускает `independent review: skipped (low-risk diff)`; main thread проверяет findings и владеет spawn.
+- **Model inheritance:** architect/database/frontend/reviewer/product больше не приколочены к поколению модели — в их TOML отсутствуют оба model fields, поэтому они наследуют session profile. Testing сохраняет bounded pair `gpt-5.6-terra` + `medium`. В Codex строка `model = "inherit"` не используется; пользовательские overrides атомарной pair сохраняются.
+
+### Codex-специфичная адаптация
+
+- Claude slash calls `qtim:*` переписаны в Codex skills `$qtim-*`; standalone-копирование `.claude/skills/` и golden example не применимы.
+- Claude Codex second-opinion адаптирован как отдельный read-only Codex agent thread по `independent-review.md`, а не внешний консультант.
+- Компенсирующий пошаговый composable-рецепт не удалялся: Codex frontend template уже содержит только компактные инварианты.
+
 ## 2.8.0 — 2026-07-10
 
 Исправлен Codex hook-контракт после Claude-порта. Bundled `hooks.json` уже имел правильную вложенную форму, но setup мог генерировать project-level `type: reminder`, дублировать bundled events, а event-specific stdout не соответствовал текущему runtime. Основание — официальная документация [Hooks](https://learn.chatgpt.com/docs/hooks): hook layers складываются, `PostToolUse` игнорирует plain stdout, `SubagentStop` при exit 0 ожидает JSON.

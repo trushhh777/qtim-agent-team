@@ -1,0 +1,4 @@
+interface:
+  display_name: "qtim Prototype"
+  short_description: "Одноразовый прототип для дизайн-развилки"
+  default_prompt: "Используй $qtim-prototype, чтобы разрешить эту дизайн-развилку одноразовым конкретным прототипом."

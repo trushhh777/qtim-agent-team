@@ -10,13 +10,33 @@ except ImportError:
     tomllib = None
 
 REQUIRED = {"name", "description", "developer_instructions"}
-EXPECTED_PROFILES = {
-    "architect.toml": ("gpt-5.6-sol", "high"),
-    "database.toml": ("gpt-5.6-sol", "high"),
-    "frontend.toml": ("gpt-5.6-sol", "medium"),
-    "product.toml": ("gpt-5.6-sol", "high"),
-    "reviewer.toml": ("gpt-5.6-sol", "high"),
+EXPECTED_MODEL_POLICIES = {
+    "architect.toml": (None, None),
+    "database.toml": (None, None),
+    "frontend.toml": (None, None),
+    "product.toml": (None, None),
+    "reviewer.toml": (None, None),
     "testing.toml": ("gpt-5.6-terra", "medium"),
+}
+EXPECTED_MARKERS = {
+    "architect.toml": [
+        "$qtim-brainstorm",
+        "$qtim-prototype",
+        "$qtim-grill",
+        "дорого откатить",
+        "будущий читатель",
+        "реальный trade-off",
+        "expand-contract",
+    ],
+    "database.toml": ["$qtim-debug-loop"],
+    "frontend.toml": ["$qtim-debug-loop"],
+    "product.toml": ["вертикальный срез", "DRI", "contributing", "expand-contract"],
+    "reviewer.toml": [
+        "Canonical high-risk matrix",
+        "обязательный запрос",
+        "skipped (low-risk diff)",
+    ],
+    "testing.toml": ["$qtim-debug-loop"],
 }
 REASONING_EFFORTS = {"none", "minimal", "low", "medium", "high", "xhigh", "max", "ultra"}
 MODEL_REASONING_EFFORTS = {
@@ -92,6 +112,10 @@ for path in paths:
     reasoning = re.search(
         r'^model_reasoning_effort\s*=\s*"([^"]*)"', text, re.MULTILINE
     )
+    if bool(m) != bool(reasoning):
+        bad.append(
+            f"{path}: `model` and `model_reasoning_effort` must be present together or both omitted"
+        )
     if reasoning and reasoning.group(1) not in REASONING_EFFORTS:
         bad.append(
             f"{path}: unsupported `model_reasoning_effort = \"{reasoning.group(1)}\"`"
@@ -104,7 +128,7 @@ for path in paths:
             f"`{reasoning.group(1)}`"
         )
 
-    expected = EXPECTED_PROFILES.get(path.name)
+    expected = EXPECTED_MODEL_POLICIES.get(path.name)
     if expected:
         actual = (
             m.group(1) if m else None,
@@ -112,14 +136,18 @@ for path in paths:
         )
         if actual != expected:
             bad.append(
-                f"{path}: expected qtim model profile {expected[0]}/{expected[1]}, "
+                f"{path}: expected qtim model policy {expected[0]}/{expected[1]}, "
                 f"found {actual[0]}/{actual[1]}"
             )
+
+    for marker in EXPECTED_MARKERS.get(path.name, []):
+        if marker not in text:
+            bad.append(f"{path}: missing qtim 2.9 discipline marker `{marker}`")
 
 if not paths:
     bad.append(f"{root}: no Codex custom agent templates found")
 
-missing_templates = sorted(set(EXPECTED_PROFILES) - {path.name for path in paths})
+missing_templates = sorted(set(EXPECTED_MODEL_POLICIES) - {path.name for path in paths})
 if missing_templates:
     bad.append(f"{root}: missing expected templates: {', '.join(missing_templates)}")
 

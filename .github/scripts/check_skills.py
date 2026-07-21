@@ -16,6 +16,14 @@ except ImportError:
     yaml = None
 
 KEY_RE = re.compile(r"^([A-Za-z0-9_-]+):\s*(.*)$")
+METADATA_REQUIRED = {
+    "qtim-brainstorm",
+    "qtim-debug-loop",
+    "qtim-grill",
+    "qtim-prototype",
+}
+THIRD_PARTY_SKILLS = {"qtim-debug-loop", "qtim-grill", "qtim-prototype"}
+INTERFACE_FIELDS = {"display_name", "short_description", "default_prompt"}
 
 bad = []
 
@@ -44,6 +52,44 @@ def parse_fallback(path, body):
             continue
         data[key] = value
     return data
+
+
+def validate_openai_metadata(skill_dir):
+    """Validate the narrow agents/openai.yaml shape used by qtim skills without PyYAML."""
+    path = skill_dir / "agents" / "openai.yaml"
+    if not path.is_file():
+        if skill_dir.name in METADATA_REQUIRED:
+            bad.append(f"{path}: metadata обязателен для bundled discipline")
+        return
+
+    lines = [line for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    if not lines or lines[0] != "interface:":
+        bad.append(f"{path}: ожидается корень `interface:`")
+        return
+
+    values = {}
+    for line in lines[1:]:
+        match = re.fullmatch(r'  ([a-z_]+):\s*"([^"]*)"', line)
+        if match is None:
+            bad.append(f"{path}: невалидная или некавыченная interface-строка `{line}`")
+            continue
+        key, value = match.groups()
+        if key not in INTERFACE_FIELDS:
+            bad.append(f"{path}: неизвестное interface-поле `{key}`")
+            continue
+        values[key] = value
+
+    missing = sorted(INTERFACE_FIELDS - values.keys())
+    if missing:
+        bad.append(f"{path}: отсутствуют поля: {', '.join(missing)}")
+        return
+    if not values["display_name"].strip():
+        bad.append(f"{path}: `display_name` должен быть непустым")
+    length = len(values["short_description"])
+    if not 25 <= length <= 64:
+        bad.append(f"{path}: `short_description` должен быть длиной 25-64, сейчас {length}")
+    if f"${skill_dir.name}" not in values["default_prompt"]:
+        bad.append(f"{path}: `default_prompt` должен явно упоминать `${skill_dir.name}`")
 
 
 for skill_dir in sorted(pathlib.Path("plugins").glob("*/skills/*")):
@@ -81,6 +127,132 @@ for skill_dir in sorted(pathlib.Path("plugins").glob("*/skills/*")):
     description = data.get("description")
     if not isinstance(description, str) or not description.strip():
         bad.append(f"{path}: `description` должен быть непустой строкой")
+    if skill_dir.name in THIRD_PARTY_SKILLS and (
+        "mattpocock/skills" not in text or "MIT" not in text
+    ):
+        bad.append(f"{path}: нет attribution и MIT marker для adapted discipline")
+    validate_openai_metadata(skill_dir)
+
+feature_brief_consumers = [
+    pathlib.Path("plugins/qtim/skills/qtim-feature/SKILL.md"),
+    pathlib.Path("plugins/qtim/reference/feature-pipeline.md"),
+    pathlib.Path("plugins/qtim/skills/qtim-setup/SKILL.md"),
+    pathlib.Path("plugins/qtim/skills/qtim-team-up/SKILL.md"),
+    pathlib.Path("plugins/qtim/skills/qtim-team-lazy/SKILL.md"),
+    pathlib.Path("plugins/qtim/skills/qtim-team-retro/SKILL.md"),
+    pathlib.Path("plugins/qtim/skills/qtim-doctor/SKILL.md"),
+]
+for path in feature_brief_consumers:
+    if not path.is_file() or "feature-brief.md" not in path.read_text(encoding="utf-8"):
+        bad.append(f"{path}: нет поддержки fast-path артефакта `feature-brief.md`")
+
+vertical_slice_consumers = [
+    pathlib.Path("plugins/qtim/skills/qtim-feature/SKILL.md"),
+    pathlib.Path("plugins/qtim/reference/feature-pipeline.md"),
+    pathlib.Path("plugins/qtim/skills/qtim-setup/SKILL.md"),
+    pathlib.Path("plugins/qtim/skills/qtim-doctor/SKILL.md"),
+    pathlib.Path("plugins/qtim/agents/product.toml"),
+    pathlib.Path("plugins/qtim/reference/upgrade-notes.md"),
+]
+for path in vertical_slice_consumers:
+    body = path.read_text(encoding="utf-8") if path.is_file() else ""
+    for marker in ("DRI", "contributing"):
+        if marker not in body:
+            bad.append(f"{path}: vertical slicing не фиксирует `{marker}`")
+
+risk_policy_consumers = [
+    pathlib.Path("plugins/qtim/reference/independent-review.md"),
+    pathlib.Path("plugins/qtim/reference/orchestration-patterns.md"),
+    pathlib.Path("plugins/qtim/skills/qtim-setup/SKILL.md"),
+    pathlib.Path("plugins/qtim/skills/qtim-doctor/SKILL.md"),
+    pathlib.Path("plugins/qtim/skills/qtim-team-up/SKILL.md"),
+    pathlib.Path("plugins/qtim/agents/reviewer.toml"),
+    pathlib.Path("plugins/qtim/reference/upgrade-notes.md"),
+]
+risk_markers = (
+    "security/auth",
+    "money/billing/account state",
+    "documented domain invariants",
+    "public contracts",
+    "data-transform",
+    "destructive migrations",
+    "critical browser flows",
+    "high-risk performance/reliability",
+    "hard-to-rollback",
+)
+for path in risk_policy_consumers:
+    body = path.read_text(encoding="utf-8") if path.is_file() else ""
+    missing = [marker for marker in risk_markers if marker not in body]
+    if missing:
+        bad.append(f"{path}: incomplete canonical risk matrix: {', '.join(missing)}")
+
+status_contracts = {
+    pathlib.Path("plugins/qtim/reference/feature-pipeline.md"): (
+        "Реализующая команда переводит плановый документ и связанные артефакты в `In Development`",
+        "затем `Done` после gates",
+    ),
+    pathlib.Path("plugins/qtim/skills/qtim-feature/SKILL.md"): (
+        "Для fast-path заверши brief:",
+        "При старте переведи Status в In Development, после всех gates — в Done.",
+    ),
+    pathlib.Path("plugins/qtim/skills/qtim-team-up/SKILL.md"): (
+        "До работы переведи плановый документ и связанные артефакты в `In Development`",
+        "только после gates — в `Done`",
+    ),
+    pathlib.Path("plugins/qtim/skills/qtim-team-lazy/SKILL.md"): (
+        "До работы переведи плановый документ и связанные артефакты в `In Development`",
+        "только после gates — в `Done`",
+    ),
+}
+for path, markers in status_contracts.items():
+    body = path.read_text(encoding="utf-8") if path.is_file() else ""
+    missing = [marker for marker in markers if marker not in body]
+    if missing:
+        bad.append(f"{path}: повреждён scoped status transition: {', '.join(missing)}")
+
+update_skill = pathlib.Path("plugins/qtim/skills/qtim-update/SKILL.md").read_text(encoding="utf-8")
+upgrade_notes = pathlib.Path("plugins/qtim/reference/upgrade-notes.md").read_text(encoding="utf-8")
+for marker in ("oldest -> newest", "pending"):
+    if marker not in update_skill or marker not in upgrade_notes:
+        bad.append(f"qtim update contract не фиксирует `{marker}` в skill и upgrade notes")
+
+if "После миграции обнови оба stamp (charter и TOML) на текущую версию плагина" in upgrade_notes:
+    bad.append("upgrade notes содержат legacy target-stamp rule, конфликтующий с incremental pending migration")
+if "После каждой полностью завершённой version-section" not in upgrade_notes:
+    bad.append("upgrade notes не фиксируют общий incremental stamp contract")
+
+atomic_migration_markers = (
+    "Мигрируй перечисленные ниже **regions независимо**",
+    "target markers делают `applied` только свой region, а не всю роль",
+    "architect / ADR filter",
+    "product / ownership",
+    "product / vertical slice",
+    "product / expand-contract",
+    "product / estimation",
+    "наличие ровно одного target marker означает partial region",
+)
+missing = [marker for marker in atomic_migration_markers if marker not in upgrade_notes]
+if missing:
+    bad.append(f"upgrade notes не защищают atomic 2.9 agent migration: {', '.join(missing)}")
+
+maintainer_rules = pathlib.Path("AGENTS.md").read_text(encoding="utf-8")
+for marker in (
+    "Bundled disciplines are role-agnostic practices, not orchestration engines",
+    "audit role templates for compensating step-by-step recipes",
+    "preserve structural invariants, risk-based gates, durable memory, and verification contracts",
+):
+    if marker not in maintainer_rules:
+        bad.append(f"AGENTS.md не фиксирует frontier-maintenance rule: {marker}")
+
+claude_skill_call = re.compile(r"(?<![A-Za-z0-9_-])qtim:(debug-loop|prototype|brainstorm|grill)\b")
+for path in pathlib.Path("plugins/qtim").rglob("*.md"):
+    if claude_skill_call.search(path.read_text(encoding="utf-8")):
+        bad.append(f"{path}: Claude-вызов qtim:<skill>; в Codex используй `$qtim-<skill>`")
+
+notice_path = pathlib.Path("plugins/qtim/THIRD_PARTY_NOTICES.md")
+notice = notice_path.read_text(encoding="utf-8") if notice_path.is_file() else ""
+if "Copyright (c) 2026 Matt Pocock" not in notice or "Permission is hereby granted" not in notice:
+    bad.append(f"{notice_path}: нет полного MIT notice источника bundled disciplines")
 
 if bad:
     print("Skill frontmatter validation failed:")

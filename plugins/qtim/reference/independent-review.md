@@ -9,19 +9,23 @@
 3. Domain invariants in `.codex/team-charter.md`, `AGENTS.md`, and `memory/` win over reviewer opinion.
 4. Review threads are read-only unless the user explicitly asks for a fix worker.
 5. Fail soft: if a reviewer thread cannot run, record that and continue with local review unless project policy says otherwise.
-6. Use only at gate points, not on every tiny edit.
+6. Use only at gate points and proportionally to the actual diff risk, not on every tiny edit.
 
 ## When To Use
 
-Use independent review for:
+Independent review is mandatory to request when the actual diff matches any item in this canonical high-risk matrix:
 
-- authorization or tenant/scope visibility;
-- security-sensitive server routes;
-- data migrations or destructive transformations;
-- money/billing/account-state paths;
-- public API contracts;
+- security/auth/tenant-scope visibility;
+- money/billing/account state;
+- documented domain invariants or public contracts;
+- data-transform or destructive migrations;
 - critical browser flows before release;
-- high-risk performance changes.
+- high-risk performance/reliability changes;
+- another demonstrably hard-to-rollback decision.
+
+For a low-risk diff limited to copy, styles, documentation or an internal refactor without contract/invariant changes, the reviewer may skip it and must record `independent review: skipped (low-risk diff)`. Setup, role templates and orchestration copy this matrix without adding or removing categories.
+
+For money-critical work, require convergence of two independent traces when runtime review is available. If it cannot run, record the failure and follow the fail-open/fail-closed policy from the project charter; do not silently call the gate passed.
 
 ## Prompt Shape
 
@@ -57,7 +61,7 @@ Mark hypotheses explicitly.
 5. Record summary in `memory/review-report.md`:
    - findings confirmed;
    - findings rejected and why;
-   - skipped reason if review could not run.
+   - skipped reason for a low-risk diff or if review could not run.
 
 ## Anti-Patterns
 

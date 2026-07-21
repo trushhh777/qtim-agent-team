@@ -35,22 +35,22 @@ codex plugin add qtim@qtim-agent-team              # переустановит�
 
 Только если plugin version новее project version. Если stamp проекта новее плагина — не даунгрейдь: скажи, что устарел сам плагин, дай команды из Step 2 и остановись.
 
-1. Прочитай `../../reference/upgrade-notes.md` и собери шаги всех версий между project version и plugin version (сверху вниз по возрастанию версий).
-2. Сравни сгенерированные `.codex/agents/qtim-*.toml` с текущими templates `../../agents/*.toml` (с поправкой на подставленные плейсхолдеры стека), включая пару `model` + `model_reasoning_effort`. Best-effort проверь пару по локальному model catalog (`codex debug models`, если доступен, или model controls runtime), без сетевой зависимости. Файлы, которые пользователь менял руками, не перезаписывай молча: покажи diff и спроси. Явный пользовательский model/reasoning override сохраняй, пока пользователь не выберет текущий профиль qtim.
+1. Прочитай `../../reference/upgrade-notes.md` и собери шаги всех версий между project version и plugin version. Применяй **oldest -> newest**; секции в notes лежат newest-first, поэтому нужный диапазон читается снизу вверх. Прямой upgrade не начинай с целевой версии.
+2. Сравни сгенерированные `.codex/agents/qtim-*.toml` с текущими templates `../../agents/*.toml` (с поправкой на подставленные плейсхолдеры стека). Прежний template из Git history не считай доступным: engine-managed region распознавай только по fingerprints и соседним anchors конкретной секции upgrade notes. Если region не распознан однозначно, не заменяй весь файл: покажи diff и оставь шаг pending. Отсутствие обоих model fields в текущем template означает inherit; явная pair атомарна. Best-effort проверь её по локальному catalog. Ручные правки и user overrides не перезаписывай молча.
 3. Если существует `.codex/hooks.json`, выполни hook-миграции из upgrade notes отдельно от agent templates. Распознавай qtim-owned handlers по совокупности fingerprints (guard `.codex/team-charter.md`, `[qtim` / `$qtim-*`, `qtim-version:`, тексты про реальные артефакты или проверку затронутого слоя), а не только по event/matcher. Сохраняй порядок и содержимое неизвестных пользовательских events/groups/handlers; если ownership неоднозначен, покажи entry и спроси.
-4. Покажи план миграции: какие файлы, handlers и блоки меняются (в charter — только между маркерами и общие структурные блоки, ручные правки вне них не трогаются), что остаётся нетронутым. Дождись подтверждения.
-5. Применяй шаги. `memory/` и `docs/features/` не переписываются.
-6. Обнови stamps: charter и все `# qtim-version:` в TOML — на версию плагина.
+4. Покажи план миграции: какие файлы, handlers и engine-managed блоки меняются (в charter — PM-механика только между её маркерами; roles table/independent-review policy — точечными строками без удаления внешних skills; ручные правки и второй track сохраняются), что остаётся нетронутым. Дождись подтверждения.
+5. Применяй секции oldest -> newest. `memory/` и `docs/features/` не переписываются. Для каждой версии собери checklist applicable шагов со статусами `applied` / `compatible override confirmed` / `pending`.
+6. Когда у очередной версии не осталось `pending`, атомарно подними charter и все TOML stamps до этой версии, затем переходи к следующей. Осознанно сохранённый catalog-supported override считается compatible; отложенный engine block — pending. При первом pending останови дальнейшие версии: stamps остаются на последней полностью завершённой версии, а следующий `$qtim-update` повторит только незавершённый диапазон.
 
 ## Step 4: Verify And Report
 
 - JSON/TOML parse для изменённых файлов (`python3 -m json.tool`, `tomllib` если доступен);
 - `.codex/hooks.json`, если существует: canonical root `hooks`, matcher groups с вложенным `hooks`, qtim handlers только `type: command` с `commandWindows`; нет qtim-owned project-дублей `SessionStart` / `SubagentStop`; qtim `PostToolUse` возвращает JSON `hookSpecificOutput.additionalContext`; пользовательские handlers и их порядок сохранены;
-- `model` + `model_reasoning_effort` каждого `.codex/agents/*.toml` образуют атомарную пару: текущий template, явно сохранённый пользователем catalog-supported override либо оба поля отсутствуют для наследования главного task; если model slug недоступен или невалиден (например `gpt-5`), удали оба поля, не угадывай замену;
+- model policy каждого `.codex/agents/*.toml`: оба поля отсутствуют для template inheritance, либо образуют текущую template/user-approved pair; half-pair и `model = "inherit"` невалидны; недоступный slug -> удалить оба, не угадывать замену;
 - `max`, `ultra` и `service_tier = "fast"` не появились в role TOML без явного пользовательского override;
-- track-маркеры парные, stamps обновлены;
+- track-маркеры парные; все stamps единообразно указывают на последнюю полностью завершённую версию, а не на partial target;
 - в изменённых файлах нет plugin-internal путей (`../../...`);
-- финальный ответ: версии до/после, изменённые файлы, что пропущено по решению пользователя. Если менялся любой `.codex/agents/*.toml`, новая задача Codex **обязательна** перед qtim workflow. Если менялись hooks, открой `/hooks`, заново review/trust изменённые definitions; если текущий runtime не подхватил их после review, открой новую задачу. Если agent TOML и hooks не менялись, дополнительный restart не нужен.
+- финальный ответ: версии до/после, изменённые файлы, compatible overrides и pending; при pending явно скажи, что stamps остались на последней полностью завершённой версии и целевая migration не завершена. Если менялся любой `.codex/agents/*.toml`, новая задача Codex **обязательна** перед qtim workflow. Если менялись hooks, открой `/hooks`, заново review/trust изменённые definitions; если текущий runtime не подхватил их после review, открой новую задачу. Если agent TOML и hooks не менялись, дополнительный restart не нужен.
 
 ## Rules
 

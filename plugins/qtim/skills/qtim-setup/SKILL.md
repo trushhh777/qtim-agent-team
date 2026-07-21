@@ -16,6 +16,7 @@ description: Use when the user wants to install or bootstrap qtim for the curren
 - Role templates: `../../agents/architect.toml`, `../../agents/database.toml`, `../../agents/frontend.toml`, `../../agents/testing.toml`, `../../agents/reviewer.toml`, `../../agents/product.toml`.
 - Model policy: `../../reference/model-profiles.md`.
 - Shared mechanics: `../../reference/intake-protocol.md`, `../../reference/orchestration-patterns.md`, `../../reference/independent-review.md`, `../../reference/feature-pipeline.md`.
+- Bundled disciplines: `../qtim-debug-loop/SKILL.md`, `../qtim-prototype/SKILL.md`, `../qtim-brainstorm/SKILL.md`, `../qtim-grill/SKILL.md`; role templates invoke them directly.
 - Hooks: `../../hooks/hooks.json` для plugin-bundled событий; `../../reference/project-hooks.json` читай только при выборе project-level `PostToolUse`.
 - Plugin version для stamps: поле `version` из `../../.codex-plugin/plugin.json`.
 
@@ -48,7 +49,9 @@ description: Use when the user wants to install or bootstrap qtim for the curren
 
 ## Phase 1b: Codex Skills, Plugins, MCP Matching
 
-Подбери уже доступные Codex skills из текущего контекста под стек и роли. Не устанавливай ничего сам.
+Layer 0 уже поставляется qtim и доступен во всех проектах: `$qtim-debug-loop`, `$qtim-prototype`, `$qtim-brainstorm`, `$qtim-grill`. Не проверяй их как внешние зависимости, не проси установить и не вписывай в колонку optional `skills`: templates ссылаются на них напрямую. В mandatory practices charter зафиксируй: architect — `$qtim-brainstorm до ADR`; database/frontend — `$qtim-debug-loop` для нетривиального бага; testing — `$qtim-debug-loop` для flaky repro. Prototype/grill остаются условными инструментами architect, не безусловной церемонией.
+
+Отдельно подбери уже доступные внешние Codex skills из текущего контекста под стек и роли. Не устанавливай ничего сам.
 
 Приоритеты:
 
@@ -60,7 +63,7 @@ description: Use when the user wants to install or bootstrap qtim for the curren
 
 Плагины и MCP только рекомендуй в финале. Для приватных систем и live-data источников предпочитай Codex connectors/MCP вместо веб-поиска.
 
-Best-effort проверь пары role templates по локальному model catalog, который показывает текущий Codex (`codex debug models`, если команда доступна, или model controls текущего runtime). Не делай сетевой lookup частью setup. Catalog доступен и пары нет -> предложи наследование; catalog недоступен -> пометь профиль unverified в плане и по умолчанию удали оба поля, если пользователь не подтвердил pin.
+Best-effort проверь только явные model pairs role templates по локальному catalog, который показывает текущий Codex (`codex debug models`, если команда доступна, или model controls текущего runtime). Не делай сетевой lookup частью setup. Отсутствие обоих полей у intelligence-heavy template — намеренное наследование session profile, не ошибка. Явная pair недоступна -> предложи наследование; catalog недоступен -> пометь pair unverified и удали оба поля, если пользователь не подтвердил pin.
 
 ## Phase 2: Decisions
 
@@ -69,7 +72,7 @@ Best-effort проверь пары role templates по локальному mod
 **Первый вопрос — роль пользователя:**
 
 - **Developer** — команда разработки: architect/database/frontend/testing/reviewer, workflow `$qtim-team-up` / `$qtim-team-lazy`;
-- **PM/Analyst** — продуктовый трек: роль `qtim-product` и pipeline `$qtim-feature` (хотелка -> PRD -> декомпозиция -> оценка -> план) с артефактами в `docs/features/`;
+- **PM/Analyst** — продуктовый трек: роль `qtim-product` и двухтрековый `$qtim-feature` (fast-path brief для простой хотелки или полный PRD -> decomposition/estimate -> plan) с артефактами в `docs/features/`;
 - **Оба** — обе дорожки в одном charter.
 
 Роль гейтит остальные вопросы. Если charter уже существует и содержит только другой track, предложи дописать недостающий track, не пересоздавая существующий.
@@ -82,13 +85,13 @@ Best-effort проверь пары role templates по локальному mod
 - memory baseline: project map, commands, safety, domain invariants;
 - independent review gate: enabled or disabled (только dev track; при disabled charter получает секцию-заглушку «выключен», а independent-review-требования шаблонов вырезаются из генерируемых агентов — включить позже можно повторным `$qtim-setup`);
 - hooks: plugin-bundled `SessionStart` / `SubagentStop` уже поставляются qtim и управляются через `/hooks`; спроси только про optional project-level `PostToolUse` reminder после edits;
-- skill recommendations: write selected skills into charter/agent instructions or keep roles standalone.
+- external skill recommendations: write selected stack skills into charter/agent instructions or keep roles standalone; bundled qtim disciplines не отключаются этой опцией.
 
 PM/Analyst-состав команды не спрашивается — он определяется стеком: `qtim-product` + `qtim-architect` + профильные `qtim-database`/`qtim-frontend`/`qtim-testing` (какие есть в стеке) + built-in `explorer`. Dev-роли нужны PM-конвейеру как read-only консультанты для точной декомпозиции и оценки, даже если пользователь код не пишет. `qtim-reviewer` в PM-only setup не генерируется — поэтому PM-состав рассчитан на конвейер документов, не на реализацию: перед запуском handoff-плана в разработку (`$qtim-team-up`, режим D с петлёй через reviewer) состав дополняется dev-дорожкой повторным `$qtim-setup` (он дописывает, не пересоздаёт). Эту пометку зафиксируй в PM track block charter.
 
 Рекомендованный default для большинства fullstack проектов: Standard, design approval first, project map + commands + safety + invariants, independent review enabled, plugin-bundled SessionStart + SubagentStop enabled, project-level PostToolUse disabled.
 
-Модельный профиль не является отдельным обязательным вопросом: по умолчанию используй пары `model` + `model_reasoning_effort` из templates и покажи их в плане. Спрашивай только если пользователь просит override или точный slug недоступен. `Max`, `Ultra` и Fast — настройки главного task/session; setup не включает их сам.
+Модельный профиль не является отдельным обязательным вопросом: intelligence-heavy roles без pair наследуют модель и reasoning текущей session; testing использует явную более дешёвую pair из template. Покажи это в плане. Спрашивай только при пользовательском override или недоступности явного slug. `Max`, `Ultra` и Fast — controls главного task/session; setup не включает их сам.
 
 ## Phase 3: Plan Confirmation
 
@@ -98,10 +101,10 @@ PM/Analyst-состав команды не спрашивается — он о
 - selected tracks (dev / pm / оба) и что будет добавлено или обновлено между track-маркерами charter, а что останется нетронутым;
 - files to create or update;
 - selected roles and custom agent filenames;
-- model/reasoning profile каждой роли и fallback на наследование главного task, если точный slug недоступен;
+- model/reasoning policy каждой роли: inheritance или явная pair, плюс fallback для недоступной pair;
 - memory files;
 - plugin-bundled hooks и отдельно optional project `PostToolUse`;
-- selected skills per role;
+- selected external skills per role и гарантированные qtim disciplines в mandatory practices;
 - any collisions in existing `.codex/agents` or `memory/`.
 
 Ничего не записывай до явного подтверждения пользователя. Если пользователь просит правки, обнови план и переспроси.
@@ -116,9 +119,9 @@ PM/Analyst-состав команды не спрашивается — он о
 
 - purpose and project context;
 - fixed stack and commands;
-- roles table: role, Codex custom agent name, mission, triggers, do-not-touch, read-on-start, skills, mandatory practices;
+- roles table: role, Codex custom agent name, mission, triggers, do-not-touch, read-on-start, external skills, mandatory practices; bundled practices из Layer 0 записываются по ролям, но не смешиваются с optional external skills;
 - domain invariants;
-- independent review gates — при включённом гейте перенеси в charter суть `../../reference/independent-review.md` (когда запускать, prompt shape, integration), чтобы сгенерированные агенты не зависели от файлов плагина; при выключенном — секция из одной строки-заглушки «independent review выключен (выбор setup); включить — повторный `$qtim-setup`», по ней `$qtim-team-up` и роли понимают, что гейт не настроен;
+- independent review gates — при включённом гейте перенеси в charter без сокращений canonical high-risk matrix из `../../reference/independent-review.md`: security/auth/tenant-scope visibility; money/billing/account state; documented domain invariants/public contracts; data-transform/destructive migrations; critical browser flows; high-risk performance/reliability; другое доказанно hard-to-rollback изменение. Добавь discretionary low-risk с явным `skipped`, prompt shape и integration. При выключенном — секция из одной строки-заглушки «independent review выключен (выбор setup); включить — повторный `$qtim-setup`»;
 - working rules: qtim subagent workflows авторизуются явным вызовом skill или прямой просьбой, а сами subagents остаются task-scoped agent threads без скрытой постоянной команды; выбранный пользователем `Ultra` может делегировать внутри разрешённого scope, но не меняет execution depth A/B/C/D и не разрешает child agents рекурсивно поднимать команду; main thread проверяет доступные descendants перед повторным spawn и уважает runtime thread cap; модель/reasoning/Fast главного task qtim не переключает; use custom agents when loaded, otherwise `worker`/`explorer` fallback with inline role instructions; session handoff: незавершённый эпик фиксируется в `memory/epic-state.md` (`$qtim-team-down` пишет, `$qtim-team-up` читает и предлагает продолжить), уроки retro — в `memory/retro-log.md` и `memory/lessons.md`;
 - memory layout.
 
@@ -134,7 +137,7 @@ Track-блоки — между HTML-маркерами, по выбранным
 <!-- qtim:track:pm:end -->
 ```
 
-PM track block должен содержать перенесённую суть `../../reference/feature-pipeline.md` (стадии и checkpoints, схема `docs/features/<slug>/` со статусами Draft -> Approved -> In Development -> Done, правило dev-consult на декомпозиции/оценке, правила grounded-оценки S/M/L/XL, handoff contract) — сгенерированные агенты не зависят от файлов плагина. При PM-only составе — также пометку из Phase 2: перед реализацией handoff-плана состав дополняется dev-дорожкой повторным `$qtim-setup`.
+PM track block должен содержать перенесённую суть `../../reference/feature-pipeline.md`: полный трек и fast-path `feature-brief.md`; Intake checkpoint с выбором трека; общий checkpoint decomposition + estimate; selective dev-consult только по реально затронутым слоям; grounded S/M/L/XL; вертикальные work items/фазы с одним DRI и contributing ролями; в полном треке — layer estimates, которые DRI синтезирует в item estimate, в fast-path — main-thread evidence fallback без обязательного fan-out; expand-contract для широкого механического рефактора; статусы Draft -> Approved -> In Development -> Done; handoff для `$qtim-team-up`/`$qtim-team-lazy`. При PM-only составе — также пометку из Phase 2 о добавлении dev track перед реализацией.
 
 Re-run rule: при повторном setup заменяй содержимое только между маркерами своего track; чужой track block и ручные правки пользователя вне маркеров не трогай. В общей roles table добавляй строки, не удаляя существующие.
 
@@ -147,7 +150,7 @@ Re-run rule: при повторном setup заменяй содержимое
 - `developer_instructions`;
 - optional `model`, `model_reasoning_effort`, `nickname_candidates`.
 
-**Пару `model` + `model_reasoning_effort` копируй из template дословно — не подставляй значения из собственных знаний** (боевой инцидент: сгенерированный `model = "gpt-5"` не существует, и все субагенты не стартовали). Переопределяй только по явному выбору пользователя. Если локальный catalog подтверждает, что точный slug/effort из template недоступен, либо catalog недоступен и пользователь не подтвердил pin, **удали оба поля**: агент унаследует модель и reasoning главного task. Не оставляй pinned reasoning без pinned model и не включай `max`, `ultra` или `service_tier = "fast"` без явного выбора пользователя.
+**Model policy копируй из template дословно, не подставляй значения из собственных знаний.** У architect/database/frontend/reviewer/product отсутствие обоих полей означает намеренное наследование session model + reasoning. У testing копируй явную pair атомарно. Переопределяй только по явному выбору пользователя; override всегда задаёт оба поля. Если catalog не подтверждает template pair, удали оба поля и наследуй. Одинокий model/reasoning, догаданный alias вроде `gpt-5`, `max`/`ultra` или `service_tier = "fast"` без явного выбора запрещены.
 
 **Gate-условные блоки шаблонов:** требования independent review gate у reviewer/architect/database (блок «Independent review gate», пункты чеклистов про independent review, секция отчёта «Independent review») переноси только при включённом гейте; при выключенном вырезай целиком, как стек-условные — роли не должны требовать гейт, от которого пользователь отказался.
 
@@ -206,10 +209,10 @@ Codex hooks требуют trust review через `/hooks`; упомяни эт
 
 - `.codex/hooks.json`, если создан: JSON парсится; корень содержит `hooks`; каждый event содержит matcher groups с вложенным `hooks`; qtim handlers имеют `type: command` и `commandWindows`; qtim `PostToolUse` возвращает JSON `hookSpecificOutput.additionalContext`, а project layer не дублирует qtim `SessionStart` / `SubagentStop`;
 - TOML custom agents parse using Python `tomllib` if available;
-- пара `model` + `model_reasoning_effort` каждого сгенерированного TOML совпадает с template, является явно подтверждённым пользователем catalog-supported override или оба поля удалены; одинокое поле, неподтверждённый догаданный alias или слаг вида `gpt-5` без минорной версии — ошибка;
+- model policy каждого TOML совпадает с template (намеренно отсутствующая pair = inherit; testing = явная pair), является подтверждённым catalog-supported override или безопасным fallback с отсутствием обоих полей; half-pair и догаданный alias — ошибка;
 - generated files contain no unresolved qtim placeholders;
 - generated files do not reference plugin-internal paths (`../../reference/...`, `../../agents/...`) — вся нужная механика должна быть в charter или `memory/`;
-- track-маркеры `qtim:track:*` в charter парные; при re-run оба track block целы, PM block содержит механику pipeline;
+- track-маркеры `qtim:track:*` в charter парные; при re-run оба track block целы, PM block содержит fast/full tracks, общий checkpoint, selective consult и vertical slicing с DRI/contributing roles;
 - при выключенном independent review: charter содержит секцию-заглушку «выключен», в сгенерированных TOML нет требований independent review gate;
 - version stamps на месте: `<!-- qtim-version: ... -->` в charter, `# qtim-version: ...` в каждом сгенерированном TOML, версия совпадает с `../../.codex-plugin/plugin.json`;
 - links in `AGENTS.md` point to existing files.

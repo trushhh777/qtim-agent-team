@@ -71,7 +71,7 @@ Rules:
 
 ### 5. Independent Review / Adversarial Verification
 
-Когда изменение security-critical, money-critical, public API, migration, auth, tenant/scope visibility, or hard to rollback.
+Каноническая high-risk matrix из `independent-review.md`: security/auth/tenant-scope visibility; money/billing/account state; documented domain invariants/public contracts; data-transform/destructive migrations; critical browser flows; high-risk performance/reliability; другое доказанно hard-to-rollback изменение. При любом совпадении запрос review обязателен. Для low-risk diff отдельный thread опционален; пропуск фиксируется в review report.
 
 Use `independent-review.md`. Spawn one or more read-only reviewer threads with a narrow prompt. They do not edit code. Main thread verifies every finding.
 

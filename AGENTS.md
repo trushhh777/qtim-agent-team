@@ -8,7 +8,7 @@ All content is primarily Russian. The repository has no build step and no applic
 
 - `.agents/plugins/marketplace.json` — Codex marketplace manifest exposing `plugins/qtim`.
 - `plugins/qtim/.codex-plugin/plugin.json` — Codex plugin manifest.
-- `plugins/qtim/skills/` — Codex skills: `qtim-setup`, `qtim-feature`, `qtim-onboard`, `qtim-product-onboard`, `qtim-team-up`, `qtim-team-lazy`, `qtim-team-retro`, `qtim-team-down`, `qtim-doctor`, `qtim-update`.
+- `plugins/qtim/skills/` — Codex workflows: `qtim-setup`, `qtim-feature`, `qtim-onboard`, `qtim-product-onboard`, `qtim-team-up`, `qtim-team-lazy`, `qtim-team-retro`, `qtim-team-down`, `qtim-doctor`, `qtim-update`; bundled disciplines: `qtim-debug-loop`, `qtim-prototype`, `qtim-brainstorm`, `qtim-grill`.
 - `plugins/qtim/agents/` — Codex custom agent TOML templates (dev roles + `product.toml` for the PM track) copied by `$qtim-setup` into target projects.
 - `plugins/qtim/reference/` — shared mechanics plus canonical `project-hooks.json` for optional project PostToolUse and upgrade notes for generated-state migrations.
 - `plugins/qtim/hooks/hooks.json` — plugin-bundled Codex `SessionStart` / `SubagentStop` lifecycle hooks.
@@ -27,6 +27,9 @@ All content is primarily Russian. The repository has no build step and no applic
 - Main thread is the team lead; subagent outputs are advisory until checked.
 - Durable project decisions belong in `memory/`, not only in chat.
 - Independent review is a separate read-only Codex agent thread, not "Codex as an external consultant".
+- Codex model inheritance means omitting both `model` and `model_reasoning_effort`; never write `model = "inherit"`. Keep explicit pairs atomic and preserve user overrides during migration.
+- Bundled disciplines are role-agnostic practices, not orchestration engines: do not put main-thread fan-out, persistent-team assumptions, or qtim workflow ownership inside `qtim-debug-loop`, `qtim-prototype`, `qtim-brainstorm`, or `qtim-grill`.
+- On every model-generation upgrade, audit role templates for compensating step-by-step recipes. Remove recipes that newer models no longer need, but preserve structural invariants, risk-based gates, durable memory, and verification contracts.
 
 ## Workspace And Deploy
 

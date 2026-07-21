@@ -1,0 +1,4 @@
+interface:
+  display_name: "qtim Debug Loop"
+  short_description: "Диагностика сложных багов через красный сигнал"
+  default_prompt: "Используй $qtim-debug-loop, чтобы диагностировать этот нетривиальный баг через воспроизводимый красный сигнал до фикса."

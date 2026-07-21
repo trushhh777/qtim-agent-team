@@ -20,14 +20,14 @@ Use direct work for trivial tasks. Escalate to `$qtim-team-up` if feedback loops
 ## Steps
 
 1. Read `.codex/team-charter.md`. If missing, ask for `$qtim-setup`.
-2. Если задача ссылается на фичу из `docs/features/<slug>/`, прочитай её `plan.md` и `prd.md` как источник scope; по завершении обнови Status артефактов, а отклонения от плана с обоснованием и всплывшие edge cases зафиксируй строкой в «Истории изменений» `plan.md`.
+2. Если задача ссылается на фичу из `docs/features/<slug>/`, прочитай `plan.md` + `prd.md` полного трека или единый `feature-brief.md` fast-path как источник scope. До работы переведи плановый документ и связанные артефакты в `In Development`; только после gates — в `Done`. Отклонения с обоснованием и новые edge cases запиши в «Историю изменений» планового документа.
 3. Classify the task and choose only the needed role(s).
 4. Spawn the needed custom agents when available; otherwise use `worker` or `explorer` fallback with inline role instructions.
 5. Give each subagent a concrete scope and expected output.
 6. Wait only when the next step is blocked on the result.
 7. Integrate results locally, verify, and update `memory/` when durable knowledge was produced.
 
-Модель, reasoning и Fast главного task не переключай. Используй role TOML как есть. Если spawn упал именно из-за model pair, автоудаление пары допустимо только для доказанно неизменённого qtim-default, отсутствующего в локальном catalog, после сообщения пользователю. Отличающуюся/непроверенную пару сохрани и продолжи через `worker` / `explorer` с inline role instructions; покажи diff для отдельного подтверждения или отправь в `$qtim-update`. Транзиентную auth/network ошибку не считай недоступной моделью. Выбранный пользователем `Ultra` не повышает режим C до full team-up и не является поводом спавнить лишние роли; child agents не делегируют рекурсивно.
+Модель, reasoning и Fast главного task не переключай. Используй role TOML как есть: отсутствие pair = inheritance, явная pair = pin. Если spawn упал именно из-за model pair, автоудаление допустимо только для доказанно неизменённого qtim-default, отсутствующего в локальном catalog, после сообщения пользователю. Отличающуюся pair сохрани и продолжи через `worker` / `explorer` с inline role instructions; покажи diff или отправь в `$qtim-update`. Auth/network ошибку не считай несовместимостью модели. `Ultra` не повышает режим C до team-up и не оправдывает лишние роли; child agents не делегируют рекурсивно.
 
 ## Escalation
 

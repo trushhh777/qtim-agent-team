@@ -1,0 +1,4 @@
+interface:
+  display_name: "qtim Brainstorm"
+  short_description: "Разбор задачи и вариантов до проектирования"
+  default_prompt: "Используй $qtim-brainstorm, чтобы разобрать трактовки, факты, варианты и открытые вопросы до проектирования."

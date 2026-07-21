@@ -21,7 +21,7 @@ Codex main thread остаётся team-lead. qtim subagent workflow автор�
    - C Lazy team: several roles, one-pass pipeline.
    - D Full team-up: iterative implement/test/review loops.
 3. Decide whether design approval is required.
-4. For non-trivial work, produce design brief or ADR.
+4. For non-trivial work, run `$qtim-brainstorm` and produce a design brief. Create a separate ADR only when the ADR filter is satisfied; otherwise record the decision as one registry line.
 5. Get approval for irreversible, ambiguous, product-visible, public API, security, money, or data migration decisions.
 6. Execute with selected roles.
 7. Verify with tests/browser/review.
@@ -50,9 +50,17 @@ Do not ask for:
 - order of tool calls;
 - report formatting.
 
+## Fact Vs Decision
+
+A fact available from the environment is the team's job: read code, `memory/`, git history and available documentation before asking. Bring the user only decisions that evidence cannot resolve: product intent, choice between viable trade-offs, irreversible scope and acceptable risk.
+
+Do not disguise missing research as a clarifying question. When evidence conflicts or is incomplete, show what was found and ask for the decision explicitly.
+
 ## Design Brief
 
-For non-trivial work, produce:
+For non-trivial work, use `$qtim-brainstorm` to separate interpretations, evidence, viable options, open questions and labeled assumptions before selecting a design. Use `$qtim-grill` to stress-test a consequential plan; use `$qtim-prototype` when a UX or behavioral fork is cheaper to resolve with a concrete disposable example than with prose.
+
+Produce:
 
 - goal in user language;
 - affected layers;

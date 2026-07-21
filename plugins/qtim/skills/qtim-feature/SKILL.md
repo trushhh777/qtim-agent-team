@@ -1,97 +1,126 @@
 ---
 name: qtim-feature
-description: "Use when a PM/analyst wants to drive a raw feature idea through the qtim pipeline in Codex: intake -> PRD -> grounded decomposition -> estimate -> plan, with versioned artifacts in docs/features/<slug>/ and handoff to $qtim-team-up or $qtim-team-lazy."
+description: "Use when a PM or analyst wants to turn a raw feature idea into implementation-ready, versioned artifacts in docs/features/<slug>/: select a risk-proportional fast-path feature brief or the full intake -> PRD -> grounded decomposition and estimate -> plan pipeline, then hand off to $qtim-team-lazy or $qtim-team-up."
 ---
 
 # qtim Feature Pipeline
 
-Ты ведёшь хотелку от сырой идеи до утверждённого плана реализации. Invocation of this skill is explicit permission to spawn the Codex subagents needed for grounding: `qtim-product`, `qtim-architect`, профильные dev-роли в consult-режиме и built-in `explorer`.
+Веди хотелку от идеи до утверждённого handoff. Этот вызов явно разрешает нужный read-only fan-out: `qtim-product`, `qtim-architect`, владельцы затронутых dev-слоёв и built-in `explorer`.
 
-Production code из этого skill не пишется — выход конвейера это документы и handoff.
+Production code не пиши. Артефакты содержат требования, evidence, контракты, инварианты и gates, а не будущие диффы.
 
 ## Preconditions
 
-1. Read `.codex/team-charter.md`. Если файла нет или в нём нет PM track (маркер `<!-- qtim:track:pm:start -->`), stop and ask the user to run `$qtim-setup`.
-2. Read `../../reference/feature-pipeline.md` for shared mechanics.
-3. Read `../../reference/model-profiles.md` for role model/reasoning policy. Не переключай controls главного task; root `Ultra` не расширяет scope конвейера и не отменяет checkpoints.
-4. Определи slug фичи: kebab-case от короткого имени.
-5. Если `docs/features/<slug>/` уже существует, прочитай Status всех артефактов и **продолжи с первой стадии, чей артефакт не Approved**. Не перезапускай конвейер с нуля.
+1. Прочитай `.codex/team-charter.md`. Если файла или PM track marker `<!-- qtim:track:pm:start -->` нет, остановись и предложи `$qtim-setup`.
+2. Прочитай `../../reference/feature-pipeline.md` и `../../reference/intake-protocol.md`.
+3. Прочитай `../../reference/model-profiles.md`. Не переключай модель/reasoning/Fast главного task; `Ultra` не расширяет scope и не отменяет checkpoints.
+4. Определи kebab-case slug.
+5. Если `docs/features/<slug>/` существует, прочитай статусы и «Историю изменений». `feature-brief.md` означает fast-path, `prd.md`/полный набор — полный трек. Продолжи с первого незавершённого обязательного артефакта, не начинай заново.
 
-Если spawn custom agent падает именно из-за model pair, автоудаление пары допустимо только для доказанно неизменённого qtim-default, отсутствующего в локальном catalog, после сообщения пользователю. Отличающуюся/непроверенную пару сохрани и продолжи через `worker` / `explorer` с inline role instructions; покажи diff для отдельного подтверждения или отправь в `$qtim-update`. Не угадывай другой slug и не считай транзиентную auth/network ошибку недоступной моделью.
+Если custom agent не стартует именно из-за model pair, автоудаление пары допустимо только для доказанно неизменённого qtim-default, отсутствующего в локальном catalog, после сообщения пользователю. Отличающийся override сохрани и продолжи через `worker`/`explorer` с inline role instructions; не угадывай slug и не считай auth/network ошибку несовместимостью модели.
 
 ## Artifacts
 
-Все артефакты — в `docs/features/<slug>/`: `intake.md`, `prd.md`, `decomposition.md`, `estimate.md`, `plan.md`. Шапка (Feature / Slug / Status / Дата), секция «История изменений» и статусная машина Draft -> Approved -> In Development -> Done — по конвенции из charter PM track. В `memory/decisions.md` — только строка-указатель на утверждённую фичу.
+Общий файл — `intake.md`. Полный трек добавляет `prd.md`, `decomposition.md`, `estimate.md`, `plan.md`; fast-path — один `feature-brief.md` вместо этих четырёх. Шапка, статусы Draft -> Approved -> In Development -> Done и append-only «История изменений» — по feature-pipeline reference. `memory/decisions.md` хранит только указатель на утверждённую фичу.
 
-## Stage 1: Intake
+## Stage 1: Intake And Track
 
-Перед вопросами прочитай продуктовую память, если она создана (`memory/product-map.md`, `product-actors.md`, `product-glossary.md`, `product-metrics.md` — их наполняет `$qtim-product-onboard`): говори с пользователем в терминах его продукта и не спрашивай то, что уже известно из памяти. Если памяти нет и кодовая база существует — предложи прогнать `$qtim-product-onboard` (не блокирует: можно продолжать без него).
+Сначала прочитай продуктовую память, если создана: `memory/product-map.md`, `product-actors.md`, `product-glossary.md`, `product-metrics.md`. Если её нет в существующей кодовой базе, предложи `$qtim-product-onboard`, но не блокируй работу.
 
-Проведи intake как интервью, а не одним batch-блоком (канон `../../reference/intake-protocol.md`: анализ и проектирование — пользователь в контуре): вопросы порциями по 1-3, каждая следующая порция строится на уже полученных ответах. Первыми — вопросы, чьи ответы сильнее всего меняют постановку:
+Проведи итеративное интервью порциями по 1-3 решения. Факты из кода, `memory/`, git и документации добывай сам. Сначала выясни проблему, пользователя и желаемый результат; затем критерии успеха, ограничения, совместимость и non-goals. Остановись, когда ответы перестали менять понимание.
 
-- какую проблему решаем и кто её испытывает;
-- желаемый результат в языке пользователя.
+Запиши `intake.md`. На checkpoint покажи:
 
-Затем уточняющие: критерии успеха; ограничения (сроки, зависимости, совместимость); что явно вне scope. Останавливайся, когда новые ответы перестают менять понимание.
+- сводку понимания;
+- предварительный размер и число фаз с evidence;
+- результат Fork Test из intake protocol;
+- рекомендуемый трек.
 
-Запиши `intake.md`. **Checkpoint:** покажи сводку понимания, получи подтверждение до PRD.
+Предлагай **fast-path** только для S/M, одной фазы и без Fork Test triggers. Иначе — полный трек. Пользователь подтверждает понимание и может переопределить трек; зафиксируй выбор и переведи intake в Approved.
 
-## Stage 2: PRD
+## Fast-path: Feature Brief
 
-Spawn `qtim-product` (fallback: `worker` с inline-инструкциями PM-роли из charter) с компактным prompt по шаблону team-up: read first AGENTS.md, charter PM track, `intake.md`.
+Собери `feature-brief.md` сам. Обязательного веера ролей нет: evidence найди чтением и точечным `explorer`; уже активную профильную роль используй только по реально затронутому слою. DRI и contributing роли/слои здесь задают ownership реализации, а не обязательный planning fan-out. Единый размер S/M обоснуй кодовым evidence; если уже консультировал профильную роль, учти её оценку как signal. Не можешь обосновать contributing layer или видишь правдоподобный L/XL — переходи на полный трек.
 
-Выход — `prd.md`: цели, не-цели, сценарии с acceptance criteria, UX-заметки, метрики, риски, open questions. Метрики успеха привязывай к реальным событиям аналитики из `memory/product-metrics.md`, когда память создана; отсутствующее событие фиксируй как задачу на трекинг, а не как факт. **Checkpoint:** пользователь утверждает или правит; Status -> Approved.
+Brief включает:
 
-## Stage 3: Decomposition (grounded)
+- проблему, желаемый результат, сценарии с acceptance criteria и non-goals;
+- work items с DRI, contributing ролями/слоями и привязкой к файлам;
+- размер S/M с evidence-обоснованием;
+- одну проверяемую фазу: gates, rollback/обратимость, Done;
+- `## Handoff` для `$qtim-team-lazy`.
 
-Точность описания важнее скорости — декомпозиция строится на consult dev-команды, не на предположениях:
+**Единственный checkpoint вместо стадий 2-5:** пользователь утверждает brief целиком; Status -> Approved.
 
-1. Fan-out read-only consult по затронутым слоям в пределах доступных runtime slots: `qtim-architect` (слои, data flow, инварианты) и профильные `qtim-database` / `qtim-frontend` / `qtim-testing` — каждый возвращает по своему слою затронутые файлы, интеграционные точки, похожие существующие фичи и риски. `explorer` — для broad-поиска. Consult-агенты не редактируют файлы; если ролей больше cap, запускай batches и закрывай завершённые threads перед следующим.
-2. `qtim-product` агрегирует `decomposition.md`: таблица work items `id | название | слой/роль | зависимости | grounding (файлы)`.
+Если при сборке возникла развилка, L/XL или больше одной фазы, разверни полный трек: сохрани intake, переименуй незавершённый brief в `prd.md`, перестрой его как Draft PRD, запиши причину перехода в историю и продолжи со стадии PRD. Не поддерживай одновременно два конкурирующих плановых документа.
 
-**Checkpoint:** пользователь утверждает состав work items.
+После approval переходи к Handoff.
 
-## Stage 4: Estimation (grounded)
+## Full Track Stage 2: PRD
 
-Размер каждого work item даёт профильный dev-агент — владелец слоя: S / M / L / XL + confidence + риск-факторы, каждая оценка с evidence (файлы, покрытие тестами, интеграционные точки, reference class из git log / `memory/decisions.md`). Оценка без evidence не принимается. XL = разрезать work item и вернуться к декомпозиции. Независимые оценки запускай batches по свободным runtime slots; не проси child agents делегировать дальше.
+Spawn `qtim-product` (fallback: `worker` с PM-инструкциями из charter) с read-first на charter PM track и `intake.md`.
 
-`qtim-product` сводит `estimate.md` с итоговой таблицей и суммарным риском. **Checkpoint:** пользователь принимает оценки.
+`prd.md` содержит цели, non-goals, сценарии и acceptance criteria, UX-заметки, метрики, риски, open questions. Метрики связывай с реальными событиями из `memory/product-metrics.md`; отсутствующее событие — задача на tracking, не факт. **Checkpoint:** пользователь утверждает PRD; Status -> Approved.
 
-## Stage 5: Plan
+## Full Track Stage 3: Grounded Decomposition
+
+Состав consult пропорционален задетым слоям:
+
+1. Spawn read-only `qtim-architect` для слоёв/data flow/инвариантов и только нужные `qtim-database`, `qtim-frontend`, `qtim-testing`; узкая фича обычно требует architect + одного владельца слоя. `explorer` — broad search. Уважай runtime cap и запускай batches; child agents не делегируют дальше.
+2. `qtim-product` агрегирует `decomposition.md`: `id | вертикальный work item | DRI | contributing роли/слои | зависимости | grounding (файлы)`. DRI владеет главной acceptance boundary; неоднозначный ownership разрешает architect.
+
+Каждый work item — проверяемый вертикальный срез через затронутые слои. Для широкого механического rename/retype используй expand-contract. Отдельного checkpoint здесь нет.
+
+## Full Track Stage 4: Grounded Estimation
+
+Каждая contributing роль даёт S/M/L/XL + confidence + риски для своего layer slice с evidence (файлы, покрытие, интеграционные точки, reference class из git или `memory/decisions.md`). DRI возвращает один итоговый размер vertical item с явным синтезом integration/coordination risk; не складывай размеры механически. Без evidence оценка не принимается; XL любого slice или item означает вернуться к decomposition и разрезать item.
+
+`qtim-product` сводит `estimate.md`. **Общий checkpoint стадий 3-4:** пользователь одним решением утверждает work items и оценки; оба артефакта -> Approved. Если состав изменён, пересчитай оценки затронутых items до повторного checkpoint.
+
+## Full Track Stage 5: Plan
 
 `qtim-product` + `qtim-architect` собирают `plan.md`:
 
-- фазы/milestones с составом work items;
-- что параллелится (disjoint write scopes);
-- verification gates по фазам: typecheck, build, tests, browser evidence для UI;
-- rollout/rollback и обратимость;
+- проверяемые вертикальные фазы с work items;
+- disjoint write scopes, которые можно параллелить;
+- typecheck/build/tests/browser gates;
+- rollout, rollback и обратимость;
 - критерий Done.
 
-Порядок фаз — по неопределённости: решения, которые вероятнее всего изменятся (модель данных, контракты API, UX-развилки), — в ранние фазы, механическая доводка — в хвост; так самое дорогое для переделки проверяется раньше всего.
-
-**Checkpoint:** финальное approval; Status -> Approved.
+Сначала ставь решения с высокой неопределённостью (данные, API-контракты, UX-развилки), механическую доводку — позже. Широкий рефактор планируй expand-contract. **Checkpoint:** финальное approval; Status -> Approved.
 
 ## Stage 6: Handoff
 
-1. Добавь строку-указатель в `memory/decisions.md`.
-2. `plan.md` заканчивается секцией `## Handoff` с готовым prompt:
+1. Добавь одну строку-указатель в `memory/decisions.md`.
+2. Для полного трека заверши `plan.md`:
 
 ```text
 $qtim-team-up: реализуй Phase 1 из docs/features/<slug>/plan.md.
 PRD и acceptance criteria: docs/features/<slug>/prd.md.
 Обнови Status артефактов: In Development при старте, Done после gates.
-Отклонения от plan.md (с обоснованием) и всплывшие edge cases фиксируй строкой в «Истории изменений» plan.md.
+Отклонения и новые edge cases фиксируй в «Истории изменений» plan.md.
 ```
 
-3. Рекомендация: многофазные фичи — `$qtim-team-up`; S/M в одну фазу — `$qtim-team-lazy`.
-   Если charter содержит только PM track (нет dev-маркеров, в составе нет `qtim-reviewer`) — предупреди прямо в handoff: перед реализацией состав дополняется dev-дорожкой повторным `$qtim-setup` (он дописывает, не пересоздаёт), иначе петля режима D останется без финального гейта.
-4. Если реализацию запускает не пользователь-PM, сообщи, что разработчик вызывает этот prompt в новой задаче Codex.
+3. Для fast-path заверши brief:
+
+```text
+$qtim-team-lazy: реализуй docs/features/<slug>/feature-brief.md.
+Scope, acceptance criteria и gates находятся в этом документе.
+При старте переведи Status в In Development, после всех gates — в Done.
+Отклонения и новые edge cases фиксируй там же.
+```
+
+4. Рекомендуй `$qtim-team-up` для многофазного полного трека, `$qtim-team-lazy` для fast-path и однофазного S/M.
+5. Если charter содержит только PM track и нет `qtim-reviewer`, предупреди: перед реализацией нужно повторно вызвать `$qtim-setup` и добавить dev track, иначе режим D останется без финального gate.
+6. Если реализацию запускает другой человек, попроси его использовать готовый prompt в новой задаче Codex.
 
 ## Anti-Patterns
 
-- Декомпозиция или оценки без consult профильных dev-ролей по реальному коду.
-- Production code, SQL или тесты из этого skill.
+- Full track на простой S/M-хотелке без развилок или fast-path при Fork Test trigger.
+- Отдельные approvals decomposition и estimate.
+- Fan-out всех ролей независимо от затронутых слоёв.
+- Горизонтальные work items «вся БД / весь UI» вместо вертикальных срезов.
+- Production code, SQL, тесты или будущие диффы в артефактах.
+- Перезапуск существующего slug с нуля.
+- Выдуманные часы вместо относительной оценки с evidence.
 - Пропуск checkpoint «потому что очевидно».
-- PRD и решения только в чате или memory вместо `docs/features/`.
-- Перезапуск конвейера с нуля при существующем slug.
-- Выдуманные часы вместо относительной шкалы с evidence.
