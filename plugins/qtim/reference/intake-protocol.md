@@ -10,7 +10,7 @@
 - реализация, тесты и ревью — автопилот после approval;
 - необратимые или неоднозначные развилки возвращаются пользователю даже во время реализации.
 
-Codex main thread остаётся team-lead. qtim subagent workflow авторизуется явной просьбой пользователя или вызовом qtim skill. Agent threads живут в scope текущего task и могут быть восстановлены только когда runtime их показывает; скрытой постоянной команды нет. Если пользователь выбрал `Ultra`, Codex может proactively делегировать внутри уже разрешённого scope, но это не расширяет задачу и не выбирает execution depth вместо main thread.
+Codex main thread остаётся team-lead. qtim subagent workflow авторизуется явной просьбой пользователя или вызовом qtim skill. Agent threads живут в scope текущего task и могут быть восстановлены только когда runtime их показывает; скрытой постоянной команды нет. qtim workflow рассчитан на main thread `gpt-5.6-sol` + `Ultra`: этот профиль даёт proactive delegation внутри уже разрешённого scope, но не расширяет задачу и не выбирает execution depth вместо main thread.
 
 ## Pipeline
 
@@ -22,11 +22,12 @@ Codex main thread остаётся team-lead. qtim subagent workflow автор�
    - D Full team-up: iterative implement/test/review loops.
 3. Decide whether design approval is required.
 4. For non-trivial work, run `$qtim-brainstorm` and produce a design brief. Create a separate ADR only when the ADR filter is satisfied; otherwise record the decision as one registry line.
-5. Get approval for irreversible, ambiguous, product-visible, public API, security, money, or data migration decisions.
-6. Execute with selected roles.
-7. Verify with tests/browser/review.
-8. Record durable decisions and findings in `memory/`; approved decisions and features get a pointer line in the `memory/decisions.md` registry.
-9. Report outcome, not agent chatter.
+5. Если создан ADR, до user approval проведи обязательный clean-context stress-test: main thread поднимает read-only `gpt-5.6-sol` + `xhigh` adversary без истории; для необратимого решения, затрагивающего документированный инвариант, — `max`. Architect верифицирует findings и фиксирует `adr-stress-test:` в ADR. Эта проверка не зависит от optional risk-based code review.
+6. Get approval for irreversible, ambiguous, product-visible, public API, security, money, or data migration decisions.
+7. Execute with selected roles.
+8. Verify with tests/browser/review.
+9. Record durable decisions and findings in `memory/`; approved decisions and features get a pointer line in the `memory/decisions.md` registry.
+10. Report outcome, not agent chatter.
 
 ## Fork Test
 
@@ -72,6 +73,16 @@ Produce:
 - proposed roles and verification gates.
 
 Use plan/approval features when available. Otherwise ask for direct confirmation in chat.
+
+## ADR Stress-Test
+
+`$qtim-grill` — self-play/decision-owner pass. Он полезен, но не независим: модель и контекст уже заякорены на выбранном решении.
+
+Для каждого настоящего ADR main thread перед approval запускает второй pass по `independent-review.md`: отдельный read-only thread, `fork_turns = "none"` или эквивалент, model `gpt-5.6-sol`, effort `xhigh` (`max`, если решение одновременно необратимо и затрагивает документированный инвариант). Передавай только ADR, инварианты и проверяемые пути, не историю рассуждений. Итоговая строка:
+
+`adr-stress-test: sol-adversary (xhigh|max) — N findings, M учтено`
+
+Если runtime не дал запустить оппонента, запиши `skipped — <reason>` и явно сообщи пользователю: попытка обязательна, пропуск не считается пройденным гейтом.
 
 ## Implementation Silence
 

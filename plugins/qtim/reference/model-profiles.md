@@ -1,33 +1,36 @@
 # Модельные профили qtim для Codex
 
-Эта политика относится к custom agents, которые `$qtim-setup` копирует в `.codex/agents/*.toml`. Модель, reasoning и Fast главного task выбирает пользователь; qtim не переключает их скрыто.
+Эта политика разделяет оркестрацию и работу ролей. Custom agents, которые `$qtim-setup` копирует в `.codex/agents/*.toml`, получают явные GPT-5.6 пары. Main thread остаётся team-lead и для qtim workflow должен быть запущен на `gpt-5.6-sol` + `ultra`; плагин не меняет профиль уже открытого task скрыто.
 
 ## Профили по умолчанию
 
 | Роль | Model / reasoning | Почему |
 |---|---|---|
-| architect | inherit session | архитектурные решения должны апгрейдиться вместе с выбранной пользователем frontier-моделью |
-| database | inherit session | security/data-integrity требуют той же сильной модели, что ведёт основной task |
-| frontend | inherit session | реализация и поведенческие развилки следуют текущему session profile |
-| reviewer | inherit session | финальная трассировка не должна оставаться на приколоченном поколении |
-| product | inherit session | intake и trade-offs следуют текущему session profile |
+| team-lead (main thread) | `gpt-5.6-sol` + `ultra` | оркестрация, синтез и proactive delegation внутри явно разрешённого qtim workflow |
+| architect | `gpt-5.6-sol` + `xhigh` | one-way doors, ADR и защита инвариантов требуют глубокого reasoning |
+| database | `gpt-5.6-sol` + `high` | security/data-integrity требуют frontier quality, но bounded scope не оправдывает xhigh по умолчанию |
+| frontend | `gpt-5.6-sol` + `high` | production UI, интеграционные и поведенческие развилки |
+| reviewer | `gpt-5.6-sol` + `xhigh` | строгий финальный гейт не должен зависеть от профиля основной сессии |
+| product | `gpt-5.6-sol` + `high` | intake, trade-offs и grounded synthesis |
 | testing | `gpt-5.6-terra` + `medium` | bounded QA-прогоны и сбор evidence выгоднее держать на явном более дешёвом профиле |
+| explorer (built-in, без TOML) | `gpt-5.6-luna` + `medium` | ясный read-heavy поиск и первичная классификация; main thread передаёт пару при spawn |
+| ADR adversary (ephemeral) | `gpt-5.6-sol` + `xhigh`; `max` для необратимого + инвариант | независимый read-only stress-test без истории текущего task |
 
-В Codex нет значения `model = "inherit"`. Наследование задаётся **отсутствием одновременно обоих полей** `model` и `model_reasoning_effort`. Не оставляй half-pair.
+Все постоянные роли pinned к семейству GPT-5.6 точным variant slug. Это отделяет модель, удобную для оркестрации, от модели, нужной конкретной роли. В Codex нет значения `model = "inherit"`; half-pair запрещена.
 
 ## Root reasoning и Ultra
 
-- `Low` / `Medium` / `High` / `Extra High` / `Max` управляются пользователем в главном task. `Ultra` добавляет proactive delegation через subagents на поддерживаемых моделях.
+- qtim не может переключить модель/reasoning уже открытого task. Перед `$qtim-feature`, `$qtim-team-up`, `$qtim-team-lazy`, `$qtim-onboard` или `$qtim-product-onboard` пользователь выбирает `gpt-5.6-sol` + `Ultra`; если runtime показывает другой профиль, workflow останавливает fan-out и просит открыть новый task с Sol/Ultra.
 - Вызов `$qtim-feature`, `$qtim-team-up`, `$qtim-team-lazy`, `$qtim-onboard` или `$qtim-product-onboard` — явное разрешение на описанный skill workflow. `Ultra` не расширяет scope и не превращает любой запрос в full team-up.
-- Не прописывай `max`, `ultra` или `service_tier = "fast"` в role templates по умолчанию. Child agents не поднимают qtim-команду рекурсивно; fan-out координирует main thread.
-- Inherited role получает session model/reasoning, но не право менять execution depth A/B/C/D или user-selected scope.
+- `Ultra` закреплён за main thread, не за role TOML. Child agents не поднимают qtim-команду рекурсивно; fan-out координирует main thread.
+- `Max` используется точечно только для clean-context ADR adversary, когда решение одновременно необратимо и затрагивает документированный инвариант. Fast не является qtim default.
 
 ## Явные пары и overrides
 
 - Явный профиль всегда атомарен: `model` + `model_reasoning_effort` вместе.
-- Template pair testing копируй дословно. Если точный slug недоступен, удали оба поля и наследуй session profile; не угадывай alias.
+- Template pair каждой роли копируй дословно. Для built-in `explorer` main thread задаёт `gpt-5.6-luna` + `medium` при spawn; если runtime допускает model override только без full-history fork, используй `fork_turns = "none"` и передай весь bounded context в начальном prompt. Если точный slug недоступен, не угадывай alias и не подменяй модель молча: используй `worker`/`explorer` fallback только после сообщения пользователю и оставь migration pending.
 - Пользователь может pin любую роль явным catalog-supported override. `$qtim-update` показывает diff и не перезаписывает такой override молча.
-- При миграции старые qtim-default pairs удаляй только когда они совпадают с известным template релиза; отличающаяся pair считается пользовательской до доказательства обратного.
+- При миграции прежний qtim-default заменяй только по fingerprint конкретной upgrade section; отличающаяся pair или сохранённое inheritance считаются пользовательским override до показанного diff и подтверждения.
 - Профиль роли не определяет execution depth, число агентов или обязательность review.
 
-Актуальные model slugs и возможности сверяй с официальными страницами [Models](https://developers.openai.com/codex/models) и [Subagents](https://developers.openai.com/codex/subagents), а доступность — с локальным runtime catalog.
+Актуальные model slugs и возможности сверяй с официальными страницами [Models](https://learn.chatgpt.com/docs/models) и [Subagents](https://learn.chatgpt.com/docs/agent-configuration/subagents), а доступность — с локальным runtime catalog.

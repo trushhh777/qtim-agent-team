@@ -11,11 +11,11 @@ except ImportError:
 
 REQUIRED = {"name", "description", "developer_instructions"}
 EXPECTED_MODEL_POLICIES = {
-    "architect.toml": (None, None),
-    "database.toml": (None, None),
-    "frontend.toml": (None, None),
-    "product.toml": (None, None),
-    "reviewer.toml": (None, None),
+    "architect.toml": ("gpt-5.6-sol", "xhigh"),
+    "database.toml": ("gpt-5.6-sol", "high"),
+    "frontend.toml": ("gpt-5.6-sol", "high"),
+    "product.toml": ("gpt-5.6-sol", "high"),
+    "reviewer.toml": ("gpt-5.6-sol", "xhigh"),
     "testing.toml": ("gpt-5.6-terra", "medium"),
 }
 EXPECTED_MARKERS = {
@@ -27,6 +27,9 @@ EXPECTED_MARKERS = {
         "будущий читатель",
         "реальный trade-off",
         "expand-contract",
+        "ADR готов к независимому stress-test",
+        "adr-stress-test: sol-adversary",
+        "adr-stress-test: pending",
     ],
     "database.toml": ["$qtim-debug-loop"],
     "frontend.toml": ["$qtim-debug-loop"],
@@ -142,7 +145,7 @@ for path in paths:
 
     for marker in EXPECTED_MARKERS.get(path.name, []):
         if marker not in text:
-            bad.append(f"{path}: missing qtim 2.9 discipline marker `{marker}`")
+            bad.append(f"{path}: missing current qtim discipline marker `{marker}`")
 
 if not paths:
     bad.append(f"{root}: no Codex custom agent templates found")
@@ -150,6 +153,34 @@ if not paths:
 missing_templates = sorted(set(EXPECTED_MODEL_POLICIES) - {path.name for path in paths})
 if missing_templates:
     bad.append(f"{root}: missing expected templates: {', '.join(missing_templates)}")
+
+CONTRACT_MARKERS = {
+    pathlib.Path("plugins/qtim/reference/model-profiles.md"): [
+        "`gpt-5.6-sol` + `ultra`",
+        "`gpt-5.6-sol` + `xhigh`",
+        "`gpt-5.6-terra` + `medium`",
+        "`gpt-5.6-luna` + `medium`",
+    ],
+    pathlib.Path("plugins/qtim/reference/independent-review.md"): [
+        "fork_turns = \"none\"",
+        "`gpt-5.6-sol` и reasoning `xhigh`",
+        "`adr-stress-test: sol-adversary (xhigh|max)",
+        "не выключается setup-настройкой independent review",
+    ],
+    pathlib.Path("plugins/qtim/skills/qtim-setup/SKILL.md"): [
+        "team-lead `gpt-5.6-sol` + `ultra`",
+        "built-in explorer `gpt-5.6-luna` + `medium`",
+        "ADR stress-test остаётся включён",
+    ],
+}
+for contract_path, markers in CONTRACT_MARKERS.items():
+    if not contract_path.exists():
+        bad.append(f"{contract_path}: missing model/review contract")
+        continue
+    contract_text = contract_path.read_text(encoding="utf-8")
+    for marker in markers:
+        if marker not in contract_text:
+            bad.append(f"{contract_path}: missing contract marker `{marker}`")
 
 if bad:
     print("Codex agent template validation failed:")

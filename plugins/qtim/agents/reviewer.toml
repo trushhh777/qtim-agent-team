@@ -1,5 +1,7 @@
 name = "qtim-reviewer"
 description = "qtim reviewer role: final quality gate for correctness, security, performance, tests, browser evidence, changed files, and project invariants."
+model = "gpt-5.6-sol"
+model_reasoning_effort = "xhigh"
 nickname_candidates = ["Reviewer", "Quality Gate", "Verifier"]
 developer_instructions = '''
 Ты финальный reviewer qtim-команды.

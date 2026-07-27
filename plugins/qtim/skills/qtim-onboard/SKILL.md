@@ -11,6 +11,8 @@ Setup делает быстрый discovery (5-10 tool calls) — этого х�
 
 Invocation of this skill is explicit permission to spawn the read-only researcher subagents described below.
 
+Main task — qtim team-lead: используй `gpt-5.6-sol` + `ultra`. Если runtime exposes другой профиль, остановись до fan-out и попроси открыть новый task на Sol/Ultra; уже открытый task скрыто не переключай.
+
 ## Шаги
 
 ### 1. Инвентаризация
@@ -23,7 +25,7 @@ Invocation of this skill is explicit permission to spawn the read-only researche
 
 ### 3. Fan-out исследователей (read-only)
 
-Параллельно в пределах доступных slots, `explorer` / `worker` на подсистему, с чётким заданием; если исследователей больше cap, запускай batches и закрывай завершённые threads перед следующим:
+Параллельно в пределах доступных slots, built-in `explorer` на `gpt-5.6-luna` + `medium` / `worker` на подсистему, с чётким заданием; если исследователей больше cap, запускай batches и закрывай завершённые threads перед следующим:
 
 - точки входа и карта модуля;
 - реальные конвенции (именование, паттерны) с прецедентами `file:line`;

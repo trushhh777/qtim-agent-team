@@ -1,6 +1,6 @@
 # Independent Review Protocol For Codex
 
-> In Codex, qtim does not call "Codex as an external second opinion." Codex is the host. Independent review means a separate read-only reviewer agent thread with a narrow prompt, ideally using a different role/model/reasoning profile where available.
+> In Codex, qtim does not call "Codex as an external second opinion." Codex is the host. Independence is created by a separate read-only agent thread with a narrow prompt and clean context. For ADR stress-test qtim also fixes a quality floor: GPT-5.6 Sol.
 
 ## Principles
 
@@ -8,12 +8,27 @@
 2. Main thread verifies every finding against opened code.
 3. Domain invariants in `.codex/team-charter.md`, `AGENTS.md`, and `memory/` win over reviewer opinion.
 4. Review threads are read-only unless the user explicitly asks for a fix worker.
-5. Fail soft: if a reviewer thread cannot run, record that and continue with local review unless project policy says otherwise.
+5. Fail soft: if a reviewer thread cannot run, record that and continue with local review unless project policy says otherwise. A skipped review is never reported as passed.
 6. Use only at gate points and proportionally to the actual diff risk, not on every tiny edit.
+
+## ADR Stress-Test — Always
+
+Каждый ADR, прошедший ADR filter, получает независимый второй проход **до** user approval. Это отдельный gate от risk-based review кода и он не выключается setup-настройкой independent review.
+
+Main thread, а не architect:
+
+1. Получает draft ADR и минимальный context pack: сам ADR, затронутые инварианты из charter/`memory/`, точные file paths для проверки.
+2. Поднимает новый read-only agent thread **без истории основного task** (`fork_turns = "none"` или ближайший runtime-эквивалент clean context).
+3. Фиксирует модель `gpt-5.6-sol` и reasoning `xhigh`. Если решение одновременно необратимо и затрагивает документированный инвариант — `max`.
+4. Просит исходить из презумпции «решение некорректно, пока обратное не подтверждено» и искать нарушения инвариантов, нерассмотренные альтернативы, rollback/data-loss/security failure modes и open questions.
+5. Передаёт findings architect, который проверяет их по коду и обновляет решение.
+6. Требует в ADR строку `adr-stress-test: sol-adversary (xhigh|max) — N findings, M учтено`. При технической недоступности thread — `adr-stress-test: skipped — <reason>`.
+
+Не передавай оппоненту chain-of-thought, резюме рассуждений architect или текущую conversation history: независимость здесь обеспечивается чистым контекстом, а не другим провайдером. Self-play `$qtim-grill` остаётся первым проходом, но не заменяет clean-context adversary.
 
 ## When To Use
 
-Independent review is mandatory to request when the actual diff matches any item in this canonical high-risk matrix:
+Ниже — отдельная политика **для фактического code diff**. Independent code review is mandatory to request when the diff matches any item in this canonical high-risk matrix:
 
 - security/auth/tenant-scope visibility;
 - money/billing/account state;
@@ -51,6 +66,8 @@ Return findings only when grounded in code or documented invariants.
 For each finding: file:line, severity P0-P3, invariant/rule, concrete fix.
 Mark hypotheses explicitly.
 ```
+
+Для ADR добавь: `Do not assume the proposed decision is correct. Check every claimed invariant/file reference. Return finding, evidence, impact, and a concrete mitigation; list unresolved open questions separately.`
 
 ## Integration
 

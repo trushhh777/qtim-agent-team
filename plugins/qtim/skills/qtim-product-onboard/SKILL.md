@@ -9,6 +9,8 @@ description: "Use when a PM/analyst wants to build product-level project memory 
 
 Invocation of this skill is explicit permission to spawn the read-only researcher subagents described below. Production code не трогается, память пишет только main thread.
 
+Main task — qtim team-lead: используй `gpt-5.6-sol` + `ultra`. Если runtime exposes другой профиль, остановись до fan-out и попроси открыть новый task на Sol/Ultra; уже открытый task скрыто не переключай.
+
 ## Когда
 
 - Сразу после `$qtim-setup` с PM-дорожкой на существующей кодовой базе.
@@ -27,7 +29,7 @@ Invocation of this skill is explicit permission to spawn the read-only researche
 
 ### 3. Fan-out исследователей (read-only)
 
-Параллельно в пределах доступных slots, `explorer`/`worker` под линзу; если линз больше cap, запускай batches и закрывай завершённые threads перед следующим. Каждый возвращает структурированный вывод с прецедентами `file:line` и **в память сам не пишет**:
+Параллельно в пределах доступных slots, built-in `explorer` на `gpt-5.6-luna` + `medium` / `worker` под линзу; если линз больше cap, запускай batches и закрывай завершённые threads перед следующим. Каждый возвращает структурированный вывод с прецедентами `file:line` и **в память сам не пишет**:
 
 - **Разделы и экраны** — роутер/pages/навигация: какие user-facing разделы существуют, что пользователь может сделать в каждом, ключевые флоу (регистрация, основной сценарий, оплата). Выход: дерево разделов + флоу.
 - **Акторы и права** — auth, роли, permissions, тенантность: кто есть в системе, кому что доступно, где проходит граница видимости. Выход: модель акторов + матрица прав.

@@ -13,11 +13,11 @@ Production code не пиши. Артефакты содержат требов�
 
 1. Прочитай `.codex/team-charter.md`. Если файла или PM track marker `<!-- qtim:track:pm:start -->` нет, остановись и предложи `$qtim-setup`.
 2. Прочитай `../../reference/feature-pipeline.md` и `../../reference/intake-protocol.md`.
-3. Прочитай `../../reference/model-profiles.md`. Не переключай модель/reasoning/Fast главного task; `Ultra` не расширяет scope и не отменяет checkpoints.
+3. Прочитай `../../reference/model-profiles.md`. qtim team-lead должен работать на `gpt-5.6-sol` + `ultra`; не переключай уже открытый task скрыто. Если runtime exposes другой профиль, остановись до fan-out и попроси открыть новый task на Sol/Ultra. `Ultra` не расширяет scope и не отменяет checkpoints.
 4. Определи kebab-case slug.
 5. Если `docs/features/<slug>/` существует, прочитай статусы и «Историю изменений». `feature-brief.md` означает fast-path, `prd.md`/полный набор — полный трек. Продолжи с первого незавершённого обязательного артефакта, не начинай заново.
 
-Если custom agent не стартует именно из-за model pair, автоудаление пары допустимо только для доказанно неизменённого qtim-default, отсутствующего в локальном catalog, после сообщения пользователю. Отличающийся override сохрани и продолжи через `worker`/`explorer` с inline role instructions; не угадывай slug и не считай auth/network ошибку несовместимостью модели.
+Если custom agent не стартует именно из-за model pair, не удаляй пару и не заменяй её inheritance молча. Отличающийся override сохрани; продолжи через `worker` с inline role instructions только на явно подтверждённой доступной pair. Built-in `explorer` используй на `gpt-5.6-luna` + `medium`; не угадывай slug и не считай auth/network ошибку несовместимостью модели.
 
 ## Artifacts
 
@@ -87,7 +87,11 @@ Spawn `qtim-product` (fallback: `worker` с PM-инструкциями из cha
 - rollout, rollback и обратимость;
 - критерий Done.
 
-Сначала ставь решения с высокой неопределённостью (данные, API-контракты, UX-развилки), механическую доводку — позже. Широкий рефактор планируй expand-contract. **Checkpoint:** финальное approval; Status -> Approved.
+Сначала ставь решения с высокой неопределённостью (данные, API-контракты, UX-развилки), механическую доводку — позже. Широкий рефактор планируй expand-contract.
+
+Если architect создал ADR, **до** финального checkpoint main thread запускает новый read-only thread без истории на `gpt-5.6-sol` + `xhigh`; при сочетании «необратимо + затронут документированный инвариант» — `max`. Findings возвращаются architect для проверки, а ADR получает строку `adr-stress-test:`. Optional code-review gate этот шаг не отключает.
+
+**Checkpoint:** финальное approval; Status -> Approved.
 
 ## Stage 6: Handoff
 

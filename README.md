@@ -14,25 +14,31 @@ qtim подстраивается под стек проекта: анализи
 - **Продуктовая память** — `$qtim-product-onboard` собирает из кодовой базы карту разделов, модель акторов, словарь домена и реестр событий аналитики (плюс материалы ПМа из `docs/product-context/`, если есть) — intake и PRD опираются на факты, а не на пересказ.
 - **Codex-native упаковка** — плагин состоит из `.codex-plugin/plugin.json`, `skills/`, custom-agent templates и plugin-bundled Codex hooks; project `PostToolUse` остаётся опциональным.
 - **Подстройка под стек** — setup создаёт `.codex/team-charter.md` и `.codex/agents/*.toml` под проект.
-- **Контроль качества** — встроены gates: typecheck/build/tests, real-browser evidence, independent review для рискованных изменений.
+- **Контроль качества** — встроены gates: typecheck/build/tests, real-browser evidence, risk-based review кода и обязательный clean-context Sol stress-test каждого ADR до approval.
 - **Гибкие режимы** — `$qtim-team-lazy` для точечных задач и `$qtim-team-up` для эпиков с циклами implement -> test -> review.
 
 ## Требования
 
 Нужен Codex с поддержкой plugins, skills и subagents. Отдельный флаг Claude Agent Teams не нужен.
 
-qtim запускает subagent workflow только по явной просьбе или вызову соответствующего skill. Если в главном task выбран `Ultra`, Codex может proactively делегировать внутри уже разрешённого scope; qtim не включает `Ultra` сам, не расширяет им задачу и не поднимает рекурсивные команды из child agents.
+qtim запускает subagent workflow только по явной просьбе или вызову соответствующего skill. Основную задачу для qtim открой на `gpt-5.6-sol` + `Ultra`: main thread остаётся team-lead и получает proactive delegation внутри уже разрешённого scope. Плагин не переключает уже открытую задачу скрыто, не расширяет scope и не поднимает рекурсивные команды из child agents.
 
 ## Модели и reasoning
 
-В qtim 2.9.0 intelligence-heavy роли наследуют модель и reasoning текущей Codex session и автоматически переходят на выбранное пользователем поколение:
+В qtim 2.10.0 оркестратор и роли разведены по явным GPT-5.6 профилям:
 
-| Роли | Policy |
+| Роль | Model / reasoning |
 |---|---|
-| architect, database, frontend, reviewer, product | inherit session (оба model-поля отсутствуют) |
-| testing | `gpt-5.6-terra` + `medium` — явный bounded QA-профиль |
+| main team-lead | `gpt-5.6-sol` + `ultra` |
+| architect, reviewer | `gpt-5.6-sol` + `xhigh` |
+| database, frontend, product | `gpt-5.6-sol` + `high` |
+| testing | `gpt-5.6-terra` + `medium` |
+| built-in explorer | `gpt-5.6-luna` + `medium` |
+| clean-context ADR adversary | `gpt-5.6-sol` + `xhigh`; `max` для необратимого решения, задевающего инвариант |
 
-Модель и reasoning главного task, включая `Max`, `Ultra` и Fast, выбирает пользователь. В Codex наследование означает отсутствие одновременно `model` и `model_reasoning_effort`, а не строку `model = "inherit"`. Если явная testing pair недоступна, setup/update удаляет оба поля; пользовательские overrides сохраняются через diff-подтверждение.
+Ролевые пары атомарны: `model` и `model_reasoning_effort` задаются вместе. Setup/update сверяет exact slug с runtime catalog, не угадывает alias и сохраняет пользовательские overrides через diff-подтверждение. Если pair недоступна, миграция остаётся pending до обновления Codex или подтверждённого override.
+
+Каждый ADR получает два прохода: `$qtim-grill` и независимого read-only Sol-оппонента в новом thread без истории. Результат остаётся в самом ADR строкой `adr-stress-test: ...`; этот design gate работает даже когда optional risk-based review кода выключен.
 
 ## Установка
 

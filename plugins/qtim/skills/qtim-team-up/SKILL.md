@@ -18,6 +18,7 @@ Use Codex subagent threads and custom agents. Do not assume a hidden persistent 
    - `../../reference/orchestration-patterns.md`;
    - `../../reference/independent-review.md`;
    - `../../reference/model-profiles.md`.
+   Проверь профиль main task, если runtime exposes metadata: qtim team-lead должен работать на `gpt-5.6-sol` + `ultra`. Если профиль другой, остановись до fan-out и попроси пользователя открыть новую задачу с Sol/Ultra; qtim не переключает текущий task скрыто.
 4. Проверь `memory/epic-state.md` (его пишет `$qtim-team-down` при незавершённом эпике): если файл есть и эпик не закрыт — после подъёма команды покажи резюме и предложи продолжить с зафиксированного места, восстановив задачи из «В полёте» в видимом плане с их ролями.
 5. Если задача ссылается на фичу из `docs/features/<slug>/`, прочитай `plan.md` + `prd.md` полного трека или единый `feature-brief.md` fast-path как источник scope и acceptance criteria. До работы переведи плановый документ и связанные артефакты в `In Development`; только после gates — в `Done`. Отклонения с обоснованием и новые edge cases фиксируй в «Истории изменений» выбранного планового документа.
 
@@ -47,12 +48,12 @@ Spawn only currently needed roles in parallel when the subagent tool is availabl
 
 Use custom agent types from `.codex/agents/*.toml` when Codex exposes them. If the current task has not loaded custom agents yet, either ask the user to start a new Codex task or use `worker` / `explorer` fallback with the role instructions embedded in the prompt.
 
-Если spawn custom agent падает именно из-за model pair, не останавливай эпик и не стирай override вслепую. Сравни пару с template и локальным catalog. Только когда это доказанно неизменённый qtim-default, которого нет в catalog, сообщи пользователю, удали **оба** поля `model` + `model_reasoning_effort` и повтори с наследованием main profile. Любую отличающуюся/непроверенную пару сохрани: используй `worker` / `explorer` fallback с inline role instructions, покажи нужный diff и отправь системную починку в `$qtim-update`. Транзиентную auth/network ошибку не классифицируй как недоступную модель.
+Если spawn custom agent падает именно из-за model pair, не останавливай эпик и не стирай override вслепую. Сравни пару с template и локальным catalog. Для неизменённого qtim-default сообщи пользователю и продолжи через `worker` с inline role instructions на доступной подтверждённой pair только после явного выбора; системную починку отправь в `$qtim-update`. Любую отличающуюся/непроверенную pair сохрани. Не угадывай slug и не подменяй точный профиль наследованием main task. Транзиентную auth/network ошибку не классифицируй как недоступную модель.
 
 ## Model And Reasoning Policy
 
-- Не переключай модель, reasoning или Fast главного task: это пользовательские controls.
-- Используй role policy из загруженных TOML: отсутствие model pair означает наследование session profile, явная pair — осознанный pin. Не повышай child agents до `max`/`ultra` без прямой просьбы пользователя.
+- Не переключай модель, reasoning или Fast уже открытого task. qtim team-lead prerequisite — `gpt-5.6-sol` + `ultra`; этот профиль выбирает пользователь при старте task.
+- Используй exact role pair из загруженных TOML. Built-in `explorer` запускай на `gpt-5.6-luna` + `medium`. Не повышай role agents до `max`/`ultra`; `max` разрешён только отдельному clean-context ADR adversary по правилу риска.
 - `Ultra` у main task разрешает Codex proactively делегировать внутри scope этого вызова, но не означает «спавнить все роли». Execution depth A/B/C/D, roster и write scopes по-прежнему определяет main thread.
 - Child agents не спавнят qtim-команду рекурсивно. Дополнительные роли спавнит main thread; fan-out ограничивай доступными slots и разбивай на batches, если независимых работ больше.
 
@@ -92,13 +93,14 @@ For implementation agents, remind them that other agents may edit in parallel an
 ## Coordination Flow
 
 1. Run design first for non-trivial work: architect produces brief/ADR and open questions.
-2. Ask for user approval before irreversible or ambiguous work, following `intake-protocol.md`.
-3. Parallelize only disjoint work scopes; `Ultra` не отменяет этот gate и не является причиной увеличить fan-out.
-4. Route implementation by ownership.
-5. Tester verifies with real browser for UI changes.
-6. Reviewer runs final gates. При активной секции independent review в charter он классифицирует фактический diff по canonical high-risk matrix: security/auth/tenant-scope visibility; money/billing/account state; documented domain invariants/public contracts; data-transform/destructive migrations; critical browser flows; high-risk performance/reliability; другое доказанно hard-to-rollback изменение. Любое совпадение требует отдельного read-only review thread; low-risk diff допускает зафиксированный `skipped (low-risk diff)`. Секции нет или она помечена «выключен» -> не требуй gate.
-7. Main agent integrates and checks all results. Subagent output is input, not authority.
-8. Commit durable decisions to `memory/`.
+2. Если architect создал ADR, **до** user approval main thread запускает отдельного read-only adversary без истории (`fork_turns = "none"` или runtime-эквивалент) на `gpt-5.6-sol` + `xhigh`; необратимое решение, затрагивающее документированный инвариант, -> `max`. Передай только ADR, инварианты и проверяемые paths. Верни findings architect для верификации и не продолжай к approval, пока в ADR нет `adr-stress-test:` со счётчиком или честным `skipped — <reason>`. Optional independent code review не выключает этот шаг.
+3. Ask for user approval before irreversible or ambiguous work, following `intake-protocol.md`.
+4. Parallelize only disjoint work scopes; `Ultra` не отменяет этот gate и не является причиной увеличить fan-out.
+5. Route implementation by ownership.
+6. Tester verifies with real browser for UI changes.
+7. Reviewer runs final gates. При активной секции independent review в charter он классифицирует фактический diff по canonical high-risk matrix: security/auth/tenant-scope visibility; money/billing/account state; documented domain invariants/public contracts; data-transform/destructive migrations; critical browser flows; high-risk performance/reliability; другое доказанно hard-to-rollback изменение. Любое совпадение требует отдельного read-only review thread; low-risk diff допускает зафиксированный `skipped (low-risk diff)`. Секции нет или она помечена «выключен» -> не требуй **code-review** gate; ADR stress-test из шага 2 остаётся обязательным.
+8. Main agent integrates and checks all results. Subagent output is input, not authority.
+9. Commit durable decisions to `memory/`.
 
 ## Reporting
 

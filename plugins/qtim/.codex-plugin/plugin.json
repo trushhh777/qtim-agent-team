@@ -1,7 +1,7 @@
 {
   "name": "qtim",
-  "version": "2.9.0",
-  "description": "Codex-native bootstrap and orchestration kit for project-specific subagent teams. Role-aware setup for developers and PM/analysts. Includes session-inheriting frontier model policy with a bounded testing profile, risk-proportional fast/full feature pipeline, debug-loop/prototype/brainstorm/grill disciplines, reasoning-aware Ultra orchestration, team workflows, onboarding, diagnostics, migrations, custom agent templates, independent review gates, durable memory, and lifecycle hooks.",
+  "version": "2.10.0",
+  "description": "Codex-native bootstrap and orchestration kit for project-specific subagent teams. Role-aware setup for developers and PM/analysts. Includes explicit GPT-5.6 Sol/Terra/Luna role profiles with a Sol/Ultra team lead, mandatory clean-context Sol stress-testing for ADRs, a risk-proportional fast/full feature pipeline, debug-loop/prototype/brainstorm/grill disciplines, team workflows, onboarding, diagnostics, migrations, custom agent templates, independent review gates, durable memory, and lifecycle hooks.",
   "author": {
     "name": "Антон Фокин"
   },
@@ -21,7 +21,7 @@
   "interface": {
     "displayName": "qtim",
     "shortDescription": "Bootstrap project-specific Codex subagent teams",
-    "longDescription": "qtim adapts a project into a Codex-native team workflow for developers and PM/analysts. Developers get implement/test/review loops plus bundled debug-loop, prototype, brainstorm, and grill disciplines. PM/analysts get a risk-proportional pipeline: a fast feature brief for simple S/M work or a full PRD, grounded decomposition and estimate, and vertical-slice plan in docs/features/. Intelligence-heavy roles inherit the current session model and reasoning so they upgrade with Codex; bounded testing keeps an explicit economical profile. Max, Ultra, and Fast remain user controls. Setup generates a track-aware charter, custom agents and durable memory; lifecycle reminders are plugin-bundled, project PostToolUse is optional, and update migrates versioned generated state safely.",
+    "longDescription": "qtim adapts a project into a Codex-native team workflow for developers and PM/analysts. Developers get implement/test/review loops plus bundled debug-loop, prototype, brainstorm, and grill disciplines. PM/analysts get a risk-proportional pipeline: a fast feature brief for simple S/M work or a full PRD, grounded decomposition and estimate, and vertical-slice plan in docs/features/. The main team lead runs on GPT-5.6 Sol with Ultra; role agents use explicit Sol/Terra pairs and built-in exploration uses Luna. Every ADR receives an independent clean-context Sol stress-test before approval. Setup generates a track-aware charter, custom agents and durable memory; lifecycle reminders are plugin-bundled, project PostToolUse is optional, and update migrates versioned generated state safely.",
     "developerName": "Антон Фокин",
     "category": "Developer Tools",
     "capabilities": [

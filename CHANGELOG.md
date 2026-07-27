@@ -2,6 +2,27 @@
 
 Версии соответствуют `version` в `plugins/qtim/.codex-plugin/plugin.json` (semver).
 
+## 2.10.0 — 2026-07-27
+
+Семантический Codex-порт Claude-релиза 1.11.0 из upstream-коммита [`93fd017`](https://github.com/toiiia/qtim-agent-team/commit/93fd017446cedc805ccd7f2ab1e0370372e87b17): явные профили ролей вместо inheritance и независимый stress-test каждого ADR. Codex-матрица сверена с актуальным runtime catalog и официальной GPT-5.6 guidance: [Sol/Terra/Luna](https://developers.openai.com/api/docs/guides/model-guidance?model=gpt-5.6), [Subagents](https://learn.chatgpt.com/docs/agent-configuration/subagents). Сгенерированное состояние меняется — миграция описана в `reference/upgrade-notes.md`, запись «2.10.0».
+
+### Изменено
+
+- **Оркестрация отделена от ролевой работы:** qtim team-lead запускается на `gpt-5.6-sol` + `ultra`; плагин не переключает уже открытый task, а setup/charter/doctor фиксируют профиль как prerequisite. `Ultra` разрешает proactive delegation только внутри явно вызванного qtim workflow и не меняет execution depth A/B/C/D.
+- **Роли получили явные GPT-5.6 pair:** architect/reviewer — Sol+xhigh; database/frontend/product — Sol+high; testing — Terra+medium; built-in explorer без TOML — Luna+medium. Это возвращает quality floor гейт-ролям и не связывает их глубину с тем, какой профиль выбран для main task.
+- **Fallback стал fail-visible:** недоступная qtim pair больше не удаляется молча ради inheritance. Setup/update предлагает обновить Codex или подтвердить catalog-supported override; миграция остаётся pending. Atomic user overrides сохраняются через diff.
+
+### Добавлено
+
+- **Независимый stress-test каждого ADR до approval:** после `$qtim-grill` main thread поднимает отдельного read-only оппонента без истории на Sol+xhigh. Для необратимого решения, затрагивающего документированный инвариант, effort повышается до `max`. Findings верифицирует architect; итог остаётся в ADR строкой `adr-stress-test: sol-adversary (xhigh|max) — N findings, M учтено`.
+- **ADR gate не зависит от code-review toggle:** optional risk-based review фактического diff можно выключить, но clean-context Sol adversary для созданных ADR остаётся обязательным. Техническая недоступность thread фиксируется как `skipped — <reason>` и не выдаётся за пройденный review.
+- **CI-контракт модели и ADR review:** `check_codex_agents.py` проверяет exact pairs всех templates и маркеры team-lead/explorer/adversary policy.
+
+### Codex-специфичная адаптация
+
+- В Claude second opinion может приходить из другого семейства моделей. В Codex независимость обеспечивается новым thread с `fork_turns = "none"` (или runtime-эквивалентом) и минимальным context pack; качество закреплено Sol, а самый рискованный ADR получает `max`.
+- Искусственный dual-review двумя одинаковыми Sol agents по умолчанию не добавлен: при «необратимо + инвариант» усиливается reasoning одного чистого adversary. Дополнительные линзы остаются risk-based orchestration choice main thread.
+
 ## 2.9.0 — 2026-07-21
 
 Семантический Codex-порт Claude-релизов 1.9.0 + 1.10.0 из upstream-коммита [`fc0f8e9`](https://github.com/toiiia/qtim-agent-team/commit/fc0f8e9b7a1bb2d9c4ab27f2dd14cef72331833a): frontier-model policy, риск-пропорциональный PM-конвейер и четыре собственные дисциплины qtim. Сгенерированное состояние меняется — миграция описана в `reference/upgrade-notes.md`, запись «2.9.0».

@@ -20,14 +20,17 @@ Use direct work for trivial tasks. Escalate to `$qtim-team-up` if feedback loops
 ## Steps
 
 1. Read `.codex/team-charter.md`. If missing, ask for `$qtim-setup`.
+   Если runtime exposes profile main task и это не `gpt-5.6-sol` + `ultra`, остановись до fan-out и попроси открыть новый task на Sol/Ultra: текущий task плагин скрыто не переключает.
 2. Если задача ссылается на фичу из `docs/features/<slug>/`, прочитай `plan.md` + `prd.md` полного трека или единый `feature-brief.md` fast-path как источник scope. До работы переведи плановый документ и связанные артефакты в `In Development`; только после gates — в `Done`. Отклонения с обоснованием и новые edge cases запиши в «Историю изменений» планового документа.
 3. Classify the task and choose only the needed role(s).
-4. Spawn the needed custom agents when available; otherwise use `worker` or `explorer` fallback with inline role instructions.
+4. Spawn the needed custom agents when available; otherwise use `worker` fallback with inline role instructions. Built-in `explorer` запускай явно на `gpt-5.6-luna` + `medium`.
 5. Give each subagent a concrete scope and expected output.
 6. Wait only when the next step is blocked on the result.
 7. Integrate results locally, verify, and update `memory/` when durable knowledge was produced.
 
-Модель, reasoning и Fast главного task не переключай. Используй role TOML как есть: отсутствие pair = inheritance, явная pair = pin. Если spawn упал именно из-за model pair, автоудаление допустимо только для доказанно неизменённого qtim-default, отсутствующего в локальном catalog, после сообщения пользователю. Отличающуюся pair сохрани и продолжи через `worker` / `explorer` с inline role instructions; покажи diff или отправь в `$qtim-update`. Auth/network ошибку не считай несовместимостью модели. `Ultra` не повышает режим C до team-up и не оправдывает лишние роли; child agents не делегируют рекурсивно.
+Модель, reasoning и Fast уже открытого main task не переключай; team-lead prerequisite — Sol+Ultra. Используй exact pair из role TOML. Если spawn упал именно из-за model pair, не удаляй её и не переходи на inheritance: сообщи пользователю, сохрани отличающийся override, продолжи через `worker` на явно подтверждённой доступной pair и отправь системную починку в `$qtim-update`. Auth/network ошибку не считай несовместимостью модели. `Ultra` не повышает режим C до team-up и не оправдывает лишние роли; child agents не делегируют рекурсивно.
+
+Если в lazy-flow появился настоящий ADR, до user approval проведи обязательный clean-context stress-test из `../../reference/independent-review.md`: новый read-only Sol+xhigh thread без истории, либо Sol+max при «необратимо + документированный инвариант»; строка `adr-stress-test:` обязательна независимо от optional code-review gate.
 
 ## Escalation
 
