@@ -402,7 +402,11 @@ if not bad:
                 f"rc={session.returncode}, stderr={session.stderr!r}",
             )
         elif "[qtim v9.8.7]" not in session.stdout.decode("utf-8"):
-            fail(bundled_path, "SessionStart не прочитал version stamp от git root")
+            fail(
+                bundled_path,
+                "SessionStart не прочитал version stamp от git root: "
+                f"rc={session.returncode}, stdout={session.stdout!r}, stderr={session.stderr!r}",
+            )
 
         subagent = run_command(commands["SubagentStop"], nested, subagent_payload)
         if subagent.returncode != 0 or subagent.stderr:
@@ -415,7 +419,11 @@ if not bad:
             try:
                 output = json.loads(subagent.stdout.decode("utf-8"))
             except (UnicodeDecodeError, json.JSONDecodeError) as err:
-                fail(bundled_path, f"SubagentStop stdout не JSON UTF-8: {err}")
+                fail(
+                    bundled_path,
+                    f"SubagentStop stdout не JSON UTF-8: {err}; "
+                    f"rc={subagent.returncode}, stdout={subagent.stdout!r}, stderr={subagent.stderr!r}",
+                )
             else:
                 if set(output) != {"systemMessage"} or not output["systemMessage"]:
                     fail(
@@ -435,7 +443,11 @@ if not bad:
         )
         gate_missing = run_command(gate_command, nested, {**subagent_payload, "agent_type": "qtim-testing"})
         if gate_missing.returncode != 2 or b"no fresh tester screenshots" not in gate_missing.stderr:
-            fail(bundled_path, "screenshot gate должен один раз блокировать отсутствие evidence")
+            fail(
+                bundled_path,
+                "screenshot gate должен один раз блокировать отсутствие evidence: "
+                f"rc={gate_missing.returncode}, stdout={gate_missing.stdout!r}, stderr={gate_missing.stderr!r}",
+            )
         gate_retry = run_command(
             gate_command,
             nested,
@@ -448,7 +460,11 @@ if not bad:
         (shots / "front-selfcheck-mobile.png").write_bytes(b"test")
         gate_selfcheck = run_command(gate_command, nested, {**subagent_payload, "agent_type": "qtim-testing"})
         if gate_selfcheck.returncode != 2:
-            fail(bundled_path, "front-selfcheck-* не должен закрывать tester screenshot gate")
+            fail(
+                bundled_path,
+                "front-selfcheck-* не должен закрывать tester screenshot gate: "
+                f"rc={gate_selfcheck.returncode}, stdout={gate_selfcheck.stdout!r}, stderr={gate_selfcheck.stderr!r}",
+            )
         (shots / "epic-phase-mobile-screen.png").write_bytes(b"test")
         gate_fresh = run_command(gate_command, nested, {**subagent_payload, "agent_type": "qtim-testing"})
         if gate_fresh.returncode != 0:
