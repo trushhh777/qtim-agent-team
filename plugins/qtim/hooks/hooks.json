@@ -34,7 +34,7 @@
           {
             "type": "command",
             "command": "sh \"$PLUGIN_ROOT/hooks/screenshots-gate.sh\"",
-            "commandWindows": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"& (Join-Path $env:PLUGIN_ROOT 'hooks\\screenshots-gate.ps1')\"",
+            "commandWindows": "powershell -NoProfile -ExecutionPolicy Bypass -File \"%PLUGIN_ROOT%\\hooks\\screenshots-gate.ps1\"",
             "statusMessage": "Checking qtim browser evidence",
             "timeout": 10
           }

@@ -237,7 +237,7 @@ for event in ("SessionStart", "SubagentStop"):
                 for marker in ("screenshots-gate.sh", "$PLUGIN_ROOT"):
                     if marker not in command:
                         fail(bundled_path, f"screenshot gate command missing {marker}")
-                for marker in ("screenshots-gate.ps1", "$env:PLUGIN_ROOT"):
+                for marker in ("screenshots-gate.ps1", "%PLUGIN_ROOT%"):
                     if marker not in command_windows:
                         fail(bundled_path, f"screenshot gate commandWindows missing {marker}")
 
@@ -296,23 +296,42 @@ def command_at(payload, event, index):
 
 
 def run_command(command, cwd, payload):
-    argv = (
-        ["cmd.exe", "/d", "/c", command]
-        if os.name == "nt"
-        else ["/bin/sh", "-c", command]
-    )
     env = os.environ.copy()
     env["PLUGIN_ROOT"] = str(pathlib.Path.cwd() / "plugins" / "qtim")
-    return subprocess.run(
-        argv,
-        cwd=cwd,
-        input=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        timeout=5,
-        check=False,
-        env=env,
-    )
+    script_path = None
+    if os.name == "nt":
+        # Passing an inline `powershell -Command "$var=..."` directly as the
+        # `cmd /c` argument lets Windows quoting eat `$var` before PowerShell.
+        # A batch file matches how commandWindows is actually interpreted.
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            suffix=".cmd",
+            dir=cwd,
+            delete=False,
+            encoding="utf-8",
+            newline="\r\n",
+        ) as script:
+            script.write("@echo off\nchcp 65001 >nul\n")
+            script.write(command)
+            script.write("\n")
+            script_path = pathlib.Path(script.name)
+        argv = ["cmd.exe", "/d", "/c", str(script_path)]
+    else:
+        argv = ["/bin/sh", "-c", command]
+    try:
+        return subprocess.run(
+            argv,
+            cwd=cwd,
+            input=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=5,
+            check=False,
+            env=env,
+        )
+    finally:
+        if script_path is not None:
+            script_path.unlink(missing_ok=True)
 
 
 if not bad:
