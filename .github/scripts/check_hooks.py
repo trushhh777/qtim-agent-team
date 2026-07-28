@@ -207,7 +207,10 @@ for event in ("SessionStart", "SubagentStop"):
             screenshot_gate = event == "SubagentStop" and group.get("matcher") == "^qtim-testing$"
             if not screenshot_gate and "git rev-parse --show-toplevel" not in command:
                 fail(bundled_path, f"{event} не резолвит charter от git root")
-            if not screenshot_gate and "git rev-parse --show-toplevel" not in command_windows:
+            if not screenshot_gate and (
+                "git rev-parse --show-toplevel" not in command_windows
+                and "Join-Path $root '.git'" not in command_windows
+            ):
                 fail(bundled_path, f"{event}.commandWindows не резолвит git root")
             if not screenshot_gate and "Test-Path -LiteralPath" not in command_windows:
                 fail(bundled_path, f"{event}.commandWindows не использует literal path")

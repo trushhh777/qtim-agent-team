@@ -4,8 +4,12 @@ $OutputEncoding = $utf8
 
 try { $payload = [Console]::In.ReadToEnd() | ConvertFrom-Json } catch { exit 0 }
 if ($payload.stop_hook_active -eq $true) { exit 0 }
-$root = (git rev-parse --show-toplevel 2>$null)
-if (-not $root) { $root = (Get-Location).Path }
+$root = (Get-Location).Path
+while (-not (Test-Path -LiteralPath (Join-Path $root ".git"))) {
+  $parent = Split-Path -Parent $root
+  if (-not $parent -or $parent -eq $root) { break }
+  $root = $parent
+}
 $charter = Join-Path $root ".codex/team-charter.md"
 if (-not (Test-Path -LiteralPath $charter -PathType Leaf)) { exit 0 }
 $configPath = Join-Path $root ".codex/screenshots-gate.json"
