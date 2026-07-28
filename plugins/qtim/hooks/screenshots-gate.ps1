@@ -4,7 +4,7 @@ $OutputEncoding = $utf8
 
 try { $payload = [Console]::In.ReadToEnd() | ConvertFrom-Json } catch { exit 0 }
 if ($payload.stop_hook_active -eq $true) { exit 0 }
-$root = (Get-Location).Path
+$root = if ($payload.cwd) { [string]$payload.cwd } else { [Environment]::CurrentDirectory }
 while (-not (Test-Path -LiteralPath (Join-Path $root ".git"))) {
   $parent = Split-Path -Parent $root
   if (-not $parent -or $parent -eq $root) { break }

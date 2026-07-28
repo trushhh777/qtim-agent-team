@@ -205,23 +205,36 @@ for event in ("SessionStart", "SubagentStop"):
                 handler.get("commandWindows", "") if isinstance(handler, dict) else ""
             )
             screenshot_gate = event == "SubagentStop" and group.get("matcher") == "^qtim-testing$"
+            windows_contract = command_windows
+            for script_name in ("session-start.ps1", "subagent-stop.ps1"):
+                if script_name in command_windows:
+                    script_path = pathlib.Path("plugins/qtim/hooks") / script_name
+                    if not script_path.is_file():
+                        fail(bundled_path, f"commandWindows ссылается на отсутствующий {script_name}")
+                    else:
+                        windows_contract += "\n" + script_path.read_text(encoding="utf-8")
+                    if "%PLUGIN_ROOT%" not in command_windows:
+                        fail(bundled_path, f"{event}.commandWindows не использует %PLUGIN_ROOT%")
             if not screenshot_gate and "git rev-parse --show-toplevel" not in command:
                 fail(bundled_path, f"{event} не резолвит charter от git root")
             if not screenshot_gate and (
-                "git rev-parse --show-toplevel" not in command_windows
-                and "Join-Path $root '.git'" not in command_windows
+                "git rev-parse --show-toplevel" not in windows_contract
+                and not (
+                    "Join-Path $root" in windows_contract
+                    and '".git"' in windows_contract
+                )
             ):
                 fail(bundled_path, f"{event}.commandWindows не резолвит git root")
-            if not screenshot_gate and "Test-Path -LiteralPath" not in command_windows:
+            if not screenshot_gate and "Test-Path -LiteralPath" not in windows_contract:
                 fail(bundled_path, f"{event}.commandWindows не использует literal path")
-            if not screenshot_gate and "-PathType Leaf" not in command_windows:
+            if not screenshot_gate and "-PathType Leaf" not in windows_contract:
                 fail(
                     bundled_path,
                     f"{event}.commandWindows не проверяет charter как файл",
                 )
-            if not screenshot_gate and "OutputEncoding" not in command_windows:
+            if not screenshot_gate and "OutputEncoding" not in windows_contract:
                 fail(bundled_path, f"{event}.commandWindows не фиксирует UTF-8")
-            if event == "SessionStart" and "Select-String -LiteralPath" not in command_windows:
+            if event == "SessionStart" and "Select-String -LiteralPath" not in windows_contract:
                 fail(
                     bundled_path,
                     "SessionStart.commandWindows читает charter не через LiteralPath",
@@ -231,7 +244,7 @@ for event in ("SessionStart", "SubagentStop"):
                     bundled_path,
                     "SubagentStop должен печатать JSON systemMessage, а не plain stdout",
                 )
-            if event == "SubagentStop" and not screenshot_gate and "systemMessage" not in command_windows:
+            if event == "SubagentStop" and not screenshot_gate and "systemMessage" not in windows_contract:
                 fail(
                     bundled_path,
                     "SubagentStop.commandWindows должен печатать JSON systemMessage",
