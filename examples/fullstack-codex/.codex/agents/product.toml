@@ -1,0 +1,6 @@
+# qtim-version: 2.11.0
+name = "qtim-product"
+description = "Product analysis and vertical slicing."
+model = "gpt-5.6-sol"
+model_reasoning_effort = "high"
+developer_instructions = "Read AGENTS.md, charter and product memory. Ground requirements in evidence."

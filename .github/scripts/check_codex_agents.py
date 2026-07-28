@@ -38,8 +38,10 @@ EXPECTED_MARKERS = {
         "Canonical high-risk matrix",
         "обязательный запрос",
         "skipped (low-risk diff)",
+        "## Adversary",
+        "none (money-critical)",
     ],
-    "testing.toml": ["$qtim-debug-loop"],
+    "testing.toml": ["$qtim-debug-loop", "{{DEV_CMD}}", "dev server command/status"],
 }
 REASONING_EFFORTS = {"none", "minimal", "low", "medium", "high", "xhigh", "max", "ultra"}
 MODEL_REASONING_EFFORTS = {
@@ -142,6 +144,11 @@ for path in paths:
                 f"{path}: expected qtim model policy {expected[0]}/{expected[1]}, "
                 f"found {actual[0]}/{actual[1]}"
             )
+
+    if path.name == "reviewer.toml":
+        sandbox = re.search(r'^sandbox_mode\s*=\s*"([^"]*)"', text, re.MULTILINE)
+        if not sandbox or sandbox.group(1) != "read-only":
+            bad.append(f"{path}: reviewer must enforce `sandbox_mode = \"read-only\"`")
 
     for marker in EXPECTED_MARKERS.get(path.name, []):
         if marker not in text:

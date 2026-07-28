@@ -2,6 +2,33 @@
 
 Версии соответствуют `version` в `plugins/qtim/.codex-plugin/plugin.json` (semver).
 
+## 2.11.0 — 2026-07-28
+
+Семантический Codex-порт общих принципов Claude-релиза 1.12: надёжная доставка
+runtime-контракта, fail-safe quality gates, атомарный resume и проверяемые миграции.
+
+### Добавлено
+
+- `$qtim-setup` пишет компактный managed block в корневой `AGENTS.md`, который Codex
+  загружает автоматически; подробный charter и memory остаются self-contained источниками.
+- Reviewer механически ограничен `sandbox_mode = "read-only"` и явно сообщает, какой
+  adversary использован. Tester владеет запуском сохранённой `DEV_CMD`.
+- Opt-in `SubagentStop` screenshot gate для `qtim-testing`: свежие tester-артефакты,
+  исключение `front-selfcheck-*`, максимум один controlled retry через `stop_hook_active`.
+- `reference/runtime-compat.md`, migration gate и semantic golden full-stack project в CI.
+
+### Исправлено
+
+- Stage 6 PM-конвейера теперь пишет plan/brief/prompts до последнего completion marker в
+  `memory/decisions.md`; Approved без pointer корректно возобновляет handoff.
+- Разведены владельцы PM-контрактов: skill управляет сессией, reference — долговечными
+  артефактами, charter содержит производную самодостаточную сводку.
+
+### Не портировано
+
+- Claude-only `.claude/rules`, Agent Teams flags, `Task*` API и agent-memory: Codex использует
+  `AGENTS.md`, custom agents, task-scoped threads и `memory/`.
+
 ## 2.10.0 — 2026-07-27
 
 Семантический Codex-порт Claude-релиза 1.11.0 из upstream-коммита [`93fd017`](https://github.com/toiiia/qtim-agent-team/commit/93fd017446cedc805ccd7f2ab1e0370372e87b17): явные профили ролей вместо inheritance и независимый stress-test каждого ADR. Codex-матрица сверена с актуальным runtime catalog и официальной GPT-5.6 guidance: [Sol/Terra/Luna](https://developers.openai.com/api/docs/guides/model-guidance?model=gpt-5.6), [Subagents](https://learn.chatgpt.com/docs/agent-configuration/subagents). Сгенерированное состояние меняется — миграция описана в `reference/upgrade-notes.md`, запись «2.10.0».

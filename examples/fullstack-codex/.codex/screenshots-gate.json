@@ -1,0 +1,5 @@
+{
+  "mode": "blocking",
+  "directory": "artifacts/screenshots",
+  "freshnessMinutes": 180
+}

@@ -18,6 +18,7 @@ ALLOWED = {
     "TYPECHECK_CMD",
     "TEST_RUNNER",
     "E2E_TOOL",
+    "DEV_CMD",
 }
 
 STRICT = re.compile(r"^\{\{([A-Z0-9_]+)\}\}$")

@@ -37,11 +37,11 @@ FILES = {
 }
 EXPECTED_MATCHERS = {
     pathlib.Path("plugins/qtim/hooks/hooks.json"): {
-        "SessionStart": "startup|resume|clear|compact",
-        "SubagentStop": "*",
+        "SessionStart": ["startup|resume|clear|compact"],
+        "SubagentStop": ["*", "^qtim-testing$"],
     },
     pathlib.Path("plugins/qtim/reference/project-hooks.json"): {
-        "PostToolUse": "Edit|Write|apply_patch",
+        "PostToolUse": ["Edit|Write|apply_patch"],
     },
 }
 
@@ -98,8 +98,9 @@ for path, expected_events in FILES.items():
         if not isinstance(groups, list) or not groups:
             fail(path, f"{event} должен содержать непустой массив matcher groups")
             continue
-        if len(groups) != 1:
-            fail(path, f"{event} canonical template должен содержать ровно один group")
+        expected_group_count = len(EXPECTED_MATCHERS[path].get(event, []))
+        if len(groups) != expected_group_count:
+            fail(path, f"{event} должен содержать {expected_group_count} matcher group(s)")
 
         for group_index, group in enumerate(groups):
             location = f"{event}[{group_index}]"
@@ -116,7 +117,12 @@ for path, expected_events in FILES.items():
             matcher = group.get("matcher")
             if matcher is not None and not isinstance(matcher, str):
                 fail(path, f"{location}.matcher должен быть строкой")
-            expected_matcher = EXPECTED_MATCHERS[path].get(event)
+            expected_matchers = EXPECTED_MATCHERS[path].get(event, [])
+            expected_matcher = (
+                expected_matchers[group_index]
+                if group_index < len(expected_matchers)
+                else None
+            )
             if matcher != expected_matcher:
                 fail(
                     path,
@@ -193,34 +199,42 @@ for event in ("SessionStart", "SubagentStop"):
             command_windows = (
                 handler.get("commandWindows", "") if isinstance(handler, dict) else ""
             )
-            if "git rev-parse --show-toplevel" not in command:
+            screenshot_gate = event == "SubagentStop" and group.get("matcher") == "^qtim-testing$"
+            if not screenshot_gate and "git rev-parse --show-toplevel" not in command:
                 fail(bundled_path, f"{event} не резолвит charter от git root")
-            if "git rev-parse --show-toplevel" not in command_windows:
+            if not screenshot_gate and "git rev-parse --show-toplevel" not in command_windows:
                 fail(bundled_path, f"{event}.commandWindows не резолвит git root")
-            if "Test-Path -LiteralPath" not in command_windows:
+            if not screenshot_gate and "Test-Path -LiteralPath" not in command_windows:
                 fail(bundled_path, f"{event}.commandWindows не использует literal path")
-            if "-PathType Leaf" not in command_windows:
+            if not screenshot_gate and "-PathType Leaf" not in command_windows:
                 fail(
                     bundled_path,
                     f"{event}.commandWindows не проверяет charter как файл",
                 )
-            if "OutputEncoding" not in command_windows:
+            if not screenshot_gate and "OutputEncoding" not in command_windows:
                 fail(bundled_path, f"{event}.commandWindows не фиксирует UTF-8")
             if event == "SessionStart" and "Select-String -LiteralPath" not in command_windows:
                 fail(
                     bundled_path,
                     "SessionStart.commandWindows читает charter не через LiteralPath",
                 )
-            if event == "SubagentStop" and '"systemMessage"' not in command:
+            if event == "SubagentStop" and not screenshot_gate and '"systemMessage"' not in command:
                 fail(
                     bundled_path,
                     "SubagentStop должен печатать JSON systemMessage, а не plain stdout",
                 )
-            if event == "SubagentStop" and "systemMessage" not in command_windows:
+            if event == "SubagentStop" and not screenshot_gate and "systemMessage" not in command_windows:
                 fail(
                     bundled_path,
                     "SubagentStop.commandWindows должен печатать JSON systemMessage",
                 )
+            if screenshot_gate:
+                for marker in ("screenshots-gate.sh", "$PLUGIN_ROOT"):
+                    if marker not in command:
+                        fail(bundled_path, f"screenshot gate command missing {marker}")
+                for marker in ("screenshots-gate.ps1", "$env:PLUGIN_ROOT"):
+                    if marker not in command_windows:
+                        fail(bundled_path, f"screenshot gate commandWindows missing {marker}")
 
 project_path = pathlib.Path("plugins/qtim/reference/project-hooks.json")
 project = loaded.get(project_path, {}).get("hooks", {})
@@ -271,12 +285,19 @@ def first_command(payload, event):
     return payload["hooks"][event][0]["hooks"][0][key]
 
 
+def command_at(payload, event, index):
+    key = "commandWindows" if os.name == "nt" else "command"
+    return payload["hooks"][event][index]["hooks"][0][key]
+
+
 def run_command(command, cwd, payload):
     argv = (
         ["cmd.exe", "/d", "/c", command]
         if os.name == "nt"
         else ["/bin/sh", "-c", command]
     )
+    env = os.environ.copy()
+    env["PLUGIN_ROOT"] = str(pathlib.Path.cwd() / "plugins" / "qtim")
     return subprocess.run(
         argv,
         cwd=cwd,
@@ -285,6 +306,7 @@ def run_command(command, cwd, payload):
         stderr=subprocess.PIPE,
         timeout=5,
         check=False,
+        env=env,
     )
 
 
@@ -376,6 +398,37 @@ if not bad:
                         bundled_path,
                         "SubagentStop должен вернуть только непустой systemMessage",
                     )
+
+        gate_command = command_at(loaded[bundled_path], "SubagentStop", 1)
+        gate_no_config = run_command(gate_command, nested, {**subagent_payload, "agent_type": "qtim-testing"})
+        if gate_no_config.returncode != 0 or gate_no_config.stdout or gate_no_config.stderr:
+            fail(bundled_path, "screenshot gate без config должен быть тихим no-op")
+
+        gate_config = root / ".codex" / "screenshots-gate.json"
+        gate_config.write_text(
+            json.dumps({"mode": "blocking", "directory": "artifacts/screenshots", "freshnessMinutes": 180}),
+            encoding="utf-8",
+        )
+        gate_missing = run_command(gate_command, nested, {**subagent_payload, "agent_type": "qtim-testing"})
+        if gate_missing.returncode != 2 or b"no fresh tester screenshots" not in gate_missing.stderr:
+            fail(bundled_path, "screenshot gate должен один раз блокировать отсутствие evidence")
+        gate_retry = run_command(
+            gate_command,
+            nested,
+            {**subagent_payload, "agent_type": "qtim-testing", "stop_hook_active": True},
+        )
+        if gate_retry.returncode != 0:
+            fail(bundled_path, "screenshot gate обязан пропускать повторный stop_hook_active")
+        shots = root / "artifacts" / "screenshots"
+        shots.mkdir(parents=True)
+        (shots / "front-selfcheck-mobile.png").write_bytes(b"test")
+        gate_selfcheck = run_command(gate_command, nested, {**subagent_payload, "agent_type": "qtim-testing"})
+        if gate_selfcheck.returncode != 2:
+            fail(bundled_path, "front-selfcheck-* не должен закрывать tester screenshot gate")
+        (shots / "epic-phase-mobile-screen.png").write_bytes(b"test")
+        gate_fresh = run_command(gate_command, nested, {**subagent_payload, "agent_type": "qtim-testing"})
+        if gate_fresh.returncode != 0:
+            fail(bundled_path, "fresh tester screenshot должен закрывать gate")
 
         post_payload = {
             "session_id": "session-test",

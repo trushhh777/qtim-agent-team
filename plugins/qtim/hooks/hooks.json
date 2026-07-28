@@ -1,5 +1,5 @@
 {
-  "description": "Plugin-bundled Codex reminders команды qtim, активные только в проектах с .codex/team-charter.md: анонс команды при старте сессии и JSON systemMessage после завершения субагента.",
+  "description": "Plugin-bundled Codex lifecycle contracts команды qtim: анонс при старте, advisory handoff после субагента и opt-in screenshot gate для qtim-testing.",
   "hooks": {
     "SessionStart": [
       {
@@ -25,6 +25,18 @@
             "commandWindows": "powershell -NoProfile -Command \"$utf8=[System.Text.UTF8Encoding]::new($false); [Console]::OutputEncoding=$utf8; $OutputEncoding=$utf8; $root=(git rev-parse --show-toplevel 2>$null); if (-not $root) { $root=(Get-Location).Path }; $charter=Join-Path $root '.codex/team-charter.md'; if (Test-Path -LiteralPath $charter -PathType Leaf) { @{systemMessage='qtim: subagent завершился. Проверь реальные артефакты: изменённые файлы, отчёт, memory/, скриншоты/логи. Если артефактов нет — уточни у agent thread или проверь сам.'} | ConvertTo-Json -Compress }\"",
             "statusMessage": "Checking qtim subagent handoff",
             "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "^qtim-testing$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"$PLUGIN_ROOT/hooks/screenshots-gate.sh\"",
+            "commandWindows": "powershell -NoProfile -ExecutionPolicy Bypass -File \"$env:PLUGIN_ROOT\\hooks\\screenshots-gate.ps1\"",
+            "statusMessage": "Checking qtim browser evidence",
+            "timeout": 10
           }
         ]
       }

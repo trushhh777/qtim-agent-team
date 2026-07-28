@@ -1,6 +1,6 @@
 ---
 name: qtim-feature
-description: "Use when a PM or analyst wants to turn a raw feature idea into implementation-ready, versioned artifacts in docs/features/<slug>/: select a risk-proportional fast-path feature brief or the full intake -> PRD -> grounded decomposition and estimate -> plan pipeline, then hand off to $qtim-team-lazy or $qtim-team-up."
+description: "Use when a PM or analyst wants to turn a raw feature idea into implementation-ready, versioned artifacts under docs/features: select a risk-proportional fast-path feature brief or the full intake-to-PRD-to-plan pipeline with grounded decomposition and estimate, then hand off to $qtim-team-lazy or $qtim-team-up."
 ---
 
 # qtim Feature Pipeline
@@ -9,13 +9,19 @@ description: "Use when a PM or analyst wants to turn a raw feature idea into imp
 
 Production code не пиши. Артефакты содержат требования, evidence, контракты, инварианты и gates, а не будущие диффы.
 
+Этот skill владеет **сессионной оркестрацией**: порядком стадий, checkpoints, resume,
+выбором трека и selective fan-out. Долговечный канон артефактов, статусов, handoff,
+grounded-оценки и vertical slicing живёт в `../../reference/feature-pipeline.md`.
+Сгенерированный PM-блок charter — производная self-contained сводка этого reference,
+а не третий независимый канон.
+
 ## Preconditions
 
 1. Прочитай `.codex/team-charter.md`. Если файла или PM track marker `<!-- qtim:track:pm:start -->` нет, остановись и предложи `$qtim-setup`.
 2. Прочитай `../../reference/feature-pipeline.md` и `../../reference/intake-protocol.md`.
 3. Прочитай `../../reference/model-profiles.md`. qtim team-lead должен работать на `gpt-5.6-sol` + `ultra`; не переключай уже открытый task скрыто. Если runtime exposes другой профиль, остановись до fan-out и попроси открыть новый task на Sol/Ultra. `Ultra` не расширяет scope и не отменяет checkpoints.
 4. Определи kebab-case slug.
-5. Если `docs/features/<slug>/` существует, прочитай статусы и «Историю изменений». `feature-brief.md` означает fast-path, `prd.md`/полный набор — полный трек. Продолжи с первого незавершённого обязательного артефакта, не начинай заново.
+5. Если `docs/features/<slug>/` существует, прочитай статусы и «Историю изменений». `feature-brief.md` означает fast-path, `prd.md`/полный набор — полный трек. Продолжи с первого незавершённого обязательного артефакта, не начинай заново. У Stage 6 своего артефакта нет: её completion marker — строка-указатель на slug в `memory/decisions.md`. Плановый документ уже `Approved`, а указателя нет -> resume со Stage 6, не считай pipeline завершённым.
 
 Если custom agent не стартует именно из-за model pair, не удаляй пару и не заменяй её inheritance молча. Отличающийся override сохрани; продолжи через `worker` с inline role instructions только на явно подтверждённой доступной pair. Built-in `explorer` используй на `gpt-5.6-luna` + `medium`; не угадывай slug и не считай auth/network ошибку несовместимостью модели.
 
@@ -95,8 +101,7 @@ Spawn `qtim-product` (fallback: `worker` с PM-инструкциями из cha
 
 ## Stage 6: Handoff
 
-1. Добавь одну строку-указатель в `memory/decisions.md`.
-2. Для полного трека заверши `plan.md`:
+1. Для полного трека заверши `plan.md`:
 
 ```text
 $qtim-team-up: реализуй Phase 1 из docs/features/<slug>/plan.md.
@@ -105,7 +110,7 @@ PRD и acceptance criteria: docs/features/<slug>/prd.md.
 Отклонения и новые edge cases фиксируй в «Истории изменений» plan.md.
 ```
 
-3. Для fast-path заверши brief:
+2. Для fast-path заверши brief:
 
 ```text
 $qtim-team-lazy: реализуй docs/features/<slug>/feature-brief.md.
@@ -114,9 +119,10 @@ Scope, acceptance criteria и gates находятся в этом докуме�
 Отклонения и новые edge cases фиксируй там же.
 ```
 
-4. Рекомендуй `$qtim-team-up` для многофазного полного трека, `$qtim-team-lazy` для fast-path и однофазного S/M.
-5. Если charter содержит только PM track и нет `qtim-reviewer`, предупреди: перед реализацией нужно повторно вызвать `$qtim-setup` и добавить dev track, иначе режим D останется без финального gate.
-6. Если реализацию запускает другой человек, попроси его использовать готовый prompt в новой задаче Codex.
+3. Рекомендуй `$qtim-team-up` для многофазного полного трека, `$qtim-team-lazy` для fast-path и однофазного S/M.
+4. Если charter содержит только PM track и нет `qtim-reviewer`, предупреди: перед реализацией нужно повторно вызвать `$qtim-setup` и добавить dev track, иначе режим D останется без финального gate.
+5. Если реализацию запускает другой человек, попроси его использовать готовый prompt в новой задаче Codex.
+6. **Последним шагом** добавь одну строку-указатель в `memory/decisions.md`. Это atomic completion marker Stage 6: записывай его только после того, как handoff уже сохранён в плановом документе и сообщён пользователю.
 
 ## Anti-Patterns
 
@@ -126,5 +132,7 @@ Scope, acceptance criteria и gates находятся в этом докуме�
 - Горизонтальные work items «вся БД / весь UI» вместо вертикальных срезов.
 - Production code, SQL, тесты или будущие диффы в артефактах.
 - Перезапуск существующего slug с нуля.
+- Плановый документ `Approved`, но указателя в `memory/decisions.md` нет: Stage 6 оборвана и должна быть продолжена.
+- Указатель записан до готового handoff: ложный completion marker ломает resume.
 - Выдуманные часы вместо относительной оценки с evidence.
 - Пропуск checkpoint «потому что очевидно».

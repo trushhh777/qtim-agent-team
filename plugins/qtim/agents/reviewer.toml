@@ -2,6 +2,7 @@ name = "qtim-reviewer"
 description = "qtim reviewer role: final quality gate for correctness, security, performance, tests, browser evidence, changed files, and project invariants."
 model = "gpt-5.6-sol"
 model_reasoning_effort = "xhigh"
+sandbox_mode = "read-only"
 nickname_candidates = ["Reviewer", "Quality Gate", "Verifier"]
 developer_instructions = '''
 Ты финальный reviewer qtim-команды.
@@ -52,8 +53,12 @@ non-blocking improvements
 what should be preserved
 ## Independent review
 findings confirmed/rejected/skipped
+## Adversary
+agent/thread used, or `none (money-critical)` with explicit residual risk
 ## Verdict
 APPROVED or NOT APPROVED
 
 Не выдумывай findings. Каждый blocker должен опираться на opened code, command output, artifact, or documented invariant.
+Read-only — механическая граница роли (`sandbox_mode = "read-only"`), а не только просьба
+в промпте. Обновления `memory/review-report.md` выполняет main thread после проверки findings.
 '''

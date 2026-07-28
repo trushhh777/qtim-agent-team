@@ -4,6 +4,40 @@
 
 Правило ведения: при каждом релизе, меняющем сгенерированное состояние, добавляй секцию сверху. Секции хранятся newest-first, но `$qtim-update` всегда применяет попавшие в диапазон шаги oldest -> newest (снизу вверх по файлу). Если релиз не меняет сгенерированное состояние, добавляй секцию с пометкой «миграция не требуется».
 
+## 2.11.0
+
+Что нового в сгенерированном состоянии:
+
+- `AGENTS.md` содержит один компактный qtim runtime contract между
+  `<!-- qtim:contract:start/end -->`; пользовательский текст вне markers сохраняется;
+- reviewer получил `sandbox_mode = "read-only"` и секцию `Adversary`;
+- testing получил фактическую `DEV_CMD` и владеет запуском dev-server;
+- PM block — производная self-contained сводка; Stage 6 pointer в `memory/decisions.md`
+  записывается последним и является completion marker;
+- blocking screenshots остаётся opt-in через `.codex/screenshots-gate.json`.
+
+Миграция с 2.10.0:
+
+1. Нормализуй qtim-секцию project `AGENTS.md` в одну marker pair. Замени только managed
+   region; весь текст пользователя до/после сохрани byte-for-byte. В блоке оставь указатели
+   на charter/agents/memory, explicit workflow scope, main-owned fan-out, advisory outputs,
+   Sol/Ultra prerequisite, ADR adversary и update/doctor.
+2. В `qtim-reviewer.toml` добавь `sandbox_mode = "read-only"` и report section `Adversary`.
+   Любой write-enabled user override покажи как diff и оставь migration pending до решения;
+   reviewer не превращай в fix worker.
+3. В `qtim-testing.toml` подставь фактическую dev-команду из `memory/commands.md` или
+   проверенного project script. Если команда неизвестна, не угадывай: оставь шаг pending.
+   Добавь владение long-running server session и поле status в handoff.
+4. Только в PM track замени engine-managed сводку: пометь её производной от durable
+   feature-pipeline contract и добавь правило «handoff artifacts first, decisions pointer
+   last». Approved brief/plan без pointer означает resume Stage 6.
+5. Не включай blocking screenshots существующим проектам автоматически. По явному opt-in
+   создай `.codex/screenshots-gate.json` с `mode=blocking`, безопасным repo-relative
+   `directory` без `..` и положительным `freshnessMinutes`; отсутствие config = advisory.
+6. Обнови stamps до `2.11.0` только когда обязательные шаги 1–4 applied или compatible
+   override confirmed. Optional screenshot config не влияет на stamp. После изменения TOML
+   открой новую задачу Codex.
+
 ## 2.10.0
 
 Что нового в сгенерированном состоянии:

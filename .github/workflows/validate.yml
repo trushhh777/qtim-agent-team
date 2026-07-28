@@ -10,6 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: JSON-манифесты валидны
         run: |
@@ -43,6 +45,14 @@ jobs:
       - name: Codex custom agents валидны
         run: python3 .github/scripts/check_codex_agents.py
 
+      - name: Generated-state migrations не забыты
+        env:
+          CHECK_MIGRATIONS_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: python3 .github/scripts/check_migrations.py
+
+      - name: Semantic golden project валиден
+        run: python3 .github/scripts/check_golden.py
+
       - name: Относительные ссылки в plugins/ не биты
         run: python3 .github/scripts/check_links.py
 
@@ -50,6 +60,8 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Windows commandWindows hooks исполняются
         run: python .github/scripts/check_hooks.py

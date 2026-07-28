@@ -7,7 +7,9 @@
 1. Advisory, not authoritative.
 2. Main thread verifies every finding against opened code.
 3. Domain invariants in `.codex/team-charter.md`, `AGENTS.md`, and `memory/` win over reviewer opinion.
-4. Review threads are read-only unless the user explicitly asks for a fix worker.
+4. Review threads are mechanically read-only when the runtime supports a sandbox override.
+   The generated `qtim-reviewer` enforces `sandbox_mode = "read-only"`; a request for fixes
+   goes to a separate write-enabled worker, never by relaxing the reviewer in place.
 5. Fail soft: if a reviewer thread cannot run, record that and continue with local review unless project policy says otherwise. A skipped review is never reported as passed.
 6. Use only at gate points and proportionally to the actual diff risk, not on every tiny edit.
 
@@ -18,7 +20,7 @@
 Main thread, а не architect:
 
 1. Получает draft ADR и минимальный context pack: сам ADR, затронутые инварианты из charter/`memory/`, точные file paths для проверки.
-2. Поднимает новый read-only agent thread **без истории основного task** (`fork_turns = "none"` или ближайший runtime-эквивалент clean context).
+2. Поднимает новый read-only agent thread **без истории основного task** (`fork_turns = "none"` или ближайший runtime-эквивалент clean context). Используй runtime/custom-agent sandbox enforcement, если он доступен; prompt-only read-only не называй механическим gate.
 3. Фиксирует модель `gpt-5.6-sol` и reasoning `xhigh`. Если решение одновременно необратимо и затрагивает документированный инвариант — `max`.
 4. Просит исходить из презумпции «решение некорректно, пока обратное не подтверждено» и искать нарушения инвариантов, нерассмотренные альтернативы, rollback/data-loss/security failure modes и open questions.
 5. Передаёт findings architect, который проверяет их по коду и обновляет решение.
