@@ -8,6 +8,11 @@ import subprocess
 import sys
 import tempfile
 
+if os.name == "nt":
+    # GitHub Actions may expose cp1252 even though hook output is UTF-8.
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
+
 
 ALLOWED_EVENTS = {
     "SessionStart",
