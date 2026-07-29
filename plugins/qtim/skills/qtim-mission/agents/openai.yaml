@@ -1,0 +1,6 @@
+interface:
+  display_name: "qtim Mission"
+  short_description: "Видимый DAG с worktrees и verification"
+  default_prompt: "Используй $qtim-mission, чтобы запустить утверждённую цель как несколько видимых задач Codex с зависимостями и общим verification gate."
+policy:
+  allow_implicit_invocation: true

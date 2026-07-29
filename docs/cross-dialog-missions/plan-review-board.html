@@ -1,0 +1,2252 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Mission Plan Codex — единый интерактивный план cross-dialog missions для qtim">
+  <title>Mission Plan Codex — карта согласования</title>
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #07100f;
+      --surface: #0d1917;
+      --surface-2: #12211e;
+      --surface-3: #172a26;
+      --line: #29413b;
+      --line-strong: #3f6259;
+      --text: #eef7f3;
+      --muted: #9ab2aa;
+      --green: #66e4aa;
+      --green-strong: #24bd7b;
+      --amber: #ffc66d;
+      --red: #ff897d;
+      --blue: #72b7ff;
+      --violet: #b69aff;
+      --cyan: #69dbe6;
+      --shadow: 0 20px 60px rgb(0 0 0 / 28%);
+      --radius: 22px;
+      --radius-sm: 13px;
+      --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: 112px;
+    }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      background:
+        radial-gradient(circle at 18% -10%, rgb(36 189 123 / 18%), transparent 34rem),
+        radial-gradient(circle at 90% 12%, rgb(114 183 255 / 10%), transparent 28rem),
+        var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      line-height: 1.55;
+    }
+
+    body::before {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      content: "";
+      opacity: .16;
+      background-image:
+        linear-gradient(rgb(255 255 255 / 4%) 1px, transparent 1px),
+        linear-gradient(90deg, rgb(255 255 255 / 4%) 1px, transparent 1px);
+      background-size: 44px 44px;
+      mask-image: linear-gradient(to bottom, black, transparent 72%);
+    }
+
+    a { color: inherit; }
+
+    button, input, textarea { font: inherit; }
+
+    button {
+      border: 0;
+      color: inherit;
+    }
+
+    button:focus-visible,
+    a:focus-visible,
+    input:focus-visible,
+    textarea:focus-visible {
+      outline: 3px solid var(--amber);
+      outline-offset: 3px;
+    }
+
+    .skip-link {
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      z-index: 100;
+      padding: 10px 14px;
+      border-radius: 10px;
+      background: var(--text);
+      color: var(--bg);
+      transform: translateY(-160%);
+    }
+
+    .skip-link:focus { transform: translateY(0); }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      display: flex;
+      gap: 18px;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 66px;
+      padding: 10px max(22px, calc((100vw - 1440px) / 2));
+      border-bottom: 1px solid rgb(102 228 170 / 16%);
+      background: rgb(7 16 15 / 82%);
+      backdrop-filter: blur(20px);
+    }
+
+    .brand {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      min-width: max-content;
+      font-weight: 750;
+      letter-spacing: -.02em;
+    }
+
+    .brand-mark {
+      display: grid;
+      width: 38px;
+      height: 38px;
+      place-items: center;
+      border: 1px solid rgb(102 228 170 / 45%);
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgb(102 228 170 / 25%), rgb(105 219 230 / 8%));
+      color: var(--green);
+      font-family: var(--mono);
+      font-size: 14px;
+    }
+
+    .top-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .search {
+      width: min(29vw, 320px);
+      padding: 10px 13px 10px 36px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='none' stroke='%239ab2aa' stroke-width='2'%3E%3Ccircle cx='8' cy='8' r='5.5'/%3E%3Cpath d='m12 12 4 4'/%3E%3C/svg%3E")
+        no-repeat 11px center / 17px,
+        var(--surface);
+      color: var(--text);
+    }
+
+    .btn {
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      justify-content: center;
+      min-height: 40px;
+      padding: 9px 14px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--surface-2);
+      color: var(--text);
+      cursor: pointer;
+      transition: border-color .2s ease, background .2s ease, transform .2s ease;
+    }
+
+    .btn:hover {
+      border-color: var(--line-strong);
+      background: var(--surface-3);
+      transform: translateY(-1px);
+    }
+
+    .btn.primary {
+      border-color: transparent;
+      background: var(--green);
+      color: #052017;
+      font-weight: 760;
+    }
+
+    .shell {
+      width: min(1440px, calc(100% - 44px));
+      margin: 0 auto;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.3fr) minmax(330px, .7fr);
+      gap: 28px;
+      align-items: end;
+      padding: 72px 0 34px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 18px;
+      color: var(--green);
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before {
+      width: 22px;
+      height: 1px;
+      content: "";
+      background: currentColor;
+    }
+
+    h1, h2, h3, p { margin-top: 0; }
+
+    h1 {
+      max-width: 980px;
+      margin-bottom: 20px;
+      font-size: clamp(42px, 6.2vw, 88px);
+      line-height: .96;
+      letter-spacing: -.065em;
+    }
+
+    .hero-copy {
+      max-width: 820px;
+      margin-bottom: 0;
+      color: #bfd1cb;
+      font-size: clamp(17px, 1.7vw, 22px);
+      line-height: 1.55;
+    }
+
+    .hero-card {
+      padding: 24px;
+      border: 1px solid rgb(102 228 170 / 20%);
+      border-radius: var(--radius);
+      background: linear-gradient(145deg, rgb(18 33 30 / 96%), rgb(13 25 23 / 82%));
+      box-shadow: var(--shadow);
+    }
+
+    .hero-meta {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin: 18px 0 0;
+    }
+
+    .metric {
+      min-height: 96px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 15px;
+      background: rgb(7 16 15 / 34%);
+    }
+
+    .metric strong {
+      display: block;
+      margin-bottom: 2px;
+      color: var(--green);
+      font-size: 29px;
+      line-height: 1;
+    }
+
+    .metric span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .status-line {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .badge {
+      display: inline-flex;
+      gap: 7px;
+      align-items: center;
+      padding: 6px 10px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgb(7 16 15 / 50%);
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+
+    .badge.draft {
+      border-color: rgb(255 198 109 / 35%);
+      color: var(--amber);
+    }
+
+    .section-nav {
+      position: sticky;
+      top: 66px;
+      z-index: 30;
+      display: flex;
+      gap: 7px;
+      margin-bottom: 34px;
+      padding: 10px;
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgb(13 25 23 / 90%);
+      backdrop-filter: blur(16px);
+      scrollbar-width: none;
+    }
+
+    .section-nav::-webkit-scrollbar { display: none; }
+
+    .section-nav a {
+      min-width: max-content;
+      padding: 8px 12px;
+      border-radius: 10px;
+      color: var(--muted);
+      font-size: 13px;
+      text-decoration: none;
+    }
+
+    .section-nav a:hover,
+    .section-nav a.active {
+      background: var(--surface-3);
+      color: var(--text);
+    }
+
+    .panel {
+      margin-bottom: 28px;
+      padding: clamp(22px, 3.2vw, 42px);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: linear-gradient(150deg, rgb(18 33 30 / 90%), rgb(10 20 18 / 96%));
+      box-shadow: 0 16px 54px rgb(0 0 0 / 18%);
+    }
+
+    .section-head {
+      display: flex;
+      gap: 24px;
+      align-items: end;
+      justify-content: space-between;
+      margin-bottom: 28px;
+    }
+
+    .section-kicker {
+      margin-bottom: 7px;
+      color: var(--green);
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    h2 {
+      margin-bottom: 8px;
+      font-size: clamp(28px, 3.5vw, 48px);
+      line-height: 1.05;
+      letter-spacing: -.045em;
+    }
+
+    h3 {
+      margin-bottom: 10px;
+      font-size: 18px;
+      line-height: 1.25;
+      letter-spacing: -.02em;
+    }
+
+    .lede,
+    .muted {
+      color: var(--muted);
+    }
+
+    .lede {
+      max-width: 780px;
+      margin-bottom: 0;
+    }
+
+    .chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .chip {
+      padding: 7px 11px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .chip:hover,
+    .chip.active {
+      border-color: rgb(102 228 170 / 42%);
+      background: rgb(102 228 170 / 10%);
+      color: var(--green);
+    }
+
+    .graph-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 320px;
+      gap: 18px;
+    }
+
+    .graph-wrap,
+    .inspector,
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 17px;
+      background: rgb(7 16 15 / 45%);
+    }
+
+    .graph-wrap {
+      position: relative;
+      min-height: 570px;
+      overflow: hidden;
+    }
+
+    #mission-graph {
+      display: block;
+      width: 100%;
+      min-height: 570px;
+    }
+
+    .inspector {
+      min-height: 570px;
+      padding: 22px;
+    }
+
+    .inspector .number {
+      display: grid;
+      width: 42px;
+      height: 42px;
+      margin-bottom: 20px;
+      place-items: center;
+      border-radius: 13px;
+      background: rgb(102 228 170 / 12%);
+      color: var(--green);
+      font-family: var(--mono);
+      font-weight: 800;
+    }
+
+    .inspector ul,
+    .compact-list {
+      margin: 14px 0 0;
+      padding-left: 19px;
+      color: #c5d7d1;
+    }
+
+    .inspector li,
+    .compact-list li { margin: 8px 0; }
+
+    .graph-node {
+      cursor: pointer;
+      transition: opacity .2s ease;
+    }
+
+    .graph-node rect {
+      stroke-width: 1.5;
+      transition: filter .2s ease, stroke-width .2s ease;
+    }
+
+    .graph-node:hover rect,
+    .graph-node.selected rect {
+      stroke-width: 3;
+      filter: drop-shadow(0 0 12px rgb(102 228 170 / 28%));
+    }
+
+    .graph-node text {
+      pointer-events: none;
+      fill: var(--text);
+      font-family: var(--sans);
+    }
+
+    .graph-node .node-kind {
+      fill: var(--muted);
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: .09em;
+      text-transform: uppercase;
+    }
+
+    .graph-link {
+      fill: none;
+      stroke: var(--line-strong);
+      stroke-width: 2;
+      marker-end: url("#arrow");
+    }
+
+    .graph-link.feedback {
+      stroke: var(--amber);
+      stroke-dasharray: 7 6;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-top: 14px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .legend span {
+      display: inline-flex;
+      gap: 7px;
+      align-items: center;
+    }
+
+    .legend i {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--green);
+    }
+
+    .grid-2,
+    .grid-3,
+    .grid-4 {
+      display: grid;
+      gap: 16px;
+    }
+
+    .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+    .card {
+      padding: 21px;
+    }
+
+    .card.accent {
+      border-color: rgb(102 228 170 / 28%);
+      background: linear-gradient(145deg, rgb(102 228 170 / 8%), rgb(7 16 15 / 48%));
+    }
+
+    .card p:last-child,
+    .card ul:last-child { margin-bottom: 0; }
+
+    .card-index {
+      display: inline-flex;
+      margin-bottom: 14px;
+      color: var(--green);
+      font-family: var(--mono);
+      font-size: 12px;
+    }
+
+    .mode {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .mode::after {
+      position: absolute;
+      right: -34px;
+      bottom: -50px;
+      width: 130px;
+      height: 130px;
+      border-radius: 50%;
+      content: "";
+      background: currentColor;
+      opacity: .045;
+    }
+
+    .mode.auto { color: var(--green); }
+    .mode.preview { color: var(--amber); }
+    .mode.recommend { color: var(--blue); }
+    .mode h3 { color: currentColor; }
+    .mode p { color: var(--muted); }
+
+    .code {
+      position: relative;
+      margin: 0;
+      padding: 19px;
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 15px;
+      background: #06100e;
+      color: #cdeadd;
+      font: 12px/1.7 var(--mono);
+      white-space: pre-wrap;
+    }
+
+    .timeline {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(150px, 1fr));
+      gap: 12px;
+      padding-bottom: 8px;
+      overflow-x: auto;
+    }
+
+    .stage-card {
+      position: relative;
+      min-height: 252px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 17px;
+      background: rgb(7 16 15 / 50%);
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .stage-card:hover,
+    .stage-card.selected {
+      border-color: var(--green);
+      background: rgb(102 228 170 / 7%);
+    }
+
+    .stage-no {
+      display: grid;
+      width: 34px;
+      height: 34px;
+      margin-bottom: 20px;
+      place-items: center;
+      border: 1px solid rgb(102 228 170 / 35%);
+      border-radius: 11px;
+      color: var(--green);
+      font-family: var(--mono);
+      font-weight: 800;
+    }
+
+    .stage-card small {
+      display: block;
+      margin-top: 12px;
+      color: var(--muted);
+      font-family: var(--mono);
+    }
+
+    .stage-detail {
+      display: grid;
+      grid-template-columns: 220px minmax(0, 1fr) minmax(260px, .6fr);
+      gap: 22px;
+      margin-top: 16px;
+      padding: 24px;
+      border: 1px solid rgb(102 228 170 / 24%);
+      border-radius: 17px;
+      background: rgb(102 228 170 / 5%);
+    }
+
+    .stage-detail .big {
+      color: var(--green);
+      font-size: 62px;
+      font-weight: 800;
+      line-height: .9;
+      letter-spacing: -.06em;
+    }
+
+    .gate {
+      padding: 16px;
+      border-left: 3px solid var(--amber);
+      border-radius: 0 12px 12px 0;
+      background: rgb(255 198 109 / 7%);
+      color: #f2dcb9;
+    }
+
+    .flow-strip {
+      display: flex;
+      gap: 8px;
+      align-items: stretch;
+      overflow-x: auto;
+    }
+
+    .flow-step {
+      min-width: 132px;
+      flex: 1;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgb(7 16 15 / 42%);
+      font-size: 13px;
+    }
+
+    .flow-arrow {
+      display: grid;
+      flex: 0 0 22px;
+      place-items: center;
+      color: var(--green);
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    th, td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      background: #11201d;
+      color: var(--green);
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    tr:last-child td { border-bottom: 0; }
+    tbody tr:hover { background: rgb(102 228 170 / 4%); }
+
+    .state {
+      display: inline-flex;
+      padding: 3px 7px;
+      border-radius: 7px;
+      background: rgb(114 183 255 / 10%);
+      color: var(--blue);
+      font-family: var(--mono);
+      font-size: 10px;
+    }
+
+    details {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgb(7 16 15 / 38%);
+    }
+
+    details + details { margin-top: 9px; }
+
+    summary {
+      padding: 16px 18px;
+      cursor: pointer;
+      font-weight: 650;
+    }
+
+    details > div {
+      padding: 0 18px 18px;
+      color: #c1d4cd;
+    }
+
+    .criteria-groups {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .criteria {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .criteria li {
+      display: grid;
+      grid-template-columns: 30px 1fr;
+      gap: 10px;
+      padding: 11px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .criteria li:last-child { border-bottom: 0; }
+
+    .criteria b {
+      color: var(--green);
+      font-family: var(--mono);
+      font-size: 11px;
+    }
+
+    .risk {
+      display: grid;
+      grid-template-columns: 40px 1fr;
+      gap: 14px;
+    }
+
+    .risk-score {
+      display: grid;
+      width: 36px;
+      height: 36px;
+      place-items: center;
+      border-radius: 11px;
+      background: rgb(255 137 125 / 10%);
+      color: var(--red);
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .decision-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .decision {
+      display: flex;
+      min-height: 250px;
+      flex-direction: column;
+      padding: 21px;
+      border: 1px solid var(--line);
+      border-radius: 17px;
+      background: rgb(7 16 15 / 48%);
+    }
+
+    .decision[data-status="approved"] { border-color: rgb(102 228 170 / 52%); }
+    .decision[data-status="discuss"] { border-color: rgb(255 198 109 / 52%); }
+    .decision[data-status="rejected"] { border-color: rgb(255 137 125 / 52%); }
+
+    .decision-top {
+      display: flex;
+      gap: 14px;
+      align-items: start;
+    }
+
+    .decision-id {
+      display: grid;
+      width: 34px;
+      height: 34px;
+      flex: 0 0 34px;
+      place-items: center;
+      border-radius: 10px;
+      background: var(--surface-3);
+      color: var(--green);
+      font-family: var(--mono);
+      font-weight: 800;
+    }
+
+    .recommendation {
+      margin: 14px 0;
+      padding: 12px;
+      border-radius: 11px;
+      background: rgb(102 228 170 / 7%);
+      color: #bde6d4;
+      font-size: 13px;
+    }
+
+    .vote {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      margin-top: auto;
+    }
+
+    .vote button {
+      min-height: 36px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: var(--surface-2);
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 11px;
+    }
+
+    .vote button:hover,
+    .vote button.active { color: var(--text); }
+    .vote button[data-vote="approved"].active { background: rgb(102 228 170 / 16%); color: var(--green); }
+    .vote button[data-vote="discuss"].active { background: rgb(255 198 109 / 15%); color: var(--amber); }
+    .vote button[data-vote="rejected"].active { background: rgb(255 137 125 / 15%); color: var(--red); }
+
+    .approval-bar {
+      display: grid;
+      grid-template-columns: minmax(260px, .8fr) minmax(0, 1.2fr);
+      gap: 20px;
+      align-items: center;
+      margin-bottom: 18px;
+      padding: 20px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgb(7 16 15 / 45%);
+    }
+
+    .progress-track {
+      height: 10px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: var(--surface-3);
+    }
+
+    .progress-track span {
+      display: block;
+      width: 0;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--green-strong), var(--green));
+      transition: width .25s ease;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 120px;
+      padding: 14px;
+      resize: vertical;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      background: #081310;
+      color: var(--text);
+    }
+
+    .file-map {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .file-map code {
+      color: #cce9dc;
+      font: 12px/1.55 var(--mono);
+      word-break: break-word;
+    }
+
+    .footer {
+      display: flex;
+      gap: 18px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 30px 0 60px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .toast {
+      position: fixed;
+      right: 22px;
+      bottom: 22px;
+      z-index: 80;
+      max-width: 380px;
+      padding: 12px 15px;
+      border: 1px solid var(--line-strong);
+      border-radius: 12px;
+      background: #182b26;
+      box-shadow: var(--shadow);
+      color: var(--text);
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity .2s ease, transform .2s ease;
+      pointer-events: none;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .search-hidden { display: none !important; }
+
+    @media (max-width: 1050px) {
+      .hero,
+      .graph-layout,
+      .stage-detail,
+      .approval-bar { grid-template-columns: 1fr; }
+      .graph-wrap,
+      .inspector { min-height: auto; }
+      .grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .inspector { min-height: 0; }
+    }
+
+    @media (max-width: 760px) {
+      .shell { width: min(100% - 24px, 1440px); }
+      .topbar { padding: 9px 12px; }
+      .search { display: none; }
+      .top-actions .btn.secondary { display: none; }
+      .hero { padding-top: 48px; }
+      .hero-meta,
+      .grid-2,
+      .grid-3,
+      .grid-4,
+      .criteria-groups,
+      .decision-grid,
+      .file-map { grid-template-columns: 1fr; }
+      .panel { padding: 21px; }
+      .section-head { display: block; }
+      h1 { font-size: clamp(42px, 15vw, 68px); }
+    }
+
+    @media print {
+      :root { color-scheme: light; }
+      body { background: white; color: #10231e; }
+      body::before, .topbar, .section-nav, .chip-row, .vote, .toast, .btn { display: none !important; }
+      .shell { width: 100%; }
+      .hero { grid-template-columns: 1fr; padding: 20px 0; }
+      .panel, .card, .graph-wrap, .inspector, .decision, details {
+        break-inside: avoid;
+        border-color: #b9cbc5;
+        background: white;
+        box-shadow: none;
+      }
+      .panel { margin-bottom: 14px; padding: 20px; }
+      .muted, .lede, .card p, .mode p, .footer { color: #526c64; }
+      .code { color: #183a31; background: #f0f7f4; }
+      .decision-grid, .grid-2, .grid-3, .criteria-groups { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        scroll-behavior: auto !important;
+        transition-duration: .01ms !important;
+        animation-duration: .01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#content">Перейти к содержанию</a>
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">qt</span>
+      <span>Mission Plan Codex</span>
+    </div>
+    <div class="top-actions">
+      <input id="search" class="search" type="search" placeholder="Найти в плане…" aria-label="Поиск по плану">
+      <button class="btn secondary" id="print-button" type="button">Печать / PDF</button>
+      <a class="btn primary" href="mission-plan-codex.md">Исходный план</a>
+    </div>
+  </header>
+
+  <main id="content" class="shell">
+    <section class="hero">
+      <div>
+        <div class="eyebrow">Mission Plan Codex · Implemented · 2026-07-29</div>
+        <h1>Mission Plan Codex.<br>Одна цель — несколько сильных задач.</h1>
+        <p class="hero-copy">
+          Единый план: от рекомендации после <code>$qtim-feature</code> до
+          peer-задач Codex, зависимостей, локальных lazy-команд и общего
+          verification gate.
+        </p>
+      </div>
+      <aside class="hero-card" aria-label="Краткая сводка">
+        <div class="status-line">
+          <strong>Сводка проекта</strong>
+          <span class="badge done">Implemented · release gate passed</span>
+        </div>
+        <div class="hero-meta">
+          <div class="metric"><strong>7</strong><span>вертикальных этапов</span></div>
+          <div class="metric"><strong>2</strong><span>уровня оркестрации</span></div>
+          <div class="metric"><strong>38</strong><span>критериев приёмки</span></div>
+          <div class="metric"><strong>7</strong><span>решений для approval</span></div>
+        </div>
+      </aside>
+    </section>
+
+    <nav class="section-nav" aria-label="Разделы плана">
+      <a href="#map">Карта миссии</a>
+      <a href="#value">Выбор и запуск</a>
+      <a href="#architecture">Архитектура</a>
+      <a href="#roadmap">Roadmap</a>
+      <a href="#validation">Validation</a>
+      <a href="#criteria">Acceptance</a>
+      <a href="#risks">Риски</a>
+      <a href="#decisions">Решения</a>
+    </nav>
+
+    <section id="map" class="panel searchable-section">
+      <div class="section-head">
+        <div>
+          <div class="section-kicker">01 · Outcome</div>
+          <h2>Как движется миссия</h2>
+          <p class="lede">Нажмите на узел, чтобы увидеть его ответственность и границы.</p>
+        </div>
+        <div class="chip-row" aria-label="Фильтры графа">
+          <button class="chip active" type="button" data-graph-filter="all">Всё</button>
+          <button class="chip" type="button" data-graph-filter="peer">Peer-задачи</button>
+          <button class="chip" type="button" data-graph-filter="lazy">Lazy level</button>
+          <button class="chip" type="button" data-graph-filter="gate">Verification</button>
+        </div>
+      </div>
+      <div class="graph-layout">
+        <div class="graph-wrap">
+          <svg id="mission-graph" role="img" aria-label="Граф cross-dialog mission" viewBox="0 0 1080 570"></svg>
+        </div>
+        <aside id="graph-inspector" class="inspector" aria-live="polite">
+          <div class="number">01</div>
+          <h3>Mission coordinator</h3>
+          <p class="muted">Владеет только внешним DAG и общим результатом.</p>
+          <ul>
+            <li>Создаёт только ready peer-задачи.</li>
+            <li>Проверяет receipts и передаёт bounded context.</li>
+            <li>Интегрирует commits в topological order.</li>
+            <li>Финализирует единый gate.</li>
+          </ul>
+        </aside>
+      </div>
+      <div class="legend">
+        <span><i style="background:var(--green)"></i> coordinator</span>
+        <span><i style="background:var(--blue)"></i> peer task / node lead</span>
+        <span><i style="background:var(--violet)"></i> local lazy role</span>
+        <span><i style="background:var(--amber)"></i> gate / feedback</span>
+      </div>
+    </section>
+
+    <section id="value" class="panel searchable-section">
+      <div class="section-head">
+        <div>
+          <div class="section-kicker">02 · Product contract</div>
+          <h2>Зачем и как запускать</h2>
+          <p class="lede">Mission полезна там, где ручная координация уже дороже отдельного workflow.</p>
+        </div>
+      </div>
+
+      <div class="grid-3">
+        <article class="card accent searchable-item">
+          <span class="card-index">01 / Параллельность</span>
+          <h3>Независимые workstreams</h3>
+          <p class="muted">Backend, clients, docs или packages идут одновременно в отдельных worktrees.</p>
+        </article>
+        <article class="card accent searchable-item">
+          <span class="card-index">02 / Зависимости</span>
+          <h3>Правильный порядок</h3>
+          <p class="muted">Consumer не стартует, пока producer не вернул проверенный contract receipt.</p>
+        </article>
+        <article class="card accent searchable-item">
+          <span class="card-index">03 / Контекст</span>
+          <h3>Одна node — один outcome</h3>
+          <p class="muted">Высокоуровневая node может поднять lazy team, сохранив внешнюю границу простой.</p>
+        </article>
+        <article class="card searchable-item">
+          <span class="card-index">04 / Изоляция</span>
+          <h3>Без гонки за checkout</h3>
+          <p class="muted">Writer nodes получают worktrees, а локальные writers — непересекающиеся scopes.</p>
+        </article>
+        <article class="card searchable-item">
+          <span class="card-index">05 / Доверие</span>
+          <h3>Receipt вместо «готово»</h3>
+          <p class="muted">Claims проверяются по source, commits, artifacts и командам.</p>
+        </article>
+        <article class="card searchable-item">
+          <span class="card-index">06 / Итог</span>
+          <h3>Один verification verdict</h3>
+          <p class="muted">После APPROVED exact evidence bundle проходит fenced delivery, затем durable checkpoint фиксирует delivered revision и Done.</p>
+        </article>
+      </div>
+
+      <div style="height:28px"></div>
+      <h3>После $qtim-feature: что запускать дальше?</h3>
+      <p class="lede">
+        Каждая Approved feature заканчивается Execution Recommendation Gate.
+        Он выбирает workflow по форме работы, объясняет решение и показывает готовую
+        команду. Сам gate ничего не запускает.
+      </p>
+      <div class="flow" aria-label="Маршрут от feature к исполнению">
+        <div class="flow-step"><span class="state">feature</span><br>Approved outcome</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step"><span class="state">classify</span><br>outcomes, DAG, loops</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step"><span class="state">recommend</span><br>workflow + причина</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step"><span class="state">authorize</span><br>команда или short approval</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step"><span class="state">preview / execute</span><br>mission требует full preview</div>
+      </div>
+
+      <div style="height:18px"></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Форма работы</th><th>Рекомендация</th><th>Почему</th></tr></thead>
+          <tbody>
+            <tr><td>Один bounded outcome</td><td>Direct</td><td>Координация дороже самой работы</td></tr>
+            <tr><td>Один outcome, несколько точечных ролей</td><td>$qtim-team-lazy</td><td>Нужны специалисты без длинного feedback loop</td></tr>
+            <tr><td>Один связный implement → test → fix → review loop</td><td>$qtim-team-up</td><td>Одна задача и один общий контекст</td></tr>
+            <tr><td>Несколько outcomes, worktrees или A → B</td><td>$qtim-mission</td><td>Нужны peer-задачи, handoff и общий gate</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div style="height:18px"></div>
+      <div class="grid-2">
+        <article class="card accent searchable-item">
+          <span class="card-index">ПРИМЕР · TEAM-UP</span>
+          <h3>Один связный outcome</h3>
+          <pre class="code">Рекомендация: $qtim-team-up
+Почему: один checkout outcome и общий
+implement → test → fix loop.
+Команда: $qtim-team-up, реализуй
+Approved feature docs/features/checkout/.</pre>
+        </article>
+        <article class="card accent searchable-item">
+          <span class="card-index">ПРИМЕР · MISSION</span>
+          <h3>Несколько outcomes</h3>
+          <pre class="code">Рекомендация: $qtim-mission
+Почему: backend contract → SDK consumer
+→ общий compatibility gate.
+Команда: $qtim-mission, запусти
+Approved feature docs/features/payments/.</pre>
+        </article>
+      </div>
+
+      <div style="height:18px"></div>
+      <details>
+        <summary>Размер S/M/L/XL не выбирает workflow</summary>
+        <div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Размер</th><th>Типичное действие</th></tr></thead>
+              <tbody>
+                <tr><td>S</td><td>Обычно direct; mission возможна только при реальной межконтекстной зависимости.</td></tr>
+                <tr><td>M</td><td>Direct или team-lazy; mission допустима при двух самостоятельных outcomes.</td></tr>
+                <tr><td>L</td><td>Team-up или mission — выбор определяет topology.</td></tr>
+                <tr><td>XL</td><td>Сначала декомпозиция, затем один или несколько team-up/mission workflows.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="muted" style="margin-top:12px">
+            M API + SDK с producer → consumer зависимостью может быть mission.
+            XL тесно связанный рефакторинг может остаться team-up. Размер влияет на
+            стоимость и декомпозицию, но не является authorization.
+          </p>
+        </div>
+      </details>
+
+      <div style="height:18px"></div>
+      <div class="grid-2">
+        <article class="card searchable-item">
+          <h3>Выбирать mission</h3>
+          <ul class="compact-list">
+            <li>Есть минимум два отделимых workstreams.</li>
+            <li>Есть producer → consumer зависимости.</li>
+            <li>Нужна независимость исследовательских контекстов.</li>
+            <li>Нужны worktrees и последовательная интеграция.</li>
+            <li>Нужен implement/test/review/fix граф.</li>
+            <li>Работу потребуется возобновлять.</li>
+          </ul>
+        </article>
+        <article class="card searchable-item">
+          <h3>Не выбирать mission</h3>
+          <ul class="compact-list">
+            <li>Локальная правка одного файла.</li>
+            <li>Writers неизбежно меняют одни строки.</li>
+            <li>Не решена продуктовая развилка.</li>
+            <li>Нужно только объяснение, ревью или план.</li>
+            <li>Нет peer thread tools, а видимые задачи обязательны.</li>
+          </ul>
+        </article>
+      </div>
+
+      <div style="height:18px"></div>
+      <h3>Простыми словами: mission или team-up?</h3>
+      <div class="grid-2">
+        <article class="card searchable-item">
+          <span class="card-index">ОДНА КОМНАТА</span>
+          <h3>$qtim-team-up</h3>
+          <p class="muted">
+            Один главный диалог поднимает внутренних специалистов и вместе с ними
+            доводит один связный результат через implement → test → fix → review.
+          </p>
+          <p><strong>Выбирайте:</strong> когда цель одна, контекст общий, а главная сложность — цикл доводки.</p>
+        </article>
+        <article class="card accent searchable-item">
+          <span class="card-index">НЕСКОЛЬКО КОМНАТ</span>
+          <h3>$qtim-mission</h3>
+          <p class="muted">
+            Coordinator управляет несколькими самостоятельными диалогами. У каждого
+            свой outcome, контекст и worktree; результаты передаются по проверенному DAG.
+          </p>
+          <p><strong>Выбирайте:</strong> когда есть разные результаты, worktrees или зависимость A → B.</p>
+        </article>
+      </div>
+
+      <div style="height:14px"></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Вопрос</th><th>Team-up</th><th>Mission</th></tr></thead>
+          <tbody>
+            <tr><td>Верхнеуровневые диалоги</td><td>Один</td><td>Два и более peer-диалога</td></tr>
+            <tr><td>Главная ценность</td><td>Глубокий цикл доводки</td><td>Изоляция контекстов и зависимостей</td></tr>
+            <tr><td>Зависимость A → B</td><td>Внутри контекста lead</td><td>B не создаётся до validated receipt A</td></tr>
+            <tr><td>Параллельные writers</td><td>Координируются одной задачей</td><td>Peer worktrees + topological integration</td></tr>
+            <tr><td>Стоимость</td><td>Ниже</td><td>Выше: больше задач, worktrees и gates</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="muted" style="margin:14px 0 0">
+        Mission — не «более мощный team-up». Исправление одной checkout-фичи с
+        тестами — team-up. Миграция API, где SDK ждёт backend-контракт, — mission.
+        Несколько ролей в один проход без циклов — обычный team-lazy.
+      </p>
+
+      <div style="height:24px"></div>
+      <div class="grid-2">
+        <article>
+          <h3>Целевой запуск</h3>
+          <pre class="code">$qtim-mission, запусти утверждённый план
+docs/features/payments/plan.md.
+
+Создай отдельные backend и SDK задачи.
+SDK зависит от backend.
+
+Обе задачи высокоуровневые:
+внутри разреши $qtim-team-lazy.
+
+После интеграции проведи общий gate.</pre>
+        </article>
+        <article>
+          <h3>Управление</h3>
+          <pre class="code">$qtim-mission, status
+$qtim-mission, resume payments-sdk
+$qtim-mission, stop payments-sdk</pre>
+          <p class="muted" style="margin-top:12px">
+            Доступно в qtim 2.12: full mode — в Codex App с peer thread tools,
+            на остальных surfaces — честный team-up fallback.
+          </p>
+        </article>
+      </div>
+
+      <div style="height:28px"></div>
+      <h3>Три режима активации</h3>
+      <div class="grid-3">
+        <article class="card mode auto searchable-item">
+          <span class="badge">явное разрешение</span>
+          <h3 style="margin-top:18px">AUTO-START</h3>
+          <p>«Запусти» + Approved source либо multi-peer shape + однозначный Approved DAG + зелёный preflight. Первые ready-задачи создаются без второго checkpoint.</p>
+        </article>
+        <article class="card mode preview searchable-item">
+          <span class="badge">нужен выбор</span>
+          <h3 style="margin-top:18px">PREVIEW</h3>
+          <p>Raw goal, Fork Test, dirty base, model или budget ambiguity. До подтверждения ни одного create_thread.</p>
+        </article>
+        <article class="card mode recommend searchable-item">
+          <span class="badge">без запуска</span>
+          <h3 style="margin-top:18px">RECOMMEND</h3>
+          <p>$qtim-feature или другой workflow показывает выбор, topology и готовую команду, но не создаёт subagents или peer-задачи.</p>
+        </article>
+      </div>
+      <p class="muted" style="margin:14px 0 0">
+        Размер L/XL никогда сам не переводит RECOMMEND в AUTO-START. Нужна явная
+        displayed mission-команда или approval после полного Approved mission
+        preview. Короткое «Запускай предложенное» после одной feature-рекомендации
+        сначала открывает PREVIEW без create_thread.
+      </p>
+
+      <details style="margin-top:18px">
+        <summary>AUTO-START: обязательные условия</summary>
+        <div>
+          <ol class="compact-list">
+            <li>Executable `$qtim-mission` с Approved source/multi-peer shape либо недвусмысленная просьба провести несколько Codex peer tasks как одну mission.</li>
+            <li>Approved plan/brief с acceptance criteria и без открытых Fork Tests.</li>
+            <li>Однозначный App project и доступные thread tools.</li>
+            <li>Понятный base/snapshot, безопасные scopes и worktrees.</li>
+            <li>Ацикличный DAG и утверждённые budgets.</li>
+            <li>Для lazy node — явно Approved Sol/Ultra pair; нужные роли можно выполнить сразу или runtime waves.</li>
+            <li>Не требуется новый model override, destructive action или пользовательское решение.</li>
+          </ol>
+        </div>
+      </details>
+      <details>
+        <summary>Когда coordinator обязан остановиться</summary>
+        <div>
+          Approval/permission, новая необратимая развилка, опровергнутый premise,
+          конфликт интеграции, scope violation, потерянный handle, исчерпанный budget
+          или расширение исходного scope. SessionStart только напоминает; resume всегда явный.
+        </div>
+      </details>
+    </section>
+
+    <section id="architecture" class="panel searchable-section">
+      <div class="section-head">
+        <div>
+          <div class="section-kicker">03 · System design</div>
+          <h2>Два уровня ownership</h2>
+          <p class="lede">Внешний coordinator управляет миссией. Внутренний node lead управляет только локальной lazy-командой.</p>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <article class="card accent searchable-item">
+          <span class="card-index">LEVEL 1</span>
+          <h3>Mission coordinator</h3>
+          <ul class="compact-list">
+            <li>Peer-задачи и DAG.</li>
+            <li>Dependency context packs.</li>
+            <li>Runtime handles и retries.</li>
+            <li>Commit integration.</li>
+            <li>Final verification verdict.</li>
+          </ul>
+        </article>
+        <article class="card searchable-item">
+          <span class="card-index">LEVEL 2</span>
+          <h3>Peer task / node lead</h3>
+          <ul class="compact-list">
+            <li><code>execution: direct | lazy</code>.</li>
+            <li>Все materially needed roles, без числовой квоты.</li>
+            <li>Explicit writer/read-only policy; disjoint local write scopes.</li>
+            <li>Проверка role claims.</li>
+            <li>Один агрегированный node receipt.</li>
+          </ul>
+        </article>
+      </div>
+
+      <div style="height:18px"></div>
+      <pre class="code">concurrency:
+  policy: demand-driven
+  overflow: runtime-waves
+
+execution: lazy
+lazy:
+  rolePolicy: minimum-sufficient
+  leadProfile:
+    model: gpt-5.6-sol
+    reasoning: ultra
+    approvedIn: mission-preview
+  allowedRoles: [qtim-architect, qtim-testing]
+  roles:
+    qtim-architect:
+      writePolicy: read-only
+      writeScopes: []
+      readScopes: ["docs/architecture/"]
+    qtim-testing:
+      writePolicy: writer
+      writeScopes: [".github/scripts/check_example.py"]
+  escalation: return-to-mission-coordinator</pre>
+
+      <div style="height:24px"></div>
+      <h3>Node state machine</h3>
+      <div class="flow-strip" aria-label="Машина состояний node">
+        <div class="flow-step"><span class="state">pending</span><br>описана в DAG</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step"><span class="state">ready</span><br>dependencies готовы</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step"><span class="state">creating</span><br>получаем handle</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step"><span class="state">running</span><br>direct или lazy</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step"><span class="state">succeeded</span><br>receipt получен</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step"><span class="state">validated</span><br>claims проверены</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">
+          <span class="state">verified | integrated → verified</span><br>
+          read-only: validated → verified<br>
+          writer: validated → integrated → verified
+        </div>
+      </div>
+
+      <div style="height:24px"></div>
+      <div class="grid-3">
+        <article class="card searchable-item">
+          <h3>Portable state</h3>
+          <pre class="code">memory/missions/&lt;slug&gt;/
+├─ mission.md
+├─ receipts.md
+├─ decisions.md
+└─ verification.md
+
+clean state worktree
+monotonic scoped checkpoints
+final evidence bundle</pre>
+        </article>
+        <article class="card searchable-item">
+          <h3>Runtime state</h3>
+          <pre class="code">.codex/qtim-runtime/
+└─ missions/&lt;slug&gt;.json
+
+opaque threadId
+opaque hostId
+opaque waitCursor</pre>
+        </article>
+        <article class="card searchable-item">
+          <h3>Worker receipt</h3>
+          <pre class="code">status + base
+changed files + commit
+artifacts + commands
+execution + local roles
+blockers + escalation</pre>
+        </article>
+      </div>
+
+      <div style="height:24px"></div>
+      <div class="grid-2">
+        <article class="card searchable-item">
+          <h3>В scope v1</h3>
+          <p class="muted">Acyclic DAG, read-only/writer nodes, App peer tasks, worktrees, demand-driven local lazy teams, runtime waves, context packs, receipts, transactional sequential integration, clean verifier, bounded fixes, single-owner resume/fallback.</p>
+        </article>
+        <article class="card searchable-item">
+          <h3>Вне scope v1</h3>
+          <p class="muted">Daemon/MCP scheduler/SQLite, tmux, mixed Claude teams, recursive missions, node-local team-up, third-level fan-out, cloud/cross-host handoff, automatic approvals, foreign task cleanup, cyclic DAG и concurrent integration.</p>
+        </article>
+      </div>
+
+      <details style="margin-top:18px">
+        <summary>Scheduler: 11 обязательных шагов</summary>
+        <div>
+          Validate DAG → find ready → start everything accepted by runtime → create worktree →
+          pass explicitly approved lazy lead profile → reconcile threadId →
+          title task → wait in batches ≤8 → surface needs_input → validate receipt before downstream.
+        </div>
+      </details>
+      <details>
+        <summary>Интеграция и final gate</summary>
+        <div>
+          Writer возвращает bounded commit. Coordinator проверяет base/scope, делает
+          cherry-pick в disposable transaction worktree, запускает affected gate и
+          только затем из clean integration worktree делает full-OID ancestry check,
+          atomic exact-old update-ref и exact-final clean-tree verification. Red gate
+          не сдвигает Approved HEAD. Reserved terminalVerifier исключён из обычных scheduler
+          waves; после полного project validation создаётся ровно одна отдельная
+          read-only verification-задача. NOT APPROVED создаёт bounded fix nodes;
+          исчерпанный budget даёт Blocked, а не ложный Done. После APPROVED
+          exact bundle проходит fenced delivery, затем отдельный монотонный
+          checkpoint записывает Done и deliveredEvidenceRevision, равный
+          независимо перечитанному promoted HEAD.
+        </div>
+      </details>
+    </section>
+
+    <section id="roadmap" class="panel searchable-section">
+      <div class="section-head">
+        <div>
+          <div class="section-kicker">04 · Delivery</div>
+          <h2>Вертикальный roadmap</h2>
+          <p class="lede">Семь этапов реализуются вертикально, но выпускаются одним 2.12 релизом после App smoke и independent review.</p>
+        </div>
+      </div>
+      <div id="timeline" class="timeline" aria-label="Этапы реализации"></div>
+      <div id="stage-detail" class="stage-detail" aria-live="polite"></div>
+    </section>
+
+    <section id="validation" class="panel searchable-section">
+      <div class="section-head">
+        <div>
+          <div class="section-kicker">05 · Failure-aware design</div>
+          <h2>Validation matrix</h2>
+          <p class="lede">Каждый сложный runtime случай имеет fail-visible результат.</p>
+        </div>
+        <span class="badge">30 сценариев</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Категория</th><th>Сценарий</th><th>Ожидаемый результат</th></tr></thead>
+          <tbody id="validation-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="criteria" class="panel searchable-section">
+      <div class="section-head">
+        <div>
+          <div class="section-kicker">06 · Definition of done</div>
+          <h2>38 acceptance criteria</h2>
+          <p class="lede">Done — это проверяемая миссия, а не сумма ответов worker-задач.</p>
+        </div>
+      </div>
+      <div id="criteria-groups" class="criteria-groups"></div>
+    </section>
+
+    <section id="risks" class="panel searchable-section">
+      <div class="section-head">
+        <div>
+          <div class="section-kicker">07 · Risk register</div>
+          <h2>Риски и предохранители</h2>
+          <p class="lede">Основной риск — не failure отдельной задачи, а ложное ощущение управляемой команды.</p>
+        </div>
+      </div>
+      <div id="risk-grid" class="grid-2"></div>
+    </section>
+
+    <section id="decisions" class="panel searchable-section">
+      <div class="section-head">
+        <div>
+          <div class="section-kicker">08 · Approval board</div>
+          <h2>Решения до реализации</h2>
+          <p class="lede">Статусы сохраняются локально в браузере. Они не меняют исходный план.</p>
+        </div>
+        <button id="export-decisions" class="btn primary" type="button">Скачать решения</button>
+      </div>
+
+      <div class="approval-bar">
+        <div>
+          <strong id="approval-summary">0 из 7 согласовано</strong>
+          <p class="muted" style="margin:4px 0 0">Для старта Этапа 0 нужны решения или явные open questions.</p>
+        </div>
+        <div class="progress-track" aria-label="Прогресс согласования">
+          <span id="approval-progress"></span>
+        </div>
+      </div>
+
+      <div id="decision-grid" class="decision-grid"></div>
+
+      <div style="height:18px"></div>
+      <label for="approval-notes"><strong>Общие комментарии согласования</strong></label>
+      <textarea id="approval-notes" placeholder="Что изменить, какие вопросы оставить открытыми…"></textarea>
+    </section>
+
+    <section class="panel searchable-section">
+      <div class="section-head">
+        <div>
+          <div class="section-kicker">09 · Change surface</div>
+          <h2>Предполагаемый file map</h2>
+          <p class="lede">Точный состав сокращается после ADR и runtime probes.</p>
+        </div>
+      </div>
+      <div class="file-map">
+        <article class="card">
+          <h3>Новые файлы</h3>
+          <code>plugins/qtim/skills/qtim-mission/SKILL.md<br>
+          plugins/qtim/skills/qtim-mission/agents/openai.yaml<br>
+          plugins/qtim/reference/mission-protocol.md<br>
+          plugins/qtim/reference/mission-receipt.md<br>
+          plugins/qtim/reference/mission-state-schema.md<br>
+          .github/scripts/check_missions.py</code>
+        </article>
+        <article class="card">
+          <h3>Основные изменения</h3>
+          <code>plugin.json · setup · update · doctor<br>
+          qtim-feature · qtim-team-lazy · qtim-team-down<br>
+          intake-protocol · model-profiles<br>
+          orchestration-patterns · runtime-compat<br>
+          upgrade-notes · hooks · validators<br>
+          README.md · CHANGELOG.md</code>
+        </article>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <span>Источник истины: mission-plan-codex.md · Mission Plan Codex</span>
+      <span>Интерактивные решения хранятся только в localStorage этого браузера</span>
+    </footer>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    const graphNodes = [
+      {
+        id: "coordinator", index: "01", group: "peer", x: 55, y: 210, w: 190, h: 104,
+        title: "Mission coordinator", kind: "LEVEL 1", color: "#66e4aa",
+        description: "Владеет внешним DAG и общим результатом.",
+        bullets: ["Создаёт только ready nodes", "Проверяет receipts", "Интегрирует commits", "Запускает final gate"]
+      },
+      {
+        id: "node-a", index: "02", group: "peer", x: 330, y: 92, w: 190, h: 104,
+        title: "Диалог A", kind: "PEER · LAZY", color: "#72b7ff",
+        description: "Высокоуровневая node с локальной lazy-командой.",
+        bullets: ["Один worktree", "Все materially needed roles", "Один агрегированный receipt", "Не управляет DAG"]
+      },
+      {
+        id: "node-b", index: "03", group: "peer", x: 330, y: 342, w: 190, h: 104,
+        title: "Диалог B", kind: "PEER · DIRECT", color: "#72b7ff",
+        description: "Зависимая direct node получает только проверенный context pack.",
+        bullets: ["Стартует после A", "Не получает transcript целиком", "Возвращает bounded receipt", "Не создаёт descendants"]
+      },
+      {
+        id: "role-1", index: "A1", group: "lazy", x: 596, y: 44, w: 156, h: 82,
+        title: "Architect", kind: "LOCAL ROLE", color: "#b69aff",
+        description: "Локальная роль, выбранная node lead.",
+        bullets: ["Bounded scope", "Advisory result", "Без дальнейшей делегации"]
+      },
+      {
+        id: "role-2", index: "A2", group: "lazy", x: 596, y: 150, w: 156, h: 82,
+        title: "Testing", kind: "LOCAL ROLE", color: "#b69aff",
+        description: "Проверяет node-level validation surface.",
+        bullets: ["Disjoint write scope", "Evidence", "Возврат node lead"]
+      },
+      {
+        id: "integrate", index: "04", group: "gate", x: 602, y: 342, w: 174, h: 104,
+        title: "Integration", kind: "TOPOLOGICAL", color: "#69dbe6",
+        description: "Coordinator переносит только проверенные commits.",
+        bullets: ["Base validation", "Scope validation", "Affected gate", "Conflict → separate node"]
+      },
+      {
+        id: "verify", index: "05", group: "gate", x: 852, y: 210, w: 176, h: 104,
+        title: "Final verifier", kind: "CLEAN CONTEXT", color: "#ffc66d",
+        description: "Отдельная read-only задача проверяет интегрированный результат.",
+        bullets: ["APPROVED → evidence bundle", "Fenced delivery → Done checkpoint", "Delivered revision recorded", "NOT APPROVED → fix node"]
+      }
+    ];
+
+    const graphLinks = [
+      { source: "coordinator", target: "node-a", group: "peer" },
+      { source: "coordinator", target: "node-b", group: "peer" },
+      { source: "node-a", target: "role-1", group: "lazy" },
+      { source: "node-a", target: "role-2", group: "lazy" },
+      { source: "role-1", target: "node-a", group: "lazy", feedback: true },
+      { source: "role-2", target: "node-a", group: "lazy", feedback: true },
+      { source: "node-a", target: "node-b", group: "peer", feedback: true },
+      { source: "node-b", target: "integrate", group: "gate" },
+      { source: "integrate", target: "verify", group: "gate" },
+      { source: "verify", target: "coordinator", group: "gate", feedback: true }
+    ];
+
+    const stages = [
+      {
+        n: 0, title: "ADR и runtime probes", size: "M", dri: "Architect",
+        summary: "Сначала доказать все runtime assumptions.",
+        deliverables: ["State split ADR", "Integration transport ADR", "clientThreadId reconciliation", "App/CLI/IDE boundary", "Nested delegation + model/concurrency contract"],
+        gate: "Ни один runtime assumption не остаётся только предположением."
+      },
+      {
+        n: 1, title: "Read-only mission MVP", size: "L", dri: "Implementation owner",
+        summary: "Feature router + A → B → synthesis без записи кода.",
+        deliverables: ["qtim-mission skill + UI metadata", "Feature completion recommendation gate", "Shape-based direct/lazy/team-up/mission routing", "AUTO-START / PREVIEW / RECOMMEND", "Capability detection", "Две peer-задачи", "Receipt + dependency pack", "Semantic activation guards"],
+        gate: "Feature даёт рекомендацию без запуска; B не создаётся до validated receipt A; отсутствие tools даёт честный fallback."
+      },
+      {
+        n: 2, title: "Node-local lazy team", size: "L", dri: "Orchestration owner",
+        summary: "Высокоуровневая node поднимает bounded lazy-команду.",
+        deliverables: ["execution direct/lazy", "Mission-child lazy contract", "Approved Sol/Ultra override", "Demand-driven minimum-sufficient roster", "Runtime waves", "Aggregated receipt", "Escalation вместо local team-up"],
+        gate: "Lazy поднимает все нужные роли; runtime capacity меняет только wave order, третий уровень невозможен."
+      },
+      {
+        n: 3, title: "Writer и integration", size: "L / XL", dri: "Implementation owner",
+        summary: "Worktrees, commits и transactional topological promotion.",
+        deliverables: ["Git preflight + base capture", "Clean state worktree + scoped checkpoints", "Writer worktree", "Commit receipt", "Transaction integration", "Exclusive promotion lock", "Full-OID ancestry + atomic exact-old update-ref + exact-final clean tree", "Verified rollback", "Conflict node", "Final evidence bundle"],
+        gate: "В clean integration worktree попадают только commits с зелёным gate и fenced promotion; red gate, drift и конфликт не сдвигают Approved HEAD."
+      },
+      {
+        n: 4, title: "Verification loop", size: "M / L", dri: "Reviewer owner",
+        summary: "Один verdict по интегрированному результату.",
+        deliverables: ["Clean-context verifier", "APPROVED / NOT APPROVED", "Confirmed findings", "Bounded fix nodes", "verification.md"],
+        gate: "Worker success без общего verifier никогда не становится mission Done."
+      },
+      {
+        n: 5, title: "Resume и recovery", size: "L", dri: "Implementation owner",
+        summary: "Status, resume, stop и проверка handles.",
+        deliverables: ["status / resume / stop", "Runtime handle verification", "Coordinator ownership lock + generation takeover", "file fsync + atomic replace + parent-directory fsync", "Crash checkpoint reconciliation", "list_threads reconstruction", "Stale/orphan/blocked classification", "SessionStart advisory", "Doctor checks"],
+        gate: "Новая coordinator-задача безопасно продолжает mission или показывает точный blocker."
+      },
+      {
+        n: 6, title: "Release и migration", size: "M", dri: "Maintainer",
+        summary: "Документация, validators, version и upgrade path.",
+        deliverables: ["Version bump", "README + quick start", "CHANGELOG", "Upgrade notes", "Generated state migration", "Plugin/App smoke validation"],
+        gate: "Все repo checks и plugin validation зелёные; новая задача видит qtim-mission."
+      }
+    ];
+
+    const validationCases = [
+      ["Runtime", "App tools доступны, git project clean", "Full mission mode, writer worktrees"],
+      ["Runtime", "App tools доступны, dirty checkout", "Blocking base/snapshot decision до writers"],
+      ["Runtime", "create_thread вернул clientThreadId", "Reconciliation или fail-visible pending"],
+      ["Fallback", "Нет peer thread tools", "Предложен team-up fallback; peer tasks не заявлены"],
+      ["Project", "Non-git project, read-only nodes", "Допустим peer read-only mode"],
+      ["Project", "Non-git project, несколько writers", "Blocked или строго single-writer mode"],
+      ["DAG", "A зависит от B и B от A", "DAG validation fail до создания задач"],
+      ["Scope", "Worker вышел за write scope", "Receipt rejected; integration не выполняется"],
+      ["Input", "Worker требует approval", "Mission Needs input; решение оставлено пользователю"],
+      ["Recovery", "Thread disappeared", "Verify/list recovery, затем respawn или blocker"],
+      ["Git", "Два commits конфликтуют", "Отдельная conflict node; никакого force overwrite"],
+      ["Git", "Affected gate красный после transaction cherry-pick", "Approved HEAD неизменен; node blocked"],
+      ["Recovery", "Другой coordinator вызывает resume", "Takeover только после non-running owner + exclusive ownership lock + generation re-read + atomic replace"],
+      ["Recovery", "Crash оставил partial portable diff", "Resume blocked; durable source — последний clean scoped checkpoint"],
+      ["Git", "Другой writer сдвинул Approved HEAD перед promotion", "Exact-old check под exclusive promotion lock блокирует stale transaction"],
+      ["Gate", "Verifier нашёл P1", "NOT APPROVED; bounded fix node"],
+      ["Budget", "Retry budget исчерпан", "Mission Blocked, не Done"],
+      ["Recovery", "Resume на другом host", "Portable state сохранён; runtime recovery unavailable"],
+      ["Identity", "Чужой похожий thread title", "Не управлять без id/project/marker confirmation"],
+      ["Activation", "Явный запуск + Approved source/multi-peer shape + зелёный preflight", "AUTO-START без второго checkpoint"],
+      ["Activation", "Явный запуск + raw goal / Fork Test", "PREVIEW; ни одной peer-задачи до approval"],
+      ["Activation", "Mission-worthy план найден другим workflow", "Только RECOMMEND; без create_thread"],
+      ["Activation", "Skill в цитате, вопросе или отрицании", "Workflow не активируется"],
+      ["Input", "Running node требует approval/permission", "Needs input; coordinator не отвечает"],
+      ["Lazy", "Approved execution: lazy + explicit Sol/Ultra pair", "Coordinator передаёт pair; node lead вызывает qtim-team-lazy"],
+      ["Lazy", "Несколько concerns, но нет feedback loop", "Только нужные роли; один receipt"],
+      ["Lazy", "Появился implement → test → fix loop", "Escalation coordinator; не local team-up"],
+      ["Concurrency", "Ready peer nodes больше текущей runtime capacity", "Принятые nodes стартуют; остальные остаются ready для следующей wave"],
+      ["Concurrency", "Нужных local roles больше per-session cap", "Локальные waves; роли не отбрасываются, третий уровень не создаётся"],
+      ["Guard", "Роль поднята без concrete responsibility", "Receipt rejected как декоративный fan-out"],
+      ["Guard", "Local subagent создаёт peer/descendant", "Contract violation; receipt отклонён"],
+      ["Routing", "Approved feature: один outcome + feedback loop", "Рекомендован team-up с причиной и командой; ничего не запущено"],
+      ["Routing", "Approved feature: producer → consumer outcomes", "Рекомендована mission с topology и командой; ничего не запущено"],
+      ["Routing", "M и XL имеют одинаковую execution topology", "Выбран одинаковый workflow; размер влияет только на декомпозицию"]
+    ];
+
+    const criteriaGroups = [
+      {
+        title: "Оркестрация · 1–8",
+        items: [
+          "Явный qtim-mission создаёт минимум две видимые peer-задачи.",
+          "Создаются только ready nodes валидного acyclic DAG.",
+          "Каждая задача имеет mission/node marker и bounded prompt.",
+          "Worker не создаёт peer mission tasks; lazy lead — только allowed local agents.",
+          "Downstream получает проверенный dependency context pack.",
+          "Read-only и writer policies разделены.",
+          "Каждый writer изолирован worktree и возвращает commit receipt.",
+          "Integration последовательна и останавливается при конфликте/scope violation."
+        ]
+      },
+      {
+        title: "Verification и recovery · 9–18",
+        items: [
+          "Worker SUCCEEDED не равен общему успеху.",
+          "Final verifier — отдельная clean-context read-only задача.",
+          "Каждый verifier finding проверяется по source.",
+          "После APPROVED exact evidence bundle проходит fenced delivery; затем durable checkpoint записывает Done и delivered revision.",
+          "Runtime state проверяем и восстанавливаем на поддерживаемой поверхности.",
+          "Потерянный handle/tool/worker failure не маскируется как success.",
+          "Model/thinking не меняется без явного выбора.",
+          "Workflow не принимает approvals и продуктовые решения за пользователя.",
+          "Stop не удаляет и не архивирует чужие задачи.",
+          "CLI/IDE fallback не обещает отдельные диалоги."
+        ]
+      },
+      {
+        title: "Release и UX · 19–24",
+        items: [
+          "Migration сохраняет foreign content, track blocks и user overrides.",
+          "Repo validation, fixtures, plugin validation и App smoke matrix зелёные.",
+          "README объясняет пользу, кейсы, запуск, status/resume/stop.",
+          "AUTO-START только после явного разрешения и зелёного preflight.",
+          "PREVIEW не вызывает create_thread до подтверждения.",
+          "RECOMMEND, SessionStart, цитата, вопрос и отрицание не создают задачи."
+        ]
+      },
+      {
+        title: "Nested lazy · 25–28",
+        items: [
+          "execution: lazy вызывает qtim-team-lazy и возвращает один checked receipt.",
+          "Размер команды задаёт scope; runtime capacity обрабатывается waves.",
+          "Local subagents не создают descendants, peer-задачи или mission.",
+          "Feedback loop эскалируется coordinator вместо local team-up."
+        ]
+      },
+      {
+        title: "Feature routing · 29–33",
+        items: [
+          "Каждая завершённая Approved qtim-feature содержит блок «Что запускать дальше».",
+          "Routing выбирает workflow по outcomes, dependencies, isolation и feedback loops — не только по размеру.",
+          "Recommendation содержит workflow, причину, topology, готовую команду и альтернативу.",
+          "Один outcome идёт в direct/lazy/team-up; несколько outcomes или A → B — в mission.",
+          "Feature completion, L/XL и RECOMMEND ничего не запускают без явного разрешения."
+        ]
+      },
+      {
+        title: "Fail-closed runtime · 34–38",
+        items: [
+          "Edge-contract map точно покрывает DAG; overlapping writers сериализованы direct integrated edge.",
+          "Writer проходит no-edit READY → coordinator baseline → exact follow-up, остаётся detached и не создаёт shared ref.",
+          "Coordinator journals разрешают только exact state checkpoint; integration и foreign refs frozen.",
+          "Raw/common Git proof проверяет type, mode, topology, bytes, no-clobber first-run registry init, single-link writer content, nested submodule controls, real Windows junctions, registry/lock paths, common worktrees и hard budgets.",
+          "SessionStart не объявляет незавершённой mission с authoritative Done на exact state ref."
+        ]
+      }
+    ];
+
+    const risks = [
+      ["H", "App-only tool surface", "Mission может быть непереносима в CLI/IDE.", "Capability detection, App-first label, честный single-task fallback."],
+      ["M", "Peer tasks ≠ subagents", "Пользователь ожидает скрытую иерархию и inherited context.", "Видимые titles, bounded prompts, coordinator-owned graph."],
+      ["H", "Async worktree creation", "clientThreadId нельзя сразу использовать в wait/read/send.", "Deterministic reconciliation или ограничение production contract."],
+      ["H", "Git integration", "Conflicts, dirty checkout, takeover race, red gate или foreign drift после cherry-pick.", "Scoped checkpoint state worktree, clean integration worktree, transaction gate, ownership → promotion lock order + generation re-read + full-OID ancestry + atomic exact-old update-ref + exact-final clean tree, verified rollback, conflict nodes."],
+      ["H", "Недоверенные outputs", "Downstream получает неверный claim как факт.", "Receipt contract, source verification, minimal context packs."],
+      ["M", "UX и состояние", "Слишком много задач, файлов и cleanup work.", "Minimum-sufficient roster, waves, один public skill, split state, manual cleanup."],
+      ["M", "Маршрутизация по размеру", "Любая XL feature ошибочно становится mission, а небольшой DAG пропускается.", "Выбирать по outcomes, dependencies, isolation и loops; размер — только сигнал стоимости."],
+      ["H", "Nested fan-out explosion", "Lazy teams могут поднять лишние роли или создать рекурсию.", "Два уровня; minimum-sufficient roster; runtime waves; disjoint scopes; no local team-up."],
+      ["H", "Неверный node profile", "Lazy node работает не на Sol/Ultra и не является честным lead.", "Exact pair явно утверждается в Preview/spec; иначе Preview или Blocked."],
+    ];
+
+    const decisions = [
+      { id: 1, title: "State ADR", question: "Где хранить runtime state?", recommendation: "Split state: portable evidence — scoped checkpoint commits в clean state branch/worktree; opaque handles + owner generation — в .codex/qtim-runtime/." },
+      { id: 2, title: "Integration ADR", question: "Handoff, commits или гибрид?", recommendation: "Transaction cherry-pick + affected gate + clean integration + exclusive lock + full-OID ancestry + atomic exact-old update-ref + exact-final clean tree; handoff не DAG merge." },
+      { id: 3, title: "Surface contract", question: "App-first или полная cross-surface parity?", recommendation: "App-first full mode + честный CLI/IDE fallback." },
+      { id: 4, title: "Model contract", question: "Default profile или upfront overrides?", recommendation: "Configured defaults; overrides только после явного выбора пользователя." },
+      { id: 5, title: "Cleanup contract", question: "Что делать с завершёнными peer-задачами?", recommendation: "Оставлять видимыми и архивировать только после отдельного подтверждения." },
+      { id: 6, title: "Nested lazy contract", question: "Разрешать ли вложенную команду?", recommendation: "Согласовано: два ownership level; без plugin hard cap. Поднимать все materially needed roles, лишние не поднимать; runtime capacity обрабатывать waves; без node-local team-up." },
+      { id: 7, title: "Lazy node profile", question: "Как гарантировать Sol/Ultra для node lead?", recommendation: "Exact Sol/Ultra pair один раз явно утверждается в Preview или Approved spec; coordinator передаёт model + thinking. Если pair недоступна — Blocked, без скрытого fallback." }
+    ];
+
+    const storageKey = "qtim-mission-review-v1";
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;");
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.classList.add("show");
+      clearTimeout(showToast.timer);
+      showToast.timer = setTimeout(() => toast.classList.remove("show"), 2200);
+    }
+
+    function nodeDetail(node) {
+      const inspector = document.getElementById("graph-inspector");
+      inspector.innerHTML = `
+        <div class="number">${escapeHtml(node.index)}</div>
+        <h3>${escapeHtml(node.title)}</h3>
+        <p class="muted">${escapeHtml(node.description)}</p>
+        <ul>${node.bullets.map(item => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+      `;
+      document.querySelectorAll(".graph-node").forEach(item => {
+        item.classList.toggle("selected", item.dataset.id === node.id);
+      });
+    }
+
+    function linkPath(link, nodesById) {
+      const source = nodesById.get(link.source);
+      const target = nodesById.get(link.target);
+      const sx = source.x + source.w;
+      const sy = source.y + source.h / 2;
+      const tx = target.x;
+      const ty = target.y + target.h / 2;
+      if (link.feedback) {
+        const bend = Math.max(50, Math.abs(tx - sx) * .35);
+        return `M${sx},${sy} C${sx + bend},${sy - 62} ${tx - bend},${ty + 62} ${tx},${ty}`;
+      }
+      return `M${sx},${sy} C${sx + 58},${sy} ${tx - 58},${ty} ${tx},${ty}`;
+    }
+
+    function renderGraphWithD3() {
+      const svg = d3.select("#mission-graph");
+      const nodesById = new Map(graphNodes.map(node => [node.id, node]));
+      svg.selectAll("*").remove();
+      const defs = svg.append("defs");
+      defs.append("marker")
+        .attr("id", "arrow")
+        .attr("viewBox", "0 -5 10 10")
+        .attr("refX", 8)
+        .attr("refY", 0)
+        .attr("markerWidth", 6)
+        .attr("markerHeight", 6)
+        .attr("orient", "auto")
+        .append("path")
+        .attr("d", "M0,-5L10,0L0,5")
+        .attr("fill", "#64847a");
+
+      svg.append("g")
+        .attr("class", "links")
+        .selectAll("path")
+        .data(graphLinks, item => `${item.source}-${item.target}`)
+        .join("path")
+        .attr("class", item => `graph-link ${item.feedback ? "feedback" : ""}`)
+        .attr("data-group", item => item.group)
+        .attr("d", item => linkPath(item, nodesById));
+
+      const node = svg.append("g")
+        .attr("class", "nodes")
+        .selectAll("g")
+        .data(graphNodes, item => item.id)
+        .join("g")
+        .attr("class", "graph-node")
+        .attr("data-id", item => item.id)
+        .attr("data-group", item => item.group)
+        .attr("transform", item => `translate(${item.x},${item.y})`)
+        .attr("role", "button")
+        .attr("tabindex", 0)
+        .attr("aria-label", item => `${item.title}: ${item.description}`)
+        .on("click", (_, item) => nodeDetail(item))
+        .on("keydown", (event, item) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            nodeDetail(item);
+          }
+        });
+
+      node.append("rect")
+        .attr("width", item => item.w)
+        .attr("height", item => item.h)
+        .attr("rx", 17)
+        .attr("fill", item => `${item.color}13`)
+        .attr("stroke", item => item.color);
+
+      node.append("text")
+        .attr("class", "node-kind")
+        .attr("x", 16)
+        .attr("y", 25)
+        .text(item => item.kind);
+
+      node.append("text")
+        .attr("x", 16)
+        .attr("y", 55)
+        .attr("font-size", 16)
+        .attr("font-weight", 720)
+        .text(item => item.title);
+
+      node.append("text")
+        .attr("x", 16)
+        .attr("y", 79)
+        .attr("fill", "#9ab2aa")
+        .attr("font-size", 11)
+        .text(item => item.id === "node-a" ? "direct | lazy" : item.id === "verify" ? "APPROVED?" : item.group);
+
+      nodeDetail(graphNodes[0]);
+    }
+
+    function renderGraphFallback() {
+      const svg = document.getElementById("mission-graph");
+      const ns = "http://www.w3.org/2000/svg";
+      svg.innerHTML = "";
+      const nodesById = new Map(graphNodes.map(node => [node.id, node]));
+      const defs = document.createElementNS(ns, "defs");
+      defs.innerHTML = '<marker id="arrow" viewBox="0 -5 10 10" refX="8" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,-5L10,0L0,5" fill="#64847a"/></marker>';
+      svg.appendChild(defs);
+      graphLinks.forEach(link => {
+        const path = document.createElementNS(ns, "path");
+        path.setAttribute("class", `graph-link ${link.feedback ? "feedback" : ""}`);
+        path.setAttribute("data-group", link.group);
+        path.setAttribute("d", linkPath(link, nodesById));
+        svg.appendChild(path);
+      });
+      graphNodes.forEach(item => {
+        const group = document.createElementNS(ns, "g");
+        group.setAttribute("class", "graph-node");
+        group.dataset.id = item.id;
+        group.dataset.group = item.group;
+        group.setAttribute("transform", `translate(${item.x},${item.y})`);
+        group.setAttribute("tabindex", "0");
+        group.innerHTML = `<rect width="${item.w}" height="${item.h}" rx="17" fill="${item.color}13" stroke="${item.color}"/>
+          <text class="node-kind" x="16" y="25">${escapeHtml(item.kind)}</text>
+          <text x="16" y="55" font-size="16" font-weight="720">${escapeHtml(item.title)}</text>`;
+        group.addEventListener("click", () => nodeDetail(item));
+        svg.appendChild(group);
+      });
+      nodeDetail(graphNodes[0]);
+      showToast("D3 CDN недоступен: включён автономный SVG fallback");
+    }
+
+    function setGraphFilter(filter) {
+      document.querySelectorAll(".graph-node").forEach(node => {
+        node.style.opacity = filter === "all" || node.dataset.group === filter ? "1" : ".12";
+        node.style.pointerEvents = filter === "all" || node.dataset.group === filter ? "auto" : "none";
+      });
+      document.querySelectorAll(".graph-link").forEach(link => {
+        link.style.opacity = filter === "all" || link.dataset.group === filter ? "1" : ".08";
+      });
+    }
+
+    function renderStages() {
+      const timeline = document.getElementById("timeline");
+      timeline.innerHTML = stages.map(stage => `
+        <button class="stage-card searchable-item" type="button" data-stage="${stage.n}">
+          <span class="stage-no">${stage.n}</span>
+          <h3>${escapeHtml(stage.title)}</h3>
+          <p class="muted">${escapeHtml(stage.summary)}</p>
+          <small>${escapeHtml(stage.size)} · ${escapeHtml(stage.dri)}</small>
+        </button>
+      `).join("");
+      timeline.querySelectorAll("[data-stage]").forEach(button => {
+        button.addEventListener("click", () => selectStage(Number(button.dataset.stage)));
+      });
+      selectStage(0);
+    }
+
+    function selectStage(index) {
+      const stage = stages[index];
+      document.querySelectorAll("[data-stage]").forEach(button => {
+        button.classList.toggle("selected", Number(button.dataset.stage) === index);
+      });
+      document.getElementById("stage-detail").innerHTML = `
+        <div>
+          <div class="big">0${stage.n}</div>
+          <p class="muted" style="margin-top:12px">Размер ${escapeHtml(stage.size)}<br>DRI: ${escapeHtml(stage.dri)}</p>
+        </div>
+        <div>
+          <h3>${escapeHtml(stage.title)}</h3>
+          <ul class="compact-list">${stage.deliverables.map(item => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+        </div>
+        <div>
+          <div class="gate"><strong>Gate</strong><br>${escapeHtml(stage.gate)}</div>
+        </div>
+      `;
+    }
+
+    function renderValidation() {
+      document.getElementById("validation-body").innerHTML = validationCases.map(row => `
+        <tr class="searchable-item">
+          <td><span class="state">${escapeHtml(row[0])}</span></td>
+          <td>${escapeHtml(row[1])}</td>
+          <td>${escapeHtml(row[2])}</td>
+        </tr>
+      `).join("");
+    }
+
+    function renderCriteria() {
+      let number = 1;
+      document.getElementById("criteria-groups").innerHTML = criteriaGroups.map(group => `
+        <article class="card searchable-item">
+          <h3>${escapeHtml(group.title)}</h3>
+          <ol class="criteria">
+            ${group.items.map(item => `<li><b>${String(number++).padStart(2, "0")}</b><span>${escapeHtml(item)}</span></li>`).join("")}
+          </ol>
+        </article>
+      `).join("");
+    }
+
+    function renderRisks() {
+      document.getElementById("risk-grid").innerHTML = risks.map(risk => `
+        <article class="card risk searchable-item">
+          <span class="risk-score">${escapeHtml(risk[0])}</span>
+          <div>
+            <h3>${escapeHtml(risk[1])}</h3>
+            <p class="muted">${escapeHtml(risk[2])}</p>
+            <p><strong>Мера:</strong> ${escapeHtml(risk[3])}</p>
+          </div>
+        </article>
+      `).join("");
+    }
+
+    function loadReview() {
+      try {
+        const review = JSON.parse(localStorage.getItem(storageKey)) || { votes: {}, notes: "" };
+        review.votes ||= {};
+        if ((review.schemaVersion || 1) < 2) {
+          Object.assign(review.votes, {
+            "1": "approved",
+            "2": "approved",
+            "3": "approved",
+            "4": "approved",
+            "5": "approved",
+            "6": "approved"
+          });
+          review.schemaVersion = 2;
+          localStorage.setItem(storageKey, JSON.stringify(review));
+        }
+        return review;
+      } catch {
+        return {
+          schemaVersion: 2,
+          votes: {
+            "1": "approved",
+            "2": "approved",
+            "3": "approved",
+            "4": "approved",
+            "5": "approved",
+            "6": "approved"
+          },
+          notes: ""
+        };
+      }
+    }
+
+    function saveReview(review) {
+      localStorage.setItem(storageKey, JSON.stringify(review));
+    }
+
+    function renderDecisions() {
+      const review = loadReview();
+      document.getElementById("decision-grid").innerHTML = decisions.map(decision => {
+        const status = review.votes[decision.id] || "";
+        return `
+          <article class="decision searchable-item" data-decision="${decision.id}" data-status="${escapeHtml(status)}">
+            <div class="decision-top">
+              <span class="decision-id">${decision.id}</span>
+              <div>
+                <h3>${escapeHtml(decision.title)}</h3>
+                <p class="muted">${escapeHtml(decision.question)}</p>
+              </div>
+            </div>
+            <div class="recommendation"><strong>Рекомендация:</strong> ${escapeHtml(decision.recommendation)}</div>
+            <div class="vote" aria-label="Статус решения ${decision.id}">
+              <button type="button" data-vote="approved" class="${status === "approved" ? "active" : ""}">Согласовано</button>
+              <button type="button" data-vote="discuss" class="${status === "discuss" ? "active" : ""}">Обсудить</button>
+              <button type="button" data-vote="rejected" class="${status === "rejected" ? "active" : ""}">Отклонено</button>
+            </div>
+          </article>
+        `;
+      }).join("");
+      document.getElementById("approval-notes").value = review.notes || "";
+      document.querySelectorAll("[data-decision] [data-vote]").forEach(button => {
+        button.addEventListener("click", () => {
+          const card = button.closest("[data-decision]");
+          const current = loadReview();
+          current.votes[card.dataset.decision] = button.dataset.vote;
+          saveReview(current);
+          renderDecisions();
+        });
+      });
+      updateApprovalSummary();
+    }
+
+    function updateApprovalSummary() {
+      const review = loadReview();
+      const approved = Object.values(review.votes).filter(value => value === "approved").length;
+      document.getElementById("approval-summary").textContent = `${approved} из ${decisions.length} согласовано`;
+      document.getElementById("approval-progress").style.width = `${approved / decisions.length * 100}%`;
+    }
+
+    function exportDecisions() {
+      const review = loadReview();
+      const labels = { approved: "СОГЛАСОВАНО", discuss: "ОБСУДИТЬ", rejected: "ОТКЛОНЕНО" };
+      const content = [
+        "# Mission Plan Codex — решения согласования",
+        "",
+        `Дата экспорта: ${new Date().toISOString()}`,
+        "",
+        ...decisions.flatMap(decision => [
+          `## ${decision.id}. ${decision.title} — ${labels[review.votes[decision.id]] || "БЕЗ РЕШЕНИЯ"}`,
+          "",
+          decision.question,
+          "",
+          `Рекомендация плана: ${decision.recommendation}`,
+          ""
+        ]),
+        "## Общие комментарии",
+        "",
+        review.notes || "Нет."
+      ].join("\n");
+      const blob = new Blob([content], { type: "text/markdown;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "mission-plan-codex-approval.md";
+      link.click();
+      URL.revokeObjectURL(url);
+      showToast("Файл решений подготовлен");
+    }
+
+    function setupSearch() {
+      const input = document.getElementById("search");
+      input.addEventListener("input", () => {
+        const query = input.value.trim().toLocaleLowerCase("ru");
+        let visible = 0;
+        document.querySelectorAll(".searchable-item").forEach(item => {
+          const match = !query || item.textContent.toLocaleLowerCase("ru").includes(query);
+          item.classList.toggle("search-hidden", !match);
+          if (match) visible++;
+        });
+        if (query) showToast(`Совпадений: ${visible}`);
+      });
+    }
+
+    function setupSectionObserver() {
+      const links = [...document.querySelectorAll(".section-nav a")];
+      const sections = links.map(link => document.querySelector(link.getAttribute("href"))).filter(Boolean);
+      const observer = new IntersectionObserver(entries => {
+        const current = entries
+          .filter(entry => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        if (!current) return;
+        links.forEach(link => link.classList.toggle("active", link.getAttribute("href") === `#${current.target.id}`));
+      }, { rootMargin: "-18% 0px -65% 0px", threshold: [0, .15, .45] });
+      sections.forEach(section => observer.observe(section));
+    }
+
+    document.querySelectorAll("[data-graph-filter]").forEach(button => {
+      button.addEventListener("click", () => {
+        document.querySelectorAll("[data-graph-filter]").forEach(item => item.classList.toggle("active", item === button));
+        setGraphFilter(button.dataset.graphFilter);
+      });
+    });
+
+    document.getElementById("print-button").addEventListener("click", () => window.print());
+    document.getElementById("export-decisions").addEventListener("click", exportDecisions);
+    document.getElementById("approval-notes").addEventListener("input", event => {
+      const review = loadReview();
+      review.notes = event.target.value;
+      saveReview(review);
+    });
+
+    renderStages();
+    renderValidation();
+    renderCriteria();
+    renderRisks();
+    renderDecisions();
+    setupSearch();
+    setupSectionObserver();
+
+    if (window.d3) renderGraphWithD3();
+    else renderGraphFallback();
+  </script>
+</body>
+</html>

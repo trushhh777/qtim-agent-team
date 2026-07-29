@@ -8,7 +8,7 @@ All content is primarily Russian. The repository has no build step and no applic
 
 - `.agents/plugins/marketplace.json` — Codex marketplace manifest exposing `plugins/qtim`.
 - `plugins/qtim/.codex-plugin/plugin.json` — Codex plugin manifest.
-- `plugins/qtim/skills/` — Codex workflows: `qtim-setup`, `qtim-feature`, `qtim-onboard`, `qtim-product-onboard`, `qtim-team-up`, `qtim-team-lazy`, `qtim-team-retro`, `qtim-team-down`, `qtim-doctor`, `qtim-update`; bundled disciplines: `qtim-debug-loop`, `qtim-prototype`, `qtim-brainstorm`, `qtim-grill`.
+- `plugins/qtim/skills/` — Codex workflows: `qtim-setup`, `qtim-feature`, `qtim-mission`, `qtim-onboard`, `qtim-product-onboard`, `qtim-team-up`, `qtim-team-lazy`, `qtim-team-retro`, `qtim-team-down`, `qtim-doctor`, `qtim-update`; bundled disciplines: `qtim-debug-loop`, `qtim-prototype`, `qtim-brainstorm`, `qtim-grill`.
 - `plugins/qtim/agents/` — Codex custom agent TOML templates (dev roles + `product.toml` for the PM track) copied by `$qtim-setup` into target projects.
 - `plugins/qtim/reference/` — shared mechanics plus canonical `project-hooks.json` for optional project PostToolUse and upgrade notes for generated-state migrations.
 - `plugins/qtim/hooks/hooks.json` — plugin-bundled Codex `SessionStart` / `SubagentStop` lifecycle hooks.
@@ -50,8 +50,11 @@ python3 -m json.tool plugins/qtim/reference/project-hooks.json > /dev/null
 python3 .github/scripts/check_hooks.py
 python3 .github/scripts/check_placeholders.py
 python3 .github/scripts/check_skills.py
+python3 .github/scripts/check_missions.py
 python3 .github/scripts/check_links.py
 python3 .github/scripts/check_codex_agents.py
+python3 .github/scripts/check_migrations.py
+python3 .github/scripts/check_golden.py
 ```
 
 In CI, use repo-local scripts only. Before release, also run Codex `plugin-creator`'s `validate_plugin.py plugins/qtim` from the local Codex skill installation if it is available.

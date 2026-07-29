@@ -42,6 +42,9 @@ jobs:
           python3 -m pip install --quiet pyyaml || true
           python3 .github/scripts/check_skills.py
 
+      - name: Mission contracts и semantic fixtures валидны
+        run: python3 .github/scripts/check_missions.py
+
       - name: Codex custom agents валидны
         run: python3 .github/scripts/check_codex_agents.py
 
@@ -65,3 +68,6 @@ jobs:
 
       - name: Windows commandWindows hooks исполняются
         run: python .github/scripts/check_hooks.py
+
+      - name: Windows junction containment mission валиден
+        run: python .github/scripts/check_missions.py --windows-filesystem-only

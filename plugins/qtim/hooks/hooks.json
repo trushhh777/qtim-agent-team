@@ -1,5 +1,5 @@
 {
-  "description": "Plugin-bundled Codex lifecycle contracts команды qtim: анонс при старте, advisory handoff после субагента и opt-in screenshot gate для qtim-testing.",
+  "description": "Plugin-bundled Codex lifecycle contracts команды qtim: стартовый анонс и passive unfinished-mission advisory, handoff после субагента и opt-in screenshot gate для qtim-testing.",
   "hooks": {
     "SessionStart": [
       {
@@ -7,7 +7,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "root=$(git rev-parse --show-toplevel 2>/dev/null || pwd); charter=\"$root/.codex/team-charter.md\"; test ! -f \"$charter\" || { v=$(grep -m1 'qtim-version:' \"$charter\" | grep -oE '[0-9]+\\.[0-9]+\\.[0-9]+' || true); printf '[qtim %s] %s\\n' \"${v:+v}${v:-legacy}\" 'Команда Codex-агентов настроена. $qtim-feature — провести хотелку до PRD/оценки/плана, $qtim-team-up — эпик, $qtim-team-lazy — точечная задача, $qtim-update — проверить версию и обновить, $qtim-team-down — завершение активных agent threads.'; }",
+            "command": "root=$(git rev-parse --show-toplevel 2>/dev/null || pwd); sh \"$PLUGIN_ROOT/hooks/session-start.sh\" \"$root\"",
             "commandWindows": "powershell -NoProfile -ExecutionPolicy Bypass -File \"%PLUGIN_ROOT%\\hooks\\session-start.ps1\"",
             "statusMessage": "Checking qtim charter",
             "timeout": 5

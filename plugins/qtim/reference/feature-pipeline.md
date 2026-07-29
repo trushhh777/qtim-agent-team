@@ -68,7 +68,9 @@ DRI и contributing роли/слои в brief задают ownership реали
 - одну фазу с verification gates (typecheck/build/tests, browser evidence для UI), rollback/обратимостью и критерием Done;
 - секцию `## Handoff`.
 
-Пользователь утверждает brief целиком; после approval переходи к handoff и рекомендуй `$qtim-team-lazy`.
+Пользователь утверждает brief целиком; после approval переходи к handoff и выбирай
+следующий workflow по execution topology. Размер S/M не исключает `$qtim-mission`,
+если brief действительно содержит самостоятельные producer/consumer outcomes.
 
 ## Dev-consult полного трека
 
@@ -97,8 +99,33 @@ Work item и фаза плана — вертикальный срез: узки
 
 ## Handoff contract
 
-- Полный трек: `plan.md` ссылается на `prd.md` и заканчивается готовым prompt для `$qtim-team-up` или `$qtim-team-lazy`.
-- Fast-path: `feature-brief.md` — единый источник scope, acceptance criteria, gates и prompt для `$qtim-team-lazy`.
+- Полный трек: `plan.md` ссылается на `prd.md` и заканчивается готовой командой
+  для direct, `$qtim-team-lazy`, `$qtim-team-up` или `$qtim-mission`.
+- Fast-path: `feature-brief.md` — единый источник scope, acceptance criteria,
+  gates и готовой команды выбранного workflow.
+- Каждый Approved плановый документ содержит `## Что запускать дальше` с полями:
+  `Рекомендация`, `Почему`, `Топология`, `Команда`, `Альтернатива`.
+- Routing определяется формой исполнения:
+  - один bounded outcome -> direct;
+  - один outcome и несколько точечных ролей без feedback loop ->
+    `$qtim-team-lazy`;
+  - один связный implement -> test -> fix -> review loop -> `$qtim-team-up`;
+  - два и более самостоятельных outcomes, разные contexts/worktrees или
+    producer -> consumer -> `$qtim-mission`.
+- Размер `S/M/L/XL` влияет на декомпозицию и coordination cost, но не выбирает
+  workflow сам. Одинаковая execution topology получает одинаковую рекомендацию.
+- Recommendation работает только в режиме `RECOMMEND`: завершение feature не
+  запускает subagents или peer-задачи. Нужна новая явная команда пользователя.
+- Approved mission graph с готовыми base/integration target, write scopes,
+  budgets и gates получает команду `$qtim-mission, запусти ...`. Если writer
+  preflight, lazy profile или integration target ещё требуют выбора, команда
+  использует `$qtim-mission, preview ...`; `$qtim-team-up` остаётся альтернативой
+  для одного связного outcome с feedback loop.
+- Короткое «Запускай предложенное» после пятистрочной feature recommendation
+  выбирает `$qtim-mission`, но открывает `PREVIEW`, а не создаёт peer tasks:
+  recommendation не является полным Approved mission preview. `AUTO-START`
+  возможен по displayed explicit mission-команде либо после approval полного
+  preview с base/targets/scopes/budgets/gates.
 - Реализующая команда переводит плановый документ и связанные артефакты в `In Development`, затем `Done` после gates.
 - Отклонения от плана с обоснованием и новые edge cases пишутся в «Историю изменений» планового документа (`plan.md` или `feature-brief.md`).
 - В `memory/decisions.md` добавляется одна строка-указатель на утверждённую фичу.
@@ -118,4 +145,7 @@ Work item и фаза плана — вертикальный срез: узки
 - Пропуск checkpoint «потому что очевидно».
 - Перезапуск существующего slug с нуля.
 - Запись указателя в `memory/decisions.md` до готового handoff.
+- Выбор workflow только по размеру или числу файлов вместо topology outcomes,
+  dependencies, context isolation и feedback loops.
+- Автоматический запуск рекомендации без отдельного явного разрешения.
 - Молчаливое отклонение от планового документа без строки в истории.

@@ -20,14 +20,19 @@ Codex main thread остаётся team-lead. qtim subagent workflow автор�
    - B Single subagent: one bounded agent for isolated work.
    - C Lazy team: several roles, one-pass pipeline.
    - D Full team-up: iterative implement/test/review loops.
-3. Decide whether design approval is required.
-4. For non-trivial work, run `$qtim-brainstorm` and produce a design brief. Create a separate ADR only when the ADR filter is satisfied; otherwise record the decision as one registry line.
-5. Если создан ADR, до user approval проведи обязательный clean-context stress-test: main thread поднимает read-only `gpt-5.6-sol` + `xhigh` adversary без истории; для необратимого решения, затрагивающего документированный инвариант, — `max`. Architect верифицирует findings и фиксирует `adr-stress-test:` в ADR. Эта проверка не зависит от optional risk-based code review.
-6. Get approval for irreversible, ambiguous, product-visible, public API, security, money, or data migration decisions.
-7. Execute with selected roles.
-8. Verify with tests/browser/review.
-9. Record durable decisions and findings in `memory/`; approved decisions and features get a pointer line in the `memory/decisions.md` registry.
-10. Report outcome, not agent chatter.
+3. Отдельно проверь execution topology: два самостоятельных outcomes,
+   producer -> consumer или разные isolated contexts/worktrees означают
+   `$qtim-mission`, а не «режим E». Внутри Approved mission node остаётся direct
+   либо получает один bounded mission-child `$qtim-team-lazy`; node-local team-up
+   и третий уровень запрещены. Recommendation ничего не запускает.
+4. Decide whether design approval is required.
+5. For non-trivial work, run `$qtim-brainstorm` and produce a design brief. Create a separate ADR only when the ADR filter is satisfied; otherwise record the decision as one registry line.
+6. Если создан ADR, до user approval проведи обязательный clean-context stress-test: main thread поднимает read-only `gpt-5.6-sol` + `xhigh` adversary без истории; для необратимого решения, затрагивающего документированный инвариант, — `max`. Architect верифицирует findings и фиксирует `adr-stress-test:` в ADR. Эта проверка не зависит от optional risk-based code review.
+7. Get approval for irreversible, ambiguous, product-visible, public API, security, money, or data migration decisions.
+8. Execute with selected roles.
+9. Verify with tests/browser/review.
+10. Record durable decisions and findings in `memory/`; approved decisions and features get a pointer line in the `memory/decisions.md` registry.
+11. Report outcome, not agent chatter.
 
 ## Fork Test
 

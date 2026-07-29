@@ -27,9 +27,9 @@
 | Роль-вопрос setup | Phase 2, первый вопрос | Q0 (нумерация Q0 — чтобы не сдвигать ссылки на Q1-Q8) | состав PM-трека одинаковый: product + architect + профильные dev, без reviewer |
 | Ссылки между файлами | skills ссылаются на `../../reference/...` (внутри плагина легально); в agent TOML `../` запрещён (CI) | commands ссылаются относительно `[](../reference/...)`; в charter пути к протоколам — **абсолютные** (паттерн codex-consult) | и там и там: сгенерированные файлы самодостаточны |
 | CI | `.github/scripts/`: check_placeholders, check_skills, check_links, check_codex_agents (+ model-слаг), check_hooks (schema + runtime output) | check_placeholders (+ examples/), check_links, check_workflows.mjs, grep канона | белый список плейсхолдеров `{{...}}` одинаковый (8 имён); hook validators runtime-specific |
-| Golden-пример | нет | `examples/nuxt-supabase/` — при правке шаблонов/структуры charter обновить эталон | CI проверяет отсутствие плейсхолдеров в examples |
+| Golden-пример | `examples/fullstack-codex/` + `check_golden.py` | `examples/nuxt-supabase/` — при правке шаблонов/структуры charter обновить эталон | Оба примера семантические и runtime-specific; текст между ними не копировать |
 
-## Соответствие фич (состояние на 2026-07-27)
+## Соответствие фич (состояние на 2026-07-28)
 
 | Фича | Codex | Claude | Статус |
 |---|---|---|---|
@@ -47,6 +47,7 @@
 | Frontier-model адаптация + fast-path PM-конвейера + четыре bundled disciplines + факт/решение + ADR filter + vertical slices | 2.9.0 (порт ИЗ Claude) | 1.9.0 + 1.10.0 (один upstream-коммит [fc0f8e9](https://github.com/toiiia/qtim-agent-team/commit/fc0f8e9b7a1bb2d9c4ab27f2dd14cef72331833a)) | `model: inherit` был адаптирован как отсутствие обоих Codex fields, затем superseded явными pairs в 2.10.0; testing Terra/medium сохранился; Standalone/golden example не портированы; front composable уже был компактным |
 | Явные ролевые модели + независимый stress-test каждого ADR | 2.10.0 (порт ИЗ Claude с Codex-native матрицей) | 1.11.0 ([93fd017](https://github.com/toiiia/qtim-agent-team/commit/93fd017446cedc805ccd7f2ab1e0370372e87b17)) | Claude tiers: opus/sonnet/haiku; Codex exact pairs: team-lead Sol/Ultra, architect+reviewer Sol/xhigh, database+frontend+product Sol/high, testing Terra/medium, explorer Luna/medium. Вместо внешнего второго семейства каждый ADR проверяет clean-context Sol adversary; для необратимого + инвариант effort повышается до max |
 | Runtime contract, atomic PM handoff, read-only review, tester-owned server, screenshot enforcement, migration/golden CI | 2.11.0 (порт общих принципов ИЗ Claude) | 1.12.0 | `.claude/rules`, Agent Teams flags, Task API и agent-memory не переносились; Codex-эквиваленты — managed `AGENTS.md`, custom-agent sandbox, task-scoped threads, plugin hooks и durable `memory/` |
+| Cross-dialog Mission Plan: topology routing, peer-task DAG, node-local lazy, isolated writers, verified integration, final verifier и recovery | 2.12.0 | — | Codex App-specific implementation; возможный Claude-порт должен заново спроектировать peer-task/runtime state поверх актуальных Claude primitives, а не копировать `create_thread`, worktree handles или hook schemas |
 
 ## Правила
 

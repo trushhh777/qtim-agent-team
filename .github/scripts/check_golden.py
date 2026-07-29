@@ -26,9 +26,21 @@ need(charter.startswith(f"<!-- qtim-version: {version} -->"), "charter stamp mis
 for marker in (
     "qtim:track:dev:start", "qtim:track:dev:end", "qtim:track:pm:start",
     "qtim:track:pm:end", "Производная self-contained сводка",
-    "memory/decisions.md", "последним completion marker",
+    "memory/decisions.md", "последним completion marker", "Что запускать дальше",
+    "$qtim-mission", "recommendation ничего не запускает", "integration target",
+    "integrate topologically", "clean-context verifier",
 ):
     need(marker in charter, f"charter missing {marker}")
+for marker in (
+    "$qtim-mission", "worktree", "topologically", "workers не создают descendants",
+):
+    need(marker in agents_md, f"AGENTS missing {marker}")
+
+gitignore = (example / ".gitignore").read_text(encoding="utf-8").splitlines()
+need(
+    gitignore.count(".codex/qtim-runtime/") == 1,
+    "golden .gitignore must contain one qtim runtime entry",
+)
 
 expected = {
     "architect.toml": ("qtim-architect", "gpt-5.6-sol", "xhigh"),
@@ -66,6 +78,12 @@ need(not directory.is_absolute() and ".." not in directory.parts, "unsafe screen
 for filename in ("MEMORY.md", "project-map.md", "commands.md", "safety.md",
                  "invariants.md", "decisions.md", "review-report.md", "bug-log.md"):
     need((example / "memory" / filename).is_file(), f"missing memory/{filename}")
+memory_index = (example / "memory/MEMORY.md").read_text(encoding="utf-8")
+need("memory/missions/<slug>/" in memory_index, "memory index has no on-demand missions")
+need(
+    "gitignored `.codex/qtim-runtime/`" in memory_index,
+    "memory index does not separate opaque mission runtime",
+)
 if bad:
     print("Golden validation failed:\n- " + "\n- ".join(bad))
     sys.exit(1)

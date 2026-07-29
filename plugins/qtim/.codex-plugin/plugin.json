@@ -1,7 +1,7 @@
 {
   "name": "qtim",
-  "version": "2.11.0",
-  "description": "Codex-native bootstrap and orchestration kit for project-specific subagent teams. Adds a platform-loaded runtime contract, mechanically read-only review, tester-owned dev-server startup, opt-in screenshot enforcement, atomic PM handoff, migration CI, and semantic generated-state validation.",
+  "version": "2.12.0",
+  "description": "Codex-native bootstrap and orchestration kit for project-specific subagent teams and explicit cross-dialog missions. Adds a platform-loaded runtime contract, mechanically read-only review, shape-based PM handoff, App capability detection, isolated writer worktrees, validated DAG receipts, topological commit integration, recovery, migration CI, and semantic generated-state validation.",
   "author": {
     "name": "Антон Фокин"
   },
@@ -13,6 +13,8 @@
     "agent-team",
     "subagents",
     "multi-agent",
+    "cross-dialog",
+    "missions",
     "bootstrap",
     "orchestration",
     "code-review"
@@ -20,8 +22,8 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "qtim",
-    "shortDescription": "Bootstrap project-specific Codex subagent teams",
-    "longDescription": "qtim adapts a project into a Codex-native team workflow for developers and PM/analysts. Setup generates a compact automatically loaded AGENTS contract, a track-aware charter, explicit Sol/Terra role profiles and durable memory. Reviewer is mechanically read-only; tester owns the recorded dev-server command and can use an opt-in one-retry browser-evidence gate. PM handoff becomes complete only after artifacts are written and a final decisions pointer is appended. CI guards generated-state migrations and a semantic golden project.",
+    "shortDescription": "Bootstrap Codex teams and cross-dialog missions",
+    "longDescription": "qtim adapts a project into a Codex-native team workflow for developers and PM/analysts. Setup generates a compact automatically loaded AGENTS contract, a track-aware charter, explicit Sol/Terra role profiles and durable memory. Reviewer is mechanically read-only; tester owns the recorded dev-server command and can use an opt-in one-retry browser-evidence gate. PM handoff routes by execution topology. Explicit $qtim-mission coordinates a validated DAG of visible Codex App tasks: read-only analysis, bounded node-local lazy teams, isolated writer worktrees, topological commit integration, clean-context verification, bounded fixes, and fail-visible status/resume/stop.",
     "developerName": "Антон Фокин",
     "category": "Developer Tools",
     "capabilities": [
@@ -32,6 +34,7 @@
       "Set up qtim for this project",
       "Run the qtim feature pipeline for this idea",
       "Run qtim team-up for this epic",
+      "Run an approved multi-task plan as a qtim mission",
       "Diagnose this non-trivial bug with qtim debug-loop"
     ],
     "brandColor": "#2563EB",

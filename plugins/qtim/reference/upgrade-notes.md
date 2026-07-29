@@ -4,6 +4,70 @@
 
 Правило ведения: при каждом релизе, меняющем сгенерированное состояние, добавляй секцию сверху. Секции хранятся newest-first, но `$qtim-update` всегда применяет попавшие в диапазон шаги oldest -> newest (снизу вверх по файлу). Если релиз не меняет сгенерированное состояние, добавляй секцию с пометкой «миграция не требуется».
 
+## 2.12.0
+
+Что нового в сгенерированном состоянии:
+
+- PM track charter заканчивает Approved feature обязательным topology-based блоком
+  «Что запускать дальше» для direct / team-lazy / team-up / mission; recommendation
+  ничего не запускает без нового явного разрешения;
+- managed qtim contract в project `AGENTS.md` фиксирует, что `$qtim-mission` с
+  глаголом исполнения или недвусмысленная просьба провести несколько Codex peer
+  tasks как одну mission создаёт видимые задачи, а одна обычная задача/диалог и
+  planning-only запрос — нет; workers не создают descendants, writers
+  изолированы worktrees, affected gate проходит до locked exact-old ff-only
+  promotion, portable state checkpoint-ится отдельно и общий gate закрывает
+  отдельный verifier;
+- `memory/MEMORY.md` упоминает on-demand `memory/missions/<slug>/`; сам каталог
+  setup/update не создают;
+- корневой `.gitignore` исключает machine-local `.codex/qtim-runtime/`, а portable
+  mission evidence остаётся отслеживаемым.
+
+Миграция с 2.11.0:
+
+1. В PM track между `qtim:track:pm:start/end` обнови только engine-managed handoff
+   summary: добавь блок «Что запускать дальше» с полями recommendation, why,
+   topology, command, alternative; выбор по outcomes/dependencies/context isolation/
+   feedback loops, а не размеру; `RECOMMEND` не запускает tasks. Approved mission
+   graph с зафиксированными base/integration target, scopes, budgets и gates
+   использует `запусти`; unresolved writer/lazy/runtime choice — `preview`;
+   `$qtim-team-up` остаётся fallback для одного связного feedback loop. Dev track
+   и текст вне PM markers не трогай. Для dev-only проекта шаг not applicable.
+2. В общей working-rules секции charter, не трогая track blocks, добавь mission
+   ownership: только coordinator создаёт peer tasks и владеет DAG/runtime/
+   integration/final verdict; Approved lazy node получает ровно один local
+   `$qtim-team-lazy` level; writers работают в отдельных worktrees и возвращают
+   один commit, который проходит topological transaction affected gate до
+   exclusive-lock exact-old/ff-only promotion в отдельный clean integration
+   worktree; portable evidence получает scoped commits в отдельной state worktree
+   и final bundle delivery, resume требует одного owner/generation; status/resume/stop
+   fail-visible, SessionStart только advisory, auto-archive запрещён.
+3. В managed region project `AGENTS.md` между `qtim:contract:start/end` добавь
+   `$qtim-mission`: peer tasks только после явного запуска Approved graph через
+   skill с глаголом исполнения или недвусмысленную просьбу провести несколько
+   Codex peer tasks как одну mission; одна обычная задача/диалог и planning-only
+   запрос не авторизуют mission. Mission workers не создают descendants;
+   read-only и isolated writer nodes используют validated receipts, writer
+   commits проходят transaction affected gate до locked exact-old ff-only
+   promotion, portable evidence checkpoint-ится в отдельной state worktree,
+   итог закрывает separate verifier. Пользовательский текст вне markers сохрани
+   byte-for-byte.
+4. В `memory/MEMORY.md` добавь одну строку без ссылки на несуществующий path:
+   `memory/missions/<slug>/` создаёт только явно запущенная mission через
+   `$qtim-mission` с глаголом исполнения или недвусмысленную просьбу провести
+   несколько Codex peer tasks как одну mission для portable spec,
+   validated/integrated receipts, локальных решений и final verification;
+   opaque runtime handles живут только в gitignored `.codex/qtim-runtime/`.
+   Остальные memory files и их содержимое не переписывай; каталог missions заранее
+   не создавай.
+5. В корневом `.gitignore` добавь ровно одну активную строку
+   `.codex/qtim-runtime/`, сохранив все существующие строки и порядок. Если runtime
+   files уже tracked, не удаляй их автоматически: оставь migration pending и
+   покажи точные paths пользователю.
+6. Role TOML content кроме version stamp, project hooks и существующие
+   mission/feature artifacts не меняй. Обнови charter/TOML stamps до `2.12.0`
+   только после applicable шагов 1–5.
+
 ## 2.11.0
 
 Что нового в сгенерированном состоянии:

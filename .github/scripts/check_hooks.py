@@ -239,6 +239,13 @@ for event in ("SessionStart", "SubagentStop"):
                     bundled_path,
                     "SessionStart.commandWindows читает charter не через LiteralPath",
                 )
+            if event == "SessionStart":
+                for marker in ("session-start.sh", "$PLUGIN_ROOT"):
+                    if marker not in command:
+                        fail(bundled_path, f"SessionStart command missing {marker}")
+                session_script = pathlib.Path("plugins/qtim/hooks/session-start.sh")
+                if not session_script.is_file():
+                    fail(bundled_path, "SessionStart ссылается на отсутствующий session-start.sh")
             if event == "SubagentStop" and not screenshot_gate and '"systemMessage"' not in command:
                 fail(
                     bundled_path,
@@ -422,6 +429,136 @@ if not bad:
                 bundled_path,
                 "SessionStart не прочитал version stamp от git root: "
                 f"rc={session.returncode}, stdout={session.stdout!r}, stderr={session.stderr!r}",
+            )
+
+        mission_dir = root / "memory" / "missions" / "runtime-recovery"
+        mission_dir.mkdir(parents=True)
+        (mission_dir / "mission.md").write_text(
+            "# Mission\nStatus: Running\n", encoding="utf-8"
+        )
+        unsafe_mission_dir = root / "memory" / "missions" / "unsafe slug"
+        unsafe_mission_dir.mkdir(parents=True)
+        (unsafe_mission_dir / "mission.md").write_text(
+            "# Mission\nStatus: Running\n", encoding="utf-8"
+        )
+        session_advisory = run_command(
+            commands["SessionStart"], nested, {**session_payload, "source": "resume"}
+        )
+        advisory_text = session_advisory.stdout.decode("utf-8")
+        if (
+            session_advisory.returncode != 0
+            or session_advisory.stderr
+            or "[qtim mission advisory]" not in advisory_text
+            or "runtime-recovery:Running" not in advisory_text
+            or "unsafe slug" in advisory_text
+            or "Ничего не запущено" not in advisory_text
+            or "$qtim-mission, resume <slug>" not in advisory_text
+        ):
+            fail(
+                bundled_path,
+                "SessionStart не вернул bounded passive mission advisory: "
+                f"rc={session_advisory.returncode}, stdout={session_advisory.stdout!r}, "
+                f"stderr={session_advisory.stderr!r}",
+            )
+
+        for git_args in (
+            ("config", "user.name", "qtim hook fixture"),
+            ("config", "user.email", "qtim-hooks@example.invalid"),
+            ("add", ".codex/team-charter.md", "memory/missions/runtime-recovery/mission.md"),
+            ("commit", "-q", "-m", "portable verifying fixture"),
+        ):
+            git_result = subprocess.run(
+                ["git", *git_args],
+                cwd=root,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=False,
+            )
+            if git_result.returncode != 0:
+                fail(
+                    bundled_path,
+                    f"не удалось подготовить SessionStart state fixture: {git_result.stderr!r}",
+                )
+                break
+        main_branch = subprocess.run(
+            ["git", "symbolic-ref", "--short", "HEAD"],
+            cwd=root,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        ).stdout.strip()
+        state_branch = "codex/qtim-mission-state-runtime-recovery"
+        subprocess.run(
+            ["git", "switch", "-q", "-c", state_branch],
+            cwd=root,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+        (mission_dir / "mission.md").write_text(
+            "# Mission\nStatus: Done\n", encoding="utf-8"
+        )
+        subprocess.run(
+            ["git", "add", "memory/missions/runtime-recovery/mission.md"],
+            cwd=root,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+        state_commit = subprocess.run(
+            ["git", "commit", "-q", "-m", "terminal state fixture"],
+            cwd=root,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+        switch_back = subprocess.run(
+            ["git", "switch", "-q", main_branch],
+            cwd=root,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+        if state_commit.returncode != 0 or switch_back.returncode != 0:
+            fail(bundled_path, "не удалось создать authoritative Done state ref")
+        (mission_dir / "mission.md").write_text(
+            "# Mission\nStatus: Verifying\n", encoding="utf-8"
+        )
+        session_done = run_command(commands["SessionStart"], nested, session_payload)
+        if b"[qtim mission advisory]" in session_done.stdout:
+            fail(
+                bundled_path,
+                "SessionStart не подавил portable Verifying при authoritative Done",
+            )
+
+        (mission_dir / "mission.md").write_text(
+            "# Mission\nStatus: Done\n", encoding="utf-8"
+        )
+        for index in range(60):
+            capped_dir = root / "memory" / "missions" / f"bounded-{index:02d}"
+            capped_dir.mkdir()
+            (capped_dir / "mission.md").write_text(
+                "# Mission\nStatus: Running\n",
+                encoding="utf-8",
+            )
+        bounded_session = run_command(
+            commands["SessionStart"],
+            nested,
+            {**session_payload, "source": "resume"},
+        )
+        bounded_text = bounded_session.stdout.decode("utf-8")
+        if (
+            bounded_session.returncode != 0
+            or bounded_session.stderr
+            or "+more" not in bounded_text
+            or len(bounded_text) > 2048
+        ):
+            fail(
+                bundled_path,
+                "SessionStart не ограничил scan/output при множестве missions: "
+                f"rc={bounded_session.returncode}, stdout={bounded_session.stdout!r}, "
+                f"stderr={bounded_session.stderr!r}",
             )
 
         subagent = run_command(commands["SubagentStop"], nested, subagent_payload)

@@ -30,8 +30,17 @@ In Codex there is no persistent team object on disk; "down" means close active a
 6. Mark any unfinished work clearly in the visible plan or final report.
 7. Tell the user what remains open and whether a new Codex task is recommended.
 
+Если существует Running/Needs input/Blocked mission, не присваивай ей `Done` и не
+поглощай её lifecycle. Запиши в portable handoff только slug, portable status,
+blocker/следующий gate и команду `$qtim-mission, status|resume <slug>`. Exact task,
+thread, host, cursor и worktree handles запрещено копировать в `memory/` или
+другой portable artifact: они остаются только в gitignored runtime registry.
+Закрывай только известные local subagent threads; peer mission tasks, worktrees,
+runtime registry и portable evidence оставь `$qtim-mission`.
+
 ## Rules
 
 - Do not delete `.codex/team-charter.md`, `.codex/agents`, hooks, or memory.
 - Do not pretend an agent thread survived a restart if you no longer have its id.
 - Do not leave important conclusions only in chat. Put durable project knowledge into `memory/`.
+- Do not archive/delete peer mission tasks or rewrite mission status as part of team-down.

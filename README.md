@@ -1,4 +1,4 @@
-# qtim — команда Codex-субагентов под твой проект
+# qtim — команда Codex-субагентов и missions под твой проект
 
 Плагин для Codex, который разворачивает в проекте **команду специализированных subagents**: архитектор, database/backend, frontend, tester, reviewer и дополнительные роли под зрелые продукты. Вместо одного ассистента-универсала ты получаешь воспроизводимый workflow: проектирование, реализация, real-browser QA, ревью и фиксация решений в `memory/`.
 
@@ -16,6 +16,11 @@ qtim подстраивается под стек проекта: анализи
 - **Подстройка под стек** — setup создаёт `.codex/team-charter.md` и `.codex/agents/*.toml` под проект.
 - **Контроль качества** — встроены gates: typecheck/build/tests, real-browser evidence, risk-based review кода и обязательный clean-context Sol stress-test каждого ADR до approval.
 - **Гибкие режимы** — `$qtim-team-lazy` для точечных задач и `$qtim-team-up` для эпиков с циклами implement -> test -> review.
+- **Cross-dialog mission** — явный `$qtim-mission` координирует несколько видимых
+  задач Codex App как проверяемый DAG: read-only analysis, bounded node-local lazy
+  team и isolated writer worktrees сходятся через transactional topological
+  integration: affected gate проходит до `--ff-only` promotion, затем отдельный
+  clean-context verifier закрывает mission.
 
 ## Требования
 
@@ -23,9 +28,19 @@ qtim подстраивается под стек проекта: анализи
 
 qtim запускает subagent workflow только по явной просьбе или вызову соответствующего skill. Основную задачу для qtim открой на `gpt-5.6-sol` + `Ultra`: main thread остаётся team-lead и получает proactive delegation внутри уже разрешённого scope. Плагин не переключает уже открытую задачу скрыто, не расширяет scope и не поднимает рекурсивные команды из child agents.
 
+Full `$qtim-mission` требует callable peer-task tools Codex App. На CLI/IDE без
+этой surface skill честно предлагает `$qtim-team-up` как single-task fallback.
+Writer mode дополнительно требует callable follow-up control: задача сначала
+возвращает no-edit READY, coordinator снимает baseline всей wave и только exact
+follow-up разрешает запись. Также нужны отдельные clean integration/state worktrees, Approved
+base/integration target и отдельный worktree на node; portable mission evidence
+получает scoped checkpoint commits в state branch. Dirty state, scope violation, lost
+handle, conflict и exhausted budget блокируются fail-visible; auto-stash, force
+overwrite и auto-archive запрещены.
+
 ## Модели и reasoning
 
-В qtim 2.11.0 оркестратор и роли разведены по явным GPT-5.6 профилям:
+В qtim 2.12.0 оркестратор и роли разведены по явным GPT-5.6 профилям:
 
 | Роль | Model / reasoning |
 |---|---|
@@ -96,6 +111,7 @@ codex plugin add qtim@qtim-agent-team              # переустановит�
    $qtim-onboard          # dev: один раз наполнить память картой, инвариантами и конвенциями
    $qtim-product-onboard  # PM: один раз собрать продуктовую память из кода
    $qtim-feature          # PM: fast brief или полный PRD -> decomposition/estimate -> plan
+   $qtim-mission          # App: видимый DAG, writer worktrees, integration + verification
    $qtim-team-up          # полный эпик с циклами implement -> test -> review
    $qtim-team-lazy        # роли по мере надобности
    $qtim-team-retro       # после эпика: дистиллировать уроки в память
@@ -110,6 +126,7 @@ codex plugin add qtim@qtim-agent-team              # переустановит�
 |---|---|
 | `$qtim-setup` | Один раз в новом проекте: выбрать роль, сгенерировать charter, custom agents и memory; при выборе добавить optional project PostToolUse |
 | `$qtim-feature` | PM/аналитик: выбрать fast-path brief или полный grounded pipeline и подготовить handoff |
+| `$qtim-mission` | Явно запустить Approved DAG видимых Codex App задач: read-only/lazy/writer nodes, topological integration, bounded verification/fixes и `status/resume/stop` без auto-archive |
 | `$qtim-team-up` | Крупная задача/эпик с обратной связью между implement/test/review |
 | `$qtim-team-lazy` | Быстрая или средняя задача без полного прогрева команды |
 | `$qtim-onboard` | После setup на существующей кодовой базе: наполнить dev-память картой, инвариантами и конвенциями с `file:line` |
@@ -129,6 +146,9 @@ codex plugin add qtim@qtim-agent-team              # переустановит�
 - `.codex/agents/*.toml` — Codex custom agents под стек проекта (включая `qtim-product` для PM-трека).
 - `.codex/hooks.json` — создаётся только для явно выбранного project `PostToolUse` или сохраняет уже существующие пользовательские hooks; `SessionStart` / `SubagentStop` поставляет плагин.
 - `memory/` — карта проекта, команды, решения, инварианты, баги и review reports; при работе команды сюда добавляются `epic-state.md` (handoff незавершённого эпика между сессиями), `retro-log.md` и `lessons.md` (уроки ретроспектив).
+- `memory/missions/<slug>/` — появляется при `$qtim-mission`: portable spec,
+  validated/integrated receipts, локальные решения и final verification;
+  opaque runtime handles остаются в gitignored `.codex/qtim-runtime/`.
 - `AGENTS.md` — указатель для Codex на qtim-команду и локальные правила проекта.
 - `docs/features/<slug>/` — появляется при `$qtim-feature`: `intake.md` + единый fast-path `feature-brief.md` или полный набор PRD/decomposition/estimate/plan.
 
@@ -147,7 +167,20 @@ PM/аналитик:
 Ты:   $qtim-feature, хотим избранное для товаров
 qtim: intake + выбор трека -> для простой версии один feature-brief и один checkpoint;
       при развилках — PRD -> selective dev-consult -> decomposition+estimate -> plan
-Ты:   получаешь docs/features/favorites/ и handoff для $qtim-team-lazy или $qtim-team-up
+Ты:   получаешь docs/features/favorites/ и topology-based команду direct,
+      $qtim-team-lazy, $qtim-team-up или $qtim-mission
+```
+
+Cross-dialog mission:
+
+```text
+Ты:   $qtim-mission, запусти Approved план: A (lazy) проверяет контракт,
+      B в worktree реализует его после validated A, C проверяет integrated revision.
+qtim: A агрегирует локальные роли -> coordinator проверяет B no-edit READY
+      и даёт exact follow-up -> B возвращает
+      scoped commit -> cherry-pick в transaction worktree -> affected gate -> ff-only promotion ->
+      clean-context C -> APPROVED / NOT APPROVED
+Ты:   видишь все peer tasks; можешь вызвать status, resume или stop без auto-archive
 ```
 
 ## Лицензия

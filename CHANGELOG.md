@@ -2,6 +2,117 @@
 
 Версии соответствуют `version` в `plugins/qtim/.codex-plugin/plugin.json` (semver).
 
+## 2.12.0 — 2026-07-28
+
+Полный Mission Plan Codex: shape-based routing после `$qtim-feature` и App-first
+cross-dialog DAG с read-only/lazy/writer nodes, проверяемой интеграцией,
+verification loop и recovery.
+
+### Добавлено
+
+- `$qtim-mission` с UI metadata и implicit loading только для fail-closed
+  activation classifier. Явный запуск через skill с глаголом исполнения и
+  Approved source/multi-peer shape,
+  недвусмысленную просьбу провести несколько Codex peer tasks как одну mission
+  или referential approval непосредственно предшествующего полного Approved
+  preview создаёт только ready peer-задачи. Одна обычная задача/диалог,
+  planning-only запрос, `PREVIEW`, `RECOMMEND`, SessionStart advisory, любой
+  quote/code marker, условие/отсрочка, вопрос и отрицание не вызывают
+  `create_thread`.
+- Portable mission evidence в `memory/missions/<slug>/`, opaque runtime hints в
+  gitignored `.codex/qtim-runtime/`, worker/integration receipts, dependency
+  context pack и node state machine до `validated | integrated | verified`.
+- App capability preflight для `list_projects`/thread tools, fail-visible
+  `clientThreadId` reconciliation, batches до восьми wait targets и честный
+  `$qtim-team-up` fallback без обещания peer tasks на CLI/IDE.
+- `execution: lazy`: Approved Sol/Ultra node lead запускает `$qtim-team-lazy` в
+  mission-child mode, выбирает minimum-sufficient roles и возвращает один
+  агрегированный receipt; explicit writer/read-only policy, canonical
+  read/write scopes, Approved role allowlist, pairwise write-scope disjointness
+  и product-fork flag проверяются, а feedback loop/new role/scope conflict/product
+  fork возвращают только `BLOCKED` + `ESCALATION_REQUEST`; любой escalation
+  marker также требует `BLOCKED`.
+- Isolated git writer contract: отдельные clean integration/state worktrees,
+  монотонные scoped portable checkpoints, один non-merge writer commit,
+  detached App writer worktree без shared attempt ref, detached
+  transaction-worktree cherry-pick без shared transaction ref, affected gate и только затем fenced
+  promotion под exclusive lock из clean integration worktree: full commit ids,
+  ff-only ancestry, atomic exact-old `update-ref`, exact tree sync и exact-final
+  clean status с проверяемым rollback.
+  Red gate/conflict/scope violation/foreign drift не сдвигают Approved HEAD и
+  блокируются без auto-stash/force. После final `APPROVED` один scoped evidence
+  bundle доставляется тем же gate, затем отдельный clean checkpoint фиксирует
+  `Done`, новый sequence и exact delivered revision; crash-window reconciliation
+  идемпотентна.
+- Clean-context final verifier с exact full-line `APPROVED | NOT APPROVED`
+  parser (literal spacing/no indentation, последняя exact запись authoritative),
+  проверкой findings, bounded fix
+  nodes и последним completion marker `Done`.
+- `status`, `resume`, `stop`, single-owner takeover через exclusive ownership
+  lock, generation re-read, file `fsync + atomic replace` и parent-directory
+  fsync, классификации
+  `live/pending/stale/orphan/ambiguous/unavailable` и пассивный SessionStart
+  advisory без auto-resume/auto-archive. Scan ограничен 50 candidates/5 records;
+  portable `Verifying` подавляется при authoritative `Done` на exact state ref.
+- `.github/scripts/check_missions.py`: semantic activation/routing/DAG fixtures,
+  reserved terminal verifier, edge contracts, state transitions, writer/lazy
+  receipts, monotonic multi-checkpoint/crash-blocked и post-delivery recovery с
+  zero side effects, competing ownership/promotion locks, stale promotion, red
+  gate, conflict abort, единый fail-closed writer/lazy scope parser с
+  Unicode controls, env/home, extended globs, case-folded `.git` и Windows
+  reserved aliases, NFC/case-fold overlap и symlink/junction containment,
+  immutable read-only raw type/mode/inode/link/bytes filesystem +
+  `GIT_OPTIONAL_LOCKS=0`, common refs/config/control, exact `.git` identity,
+  full common-worktree registry и per-worktree index/admin guard; hard
+  50 000-entry/512-MiB budget, special-file и hardlink rejection. Writer guard
+  требует detached `expectedBase -> commit` без shared ref, frozen admin/config,
+  canonical index flags, single-link content и nested submodule
+  config/control/hooks/packed-refs baseline. Root/directory junction
+  отвергается до traversal и проверяется реальным Windows CI fixture. Writer startup
+  двухфазный: no-edit READY, coordinator baseline всей wave и exact follow-up
+  authorization. Coordinator journals
+  отдельно ограничивают exact state checkpoint, App worktree additions и
+  current-mission registry before/after transition; state delete/recreate и
+  integration/foreign drift запрещены. Runtime/portable paths проходят
+  component-wise lstat/realpath/same-filesystem containment; ownership/promotion
+  используют разные deterministic `<slug>.*.lock` с owner/generation binding.
+  First-run runtime/portable parents создаются component-by-component с
+  containment revalidation; initial registry публикуется под ownership lock
+  через exclusive temp + fsync + atomic no-clobber, поэтому collision не
+  перезаписывает чужое состояние. Takeover делает exact regular/single-link
+  final read до снятия ownership lock; promotion держит canonical locks только
+  `ownership -> promotion` и перечитывает generation под обоими до CAS.
+  Complete terminal verifier
+  и exact full-subtree final evidence delivery с
+  deletion/APPROVED/durable-Done gates; hook tests проверяют passive
+  unfinished-mission advisory.
+
+### Изменено
+
+- `$qtim-feature` всегда завершает Approved artifact блоком «Что запускать дальше»:
+  рекомендация, причина, topology, готовая команда и альтернатива. Direct,
+  team-lazy, team-up и mission выбираются по outcomes/dependencies/context
+  isolation/feedback loops, а не только по S/M/L/XL. Полностью Approved graph
+  получает `запусти`, unresolved writer/lazy/runtime choice — `preview`.
+- Runtime/model/orchestration/doctor references знают границы peer tasks,
+  configured-default model для direct nodes, Approved Sol/Ultra lazy lead,
+  worktree integration и mission recovery.
+- Setup и migration 2.12 синхронизируют PM track charter, managed qtim block в
+  project `AGENTS.md`, on-demand mission entry в `memory/MEMORY.md` и exact
+  `.codex/qtim-runtime/` ignore, сохраняя чужой track и пользовательский текст.
+- ADR-001 фиксирует split checkpoint-state/integration worktrees, atomic
+  coordinator ownership и transaction gate + locked full-OID ancestry/atomic
+  exact-old ref CAS/exact-final clean-tree promotion вместо shared checkout или
+  handoff-as-merge.
+
+### Совместимость
+
+- Full mission mode доступен только на App surface с callable peer tools.
+  CLI/IDE получают честный `$qtim-team-up` fallback.
+- Runtime handles остаются last-known hints; недоказанный worktree/host/base
+  блокирует конкретную операцию. Новая задача Codex после переустановки нужна,
+  чтобы увидеть skill и обновлённый lifecycle hook.
+
 ## 2.11.0 — 2026-07-28
 
 Семантический Codex-порт общих принципов Claude-релиза 1.12: надёжная доставка

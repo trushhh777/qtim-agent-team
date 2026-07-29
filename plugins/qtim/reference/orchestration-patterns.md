@@ -15,12 +15,28 @@ qtim subagent workflow запускается по явному вызову ski
 
 Ось A/B/C/D меряется **глубиной координации** — наличием петель implement -> test -> fix -> review, — а не числом ролей: выбор режима подсчётом ролей — anti-pattern (одна роль с петлёй доводки ближе к D, чем три роли в один проход). При сомнении стартуй дешевле и эскалируй вверх.
 
+Cross-dialog `$qtim-mission` — не режим E и не «усиленный team-up». A/B/C/D
+описывает глубину внутри одной main task; mission координирует два и более
+самостоятельных peer outcomes, их dependencies и общий gate. Если один связный
+outcome требует feedback loop, выбирай D. Если есть producer -> consumer, разные
+contexts/worktrees или независимые outcomes, выбирай mission независимо от S/M/L/XL.
+Mission поддерживает read-only и isolated writer nodes, transaction gate до
+topological ff-only promotion и bounded final verification; подробный контракт —
+в `mission-protocol.md`.
+
 ## Model, Reasoning And Concurrency
 
 - Перед fan-out проверь, что main task работает на обязательном для qtim профиле `gpt-5.6-sol` + `ultra`, когда runtime exposes metadata; иначе останови workflow и попроси пользователя открыть task с этим профилем. Role defaults и fallback описаны в `model-profiles.md`.
 - `Ultra` относится только к team-lead и не означает mode D, не отменяет disjoint write scopes и не является причиной спавнить весь roster. `Max` зарезервирован для clean-context ADR adversary при сочетании «необратимо + затронут инвариант».
 - Main thread владеет agent graph: спавнит дополнительные роли, проверяет descendants перед повторным spawn, переиспользует доступные threads и закрывает завершённые.
 - Child agents возвращают запрос на дополнительную роль main thread, а не спавнят qtim descendants сами.
+- Только mission coordinator, явно авторизованный `$qtim-mission` или прямой
+  просьбой о делегировании, создаёт peer tasks. Implicit loading само по себе не
+  авторизация. Mission workers и обычные child agents не создают peer mission tasks.
+- Mission допускает ровно второй orchestration boundary: Approved peer node с
+  `execution: lazy` вызывает `$qtim-team-lazy` для своей bounded node. Node lead
+  возвращает один aggregated receipt, local subagents не создают descendants, а
+  feedback loop эскалируется coordinator.
 - Built-in `explorer` запускай явно на `gpt-5.6-luna` + `medium`; при model override используй `fork_turns = "none"` (или минимальный поддерживаемый fork) и сам передай bounded context в prompt. Постоянные custom roles берут exact pair из TOML.
 - Учитывай фактический thread cap runtime. Если независимых работ больше свободных slots, запускай batches; сначала закрывай больше не нужные Done threads. Не повышай nesting depth ради удобства — рекурсивный fan-out повышает расход и ухудшает предсказуемость.
 

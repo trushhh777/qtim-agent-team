@@ -20,6 +20,7 @@ METADATA_REQUIRED = {
     "qtim-brainstorm",
     "qtim-debug-loop",
     "qtim-grill",
+    "qtim-mission",
     "qtim-prototype",
 }
 THIRD_PARTY_SKILLS = {"qtim-debug-loop", "qtim-grill", "qtim-prototype"}
@@ -68,16 +69,35 @@ def validate_openai_metadata(skill_dir):
         return
 
     values = {}
-    for line in lines[1:]:
-        match = re.fullmatch(r'  ([a-z_]+):\s*"([^"]*)"', line)
-        if match is None:
-            bad.append(f"{path}: невалидная или некавыченная interface-строка `{line}`")
+    policy = {}
+    section = None
+    for line in lines:
+        if not line.startswith(" "):
+            if line not in {"interface:", "policy:"}:
+                bad.append(f"{path}: неизвестная корневая секция `{line}`")
+                section = None
+            else:
+                section = line[:-1]
             continue
-        key, value = match.groups()
-        if key not in INTERFACE_FIELDS:
-            bad.append(f"{path}: неизвестное interface-поле `{key}`")
-            continue
-        values[key] = value
+        if section == "interface":
+            match = re.fullmatch(r'  ([a-z_]+):\s*"([^"]*)"', line)
+            if match is None:
+                bad.append(f"{path}: невалидная или некавыченная interface-строка `{line}`")
+                continue
+            key, value = match.groups()
+            if key not in INTERFACE_FIELDS:
+                bad.append(f"{path}: неизвестное interface-поле `{key}`")
+                continue
+            values[key] = value
+        elif section == "policy":
+            match = re.fullmatch(r"  (allow_implicit_invocation):\s*(true|false)", line)
+            if match is None:
+                bad.append(f"{path}: невалидная policy-строка `{line}`")
+                continue
+            key, value = match.groups()
+            policy[key] = value == "true"
+        else:
+            bad.append(f"{path}: поле вне известной секции `{line}`")
 
     missing = sorted(INTERFACE_FIELDS - values.keys())
     if missing:
@@ -90,6 +110,11 @@ def validate_openai_metadata(skill_dir):
         bad.append(f"{path}: `short_description` должен быть длиной 25-64, сейчас {length}")
     if f"${skill_dir.name}" not in values["default_prompt"]:
         bad.append(f"{path}: `default_prompt` должен явно упоминать `${skill_dir.name}`")
+    if skill_dir.name == "qtim-mission" and policy.get("allow_implicit_invocation") is not True:
+        bad.append(
+            f"{path}: qtim-mission должен разрешать implicit loading для "
+            "fail-closed activation gate"
+        )
 
 
 for skill_dir in sorted(pathlib.Path("plugins").glob("*/skills/*")):

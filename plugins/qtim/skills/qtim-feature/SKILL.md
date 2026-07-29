@@ -1,6 +1,6 @@
 ---
 name: qtim-feature
-description: "Use when a PM or analyst wants to turn a raw feature idea into implementation-ready, versioned artifacts under docs/features: select a risk-proportional fast-path feature brief or the full intake-to-PRD-to-plan pipeline with grounded decomposition and estimate, then hand off to $qtim-team-lazy or $qtim-team-up."
+description: "Use when a PM or analyst wants to turn a raw feature idea into implementation-ready, versioned artifacts under docs/features: select a risk-proportional fast-path feature brief or the full intake-to-PRD-to-plan pipeline with grounded decomposition and estimate, then recommend direct execution, $qtim-team-lazy, $qtim-team-up, or $qtim-mission from the execution topology."
 ---
 
 # qtim Feature Pipeline
@@ -101,10 +101,9 @@ Spawn `qtim-product` (fallback: `worker` с PM-инструкциями из cha
 
 ## Stage 6: Handoff
 
-1. Для полного трека заверши `plan.md`:
+1. Для полного трека сначала заверши `plan.md` базовым implementation contract:
 
 ```text
-$qtim-team-up: реализуй Phase 1 из docs/features/<slug>/plan.md.
 PRD и acceptance criteria: docs/features/<slug>/prd.md.
 Обнови Status артефактов: In Development при старте, Done после gates.
 Отклонения и новые edge cases фиксируй в «Истории изменений» plan.md.
@@ -113,16 +112,52 @@ PRD и acceptance criteria: docs/features/<slug>/prd.md.
 2. Для fast-path заверши brief:
 
 ```text
-$qtim-team-lazy: реализуй docs/features/<slug>/feature-brief.md.
 Scope, acceptance criteria и gates находятся в этом документе.
 При старте переведи Status в In Development, после всех gates — в Done.
 Отклонения и новые edge cases фиксируй там же.
 ```
 
-3. Рекомендуй `$qtim-team-up` для многофазного полного трека, `$qtim-team-lazy` для fast-path и однофазного S/M.
-4. Если charter содержит только PM track и нет `qtim-reviewer`, предупреди: перед реализацией нужно повторно вызвать `$qtim-setup` и добавить dev track, иначе режим D останется без финального gate.
-5. Если реализацию запускает другой человек, попроси его использовать готовый prompt в новой задаче Codex.
-6. **Последним шагом** добавь одну строку-указатель в `memory/decisions.md`. Это atomic completion marker Stage 6: записывай его только после того, как handoff уже сохранён в плановом документе и сообщён пользователю.
+3. Проведи обязательный **Execution Recommendation Gate**. Выбирай форму по
+   topology, а не по размеру:
+   - один bounded outcome без fan-out -> direct;
+   - один outcome, нужны несколько точечных ролей, feedback loop не ожидается ->
+     `$qtim-team-lazy`;
+   - один связный outcome и implement -> test -> fix -> review loop ->
+     `$qtim-team-up`;
+   - два и более самостоятельных outcomes, разные контексты/worktrees или
+     dependency producer -> consumer -> `$qtim-mission`.
+   Размер `S/M/L/XL` влияет на декомпозицию и стоимость, но не переопределяет
+   topology. XL с одним feedback loop остаётся team-up; M producer -> consumer
+   может требовать mission.
+4. Добавь в плановый документ блок `## Что запускать дальше`:
+
+```text
+Рекомендация: $qtim-mission
+Почему: <самостоятельные outcomes / dependency / context isolation / feedback loop>
+Топология: <A -> B -> verification или один связный loop>
+Команда: $qtim-mission, <запусти|preview> Approved feature docs/features/<slug>/.
+Альтернатива: $qtim-team-up для одного связного outcome с feedback loop.
+```
+
+   Для direct, team-lazy и team-up сохрани те же пять полей; команда должна быть
+   готова к копированию. Recommendation — режим `RECOMMEND`: он не разрешает
+   `spawn_agent`, `create_thread` или реализацию. Для Approved graph с готовыми
+   base/integration target, write scopes, budgets и gates допустима команда
+   `запусти`; unresolved writer/lazy/runtime choice получает `preview`.
+5. Если charter содержит только PM track и нет `qtim-reviewer`, предупреди: перед
+   реализацией нужно повторно вызвать `$qtim-setup` и добавить dev track, иначе
+   team-up/mission останутся без обязательного verification gate.
+6. Если реализацию запускает другой человек, попроси его использовать готовую
+   команду в новой задаче Codex. Выполнение displayed команды — явный вызов
+   выбранного workflow. Короткое «Запускай предложенное» после feature
+   recommendation выбирает workflow, но для `$qtim-mission` сначала открывает
+   `PREVIEW`: этот пятистрочный handoff не является полным Approved mission
+   preview. Peer tasks появляются только после explicit mission-команды либо
+   approval на непосредственно предшествующий полный preview; завершение feature
+   само ничего не запускает.
+7. **Последним шагом** добавь одну строку-указатель в `memory/decisions.md`. Это
+   atomic completion marker Stage 6: записывай его только после того, как handoff
+   и блок «Что запускать дальше» сохранены и сообщены пользователю.
 
 ## Anti-Patterns
 
@@ -134,5 +169,9 @@ Scope, acceptance criteria и gates находятся в этом докуме�
 - Перезапуск существующего slug с нуля.
 - Плановый документ `Approved`, но указателя в `memory/decisions.md` нет: Stage 6 оборвана и должна быть продолжена.
 - Указатель записан до готового handoff: ложный completion marker ломает resume.
+- Выбор workflow только по S/M/L/XL или числу файлов вместо outcomes, dependencies,
+  context/worktree isolation и feedback loops.
+- Автоматический запуск рекомендованного `$qtim-team-up`/`$qtim-mission` без нового
+  явного разрешения пользователя.
 - Выдуманные часы вместо относительной оценки с evidence.
 - Пропуск checkpoint «потому что очевидно».

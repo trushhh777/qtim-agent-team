@@ -39,9 +39,16 @@ codex plugin add qtim@qtim-agent-team              # переустановит�
 2. Сравни сгенерированные `.codex/agents/qtim-*.toml` с текущими templates `../../agents/*.toml` (с поправкой на подставленные плейсхолдеры стека). Прежний template из Git history не считай доступным: engine-managed region распознавай только по fingerprints и соседним anchors конкретной секции upgrade notes. Если region не распознан однозначно, не заменяй весь файл: покажи diff и оставь шаг pending. Текущие templates имеют явные atomic model pairs; best-effort проверь их по локальному catalog. Ручные правки и user overrides не перезаписывай молча.
 3. Если существует `.codex/hooks.json`, выполни hook-миграции из upgrade notes отдельно от agent templates. Распознавай qtim-owned handlers по совокупности fingerprints (guard `.codex/team-charter.md`, `[qtim` / `$qtim-*`, `qtim-version:`, тексты про реальные артефакты или проверку затронутого слоя), а не только по event/matcher. Сохраняй порядок и содержимое неизвестных пользовательских events/groups/handlers; если ownership неоднозначен, покажи entry и спроси.
 4. Managed qtim contract в `AGENTS.md` изменяй только между `qtim:contract:start/end`; пользовательский текст вне markers сохраняй. `.codex/screenshots-gate.json` не создавай без нового explicit opt-in и валидируй как safe repo-relative policy.
-4. Покажи план миграции: какие файлы, handlers и engine-managed блоки меняются (в charter — PM-механика только между её маркерами; roles table/independent-review policy — точечными строками без удаления внешних skills; ручные правки и второй track сохраняются), что остаётся нетронутым. Дождись подтверждения.
-5. Применяй секции oldest -> newest. `memory/` и `docs/features/` не переписываются. Для каждой версии собери checklist applicable шагов со статусами `applied` / `compatible override confirmed` / `pending`.
-6. Когда у очередной версии не осталось `pending`, атомарно подними charter и все TOML stamps до этой версии, затем переходи к следующей. Осознанно сохранённый catalog-supported override считается compatible; отложенный engine block — pending. При первом pending останови дальнейшие версии: stamps остаются на последней полностью завершённой версии, а следующий `$qtim-update` повторит только незавершённый диапазон.
+5. Покажи план миграции: какие файлы, handlers и engine-managed блоки меняются (в charter — PM-механика только между её маркерами; roles table/independent-review policy — точечными строками без удаления внешних skills; ручные правки и второй track сохраняются), что остаётся нетронутым. Дождись подтверждения.
+6. Применяй секции oldest -> newest. Durable содержимое `memory/` и
+   `docs/features/` не переписывается; исключение — только точные qtim-managed
+   index lines в `memory/MEMORY.md` и точная `.codex/qtim-runtime/` строка
+   корневого `.gitignore`, явно названные version-section. Сохраняй остальные
+   строки byte-for-byte. Для каждой версии собери checklist applicable шагов со
+   статусами `applied` / `compatible override confirmed` / `pending`.
+   Секция «миграция не требуется» считается `applied` без изменения project
+   content; после неё обнови только version stamps по общему incremental contract.
+7. Когда у очередной версии не осталось `pending`, атомарно подними charter и все TOML stamps до этой версии, затем переходи к следующей. Осознанно сохранённый catalog-supported override считается compatible; отложенный engine block — pending. При первом pending останови дальнейшие версии: stamps остаются на последней полностью завершённой версии, а следующий `$qtim-update` повторит только незавершённый диапазон.
 
 ## Step 4: Verify And Report
 
@@ -50,13 +57,18 @@ codex plugin add qtim@qtim-agent-team              # переустановит�
 - model policy каждого `.codex/agents/*.toml`: exact current template pair либо user-approved catalog-supported override; half-pair и `model = "inherit"` невалидны; недоступный slug -> migration pending, не удаляй pair и не угадывай замену;
 - `ultra` и `service_tier = "fast"` не появились в role TOML; charter фиксирует main team-lead `gpt-5.6-sol` + `ultra`, built-in explorer Luna+medium и ADR adversary Sol+xhigh/max;
 - track-маркеры парные; все stamps единообразно указывают на последнюю полностью завершённую версию, а не на partial target;
+- для stamp 2.12.0+ `.codex/qtim-runtime/` находится в корневом `.gitignore` ровно
+  один раз и runtime registry не tracked;
 - в изменённых файлах нет plugin-internal путей (`../../...`);
 - финальный ответ: версии до/после, изменённые файлы, compatible overrides и pending; при pending явно скажи, что stamps остались на последней полностью завершённой версии и целевая migration не завершена. Если менялся любой `.codex/agents/*.toml`, новая задача Codex **обязательна** перед qtim workflow. Если менялись hooks, открой `/hooks`, заново review/trust изменённые definitions; если текущий runtime не подхватил их после review, открой новую задачу. Если agent TOML и hooks не менялись, дополнительный restart не нужен.
 
 ## Rules
 
 - Не выполняй `codex plugin ...` без явной просьбы пользователя.
-- Не трогай `memory/`, `docs/features/` и правки пользователя вне qtim-маркеров.
+- Не трогай durable содержимое `memory/`, `docs/features/` и правки пользователя
+  вне qtim-маркеров. В `memory/MEMORY.md` меняй только exact qtim-managed index
+  lines, а в `.gitignore` — только exact runtime line, прямо предписанные upgrade
+  notes; остальные строки сохраняй.
 - Не удаляй и не переупорядочивай неизвестные пользовательские hook entries; распознанный qtim handler удаляй отдельно от соседних handlers и только после показанного diff.
 - Не выдумывай шаги миграции: только `upgrade-notes.md` и фактический diff с templates.
 - Считай `model` + `model_reasoning_effort` одной профильной парой: current qtim defaults явные; недоступная pair оставляет migration pending, пользовательские overrides требуют diff-подтверждения.

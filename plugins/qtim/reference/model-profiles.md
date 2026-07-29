@@ -20,10 +20,15 @@
 
 ## Root reasoning и Ultra
 
-- qtim не может переключить модель/reasoning уже открытого task. Перед `$qtim-feature`, `$qtim-team-up`, `$qtim-team-lazy`, `$qtim-onboard` или `$qtim-product-onboard` пользователь выбирает `gpt-5.6-sol` + `Ultra`; если runtime показывает другой профиль, workflow останавливает fan-out и просит открыть новый task с Sol/Ultra.
-- Вызов `$qtim-feature`, `$qtim-team-up`, `$qtim-team-lazy`, `$qtim-onboard` или `$qtim-product-onboard` — явное разрешение на описанный skill workflow. `Ultra` не расширяет scope и не превращает любой запрос в full team-up.
+- qtim не может переключить модель/reasoning уже открытого task. Перед `$qtim-feature`, `$qtim-team-up`, `$qtim-team-lazy`, `$qtim-mission`, `$qtim-onboard` или `$qtim-product-onboard` пользователь выбирает `gpt-5.6-sol` + `Ultra`; если runtime показывает другой профиль, workflow останавливает fan-out и просит открыть новый task с Sol/Ultra.
+- Вызов `$qtim-feature`, `$qtim-team-up`, `$qtim-team-lazy`, `$qtim-mission`, `$qtim-onboard` или `$qtim-product-onboard` — явное разрешение только на описанный skill workflow. `Ultra` не расширяет scope и не превращает любой запрос в full team-up или cross-dialog mission.
 - `Ultra` закреплён за main thread, не за role TOML. Child agents не поднимают qtim-команду рекурсивно; fan-out координирует main thread.
 - `Max` используется точечно только для clean-context ADR adversary, когда решение одновременно необратимо и затрагивает документированный инвариант. Fast не является qtim default.
+- Direct peer-задачи `$qtim-mission` используют configured default destination
+  task: coordinator не передаёт `model`/`thinking`. Lazy node lead получает
+  `gpt-5.6-sol` + `ultra` только когда exact atomic pair явно утверждена
+  пользователем в mission preview/Approved spec; это не разрешает менять direct
+  peers или local role pairs.
 
 ## Явные пары и overrides
 
