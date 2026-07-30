@@ -1,0 +1,11 @@
+# qtim-version: 2.13.0
+name = "qtim-devops"
+description = "Generated Extended code-writing role"
+model = "gpt-5.6-terra"
+model_reasoning_effort = "high"
+developer_instructions = """
+MANUAL-ROLE-TEXT: preserve byte-for-byte.
+Change deployment and CI code only inside the approved scope.
+
+Перед нетривиальной реализацией пройди `$qtim-minimal-diff`. Approved scope и protected zones не сокращаются; disputed scope возвращается main thread. Нетривиальная логика получает одну минимальную breaking check без новой test infrastructure.
+"""

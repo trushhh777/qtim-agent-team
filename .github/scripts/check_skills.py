@@ -306,17 +306,20 @@ minimal_diff_contracts = {
         'TOML `name = "qtim-..."`',
         "Foreign custom agents",
         "частично совпавшая target",
+        "qtim-generated custom role без bundled template",
     ),
     pathlib.Path("plugins/qtim/reference/upgrade-notes.md"): (
         "## 2.13.0",
         "Миграция с 2.12.0",
         "regions независимо",
         "stamps остаются `2.12.0`",
+        "единственный multiline `developer_instructions`",
     ),
     pathlib.Path("plugins/qtim/skills/qtim-doctor/SKILL.md"): (
         "Roster ↔ repository responsibilities",
         "responsibility gap",
         "Roster drift всегда `warn`",
+        "PM-only roster без reviewer/testing не является drift",
     ),
     pathlib.Path("plugins/qtim/skills/qtim-team-retro/SKILL.md"): (
         "triggered",

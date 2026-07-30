@@ -36,22 +36,37 @@ codex plugin add qtim@qtim-agent-team              # переустановит�
 Только если plugin version новее project version. Если stamp проекта новее плагина — не даунгрейдь: скажи, что устарел сам плагин, дай команды из Step 2 и остановись.
 
 1. Прочитай `../../reference/upgrade-notes.md` и собери шаги всех версий между project version и plugin version. Применяй **oldest -> newest**; секции в notes лежат newest-first, поэтому нужный диапазон читается снизу вверх. Прямой upgrade не начинай с целевой версии.
-2. Просмотри `.codex/agents/*.toml`, но мигрируй только сгенерированные qtim role
-   files, которые однозначно сопоставлены с current templates `../../agents/*.toml`
-   (с поправкой на подставленные плейсхолдеры стека). Foreign custom agents не
-   меняй и не добавляй им qtim stamp. Прежний template из Git history не считай
-   доступным: engine-managed region распознавай только по fingerprints и
-   соседним anchors конкретной секции upgrade notes. Если region не распознан
-   однозначно, не заменяй весь файл: покажи diff и оставь шаг pending. Текущие
-   templates имеют явные atomic model pairs; best-effort проверь их по локальному
-   catalog. Ручные правки и user overrides не перезаписывай молча. Role target
-   сопоставляй только по согласованному evidence из charter roster, filename и
-   TOML `name = "qtim-..."`. Переименованный/отсутствующий target, несколько
-   кандидатов или несовпадающее имя — `pending`, а не догадка, новый дубликат
-   или whole-file overwrite. Роль вне текущего roster считается not applicable.
+2. Просмотри `.codex/agents/*.toml` и сначала разложи файлы на три класса:
+   - сгенерированная qtim role с current bundled template
+     `../../agents/*.toml` (с поправкой на подставленные плейсхолдеры стека);
+   - **qtim-generated custom role без bundled template**: первая строка содержит
+     qtim stamp исходной project version, charter roster однозначно указывает на
+     этот custom-agent name, filename и TOML `name = "qtim-..."` согласованы;
+   - foreign custom agent — всей совокупности evidence выше нет.
+   Мигрируй первые два класса только через fingerprints и соседние anchors
+   конкретной version-section. Для custom role без template сначала по charter
+   mission/responsibility и её self-contained instructions однозначно определи,
+   пишет ли она код: code-writing role получает только явно описанный в upgrade
+   notes additive contract, read-only/product роль — `not applicable`,
+   неоднозначная responsibility — `pending`. Foreign custom agents не меняй и
+   не добавляй им qtim stamp. Прежний template из Git history не считай
+   доступным. Если region не распознан однозначно, не заменяй весь файл: покажи
+   scoped diff и оставь шаг pending. Текущие bundled templates имеют явные
+   atomic model pairs; best-effort проверь их по локальному catalog. У
+   qtim-generated custom role сохраняй существующую полную atomic pair
+   byte-for-byte; half-pair или неподтверждённая pair оставляет шаг pending.
+   Ручные правки и user overrides не перезаписывай молча. Переименованный/
+   отсутствующий target, несколько кандидатов или несовпадающее имя —
+   `pending`, а не догадка, новый дубликат или whole-file overwrite. Роль вне
+   текущего roster считается not applicable.
 3. Если существует `.codex/hooks.json`, выполни hook-миграции из upgrade notes отдельно от agent templates. Распознавай qtim-owned handlers по совокупности fingerprints (guard `.codex/team-charter.md`, `[qtim` / `$qtim-*`, `qtim-version:`, тексты про реальные артефакты или проверку затронутого слоя), а не только по event/matcher. Сохраняй порядок и содержимое неизвестных пользовательских events/groups/handlers; если ownership неоднозначен, покажи entry и спроси.
 4. Managed qtim contract в `AGENTS.md` изменяй только между `qtim:contract:start/end`; пользовательский текст вне markers сохраняй. `.codex/screenshots-gate.json` не создавай без нового explicit opt-in и валидируй как safe repo-relative policy.
-5. Покажи план миграции: какие файлы, handlers и engine-managed блоки меняются (в charter — PM-механика только между её маркерами; roles table/independent-review policy — точечными строками без удаления внешних skills; ручные правки и второй track сохраняются), что остаётся нетронутым. Дождись подтверждения.
+5. Покажи план миграции: какие файлы, handlers и engine-managed блоки меняются
+   (в charter — PM-механика только между её маркерами; roles table/
+   independent-review policy — точечными строками без удаления внешних skills;
+   qtim-generated custom roles без template — отдельными additive regions;
+   ручные правки, foreign agents и второй track сохраняются), что остаётся
+   нетронутым. Дождись подтверждения.
 6. Применяй секции oldest -> newest. Durable содержимое `memory/` и
    `docs/features/` не переписывается; исключение — только точные qtim-managed
    index lines в `memory/MEMORY.md` и точная `.codex/qtim-runtime/` строка
@@ -63,20 +78,23 @@ codex plugin add qtim@qtim-agent-team              # переустановит�
    Секция «миграция не требуется» считается `applied` без изменения project
    content; после неё обнови только version stamps по общему incremental contract.
 7. Когда у очередной версии не осталось `pending`, атомарно подними charter и
-   stamps всех однозначно сопоставленных qtim role TOML до этой версии; foreign
-   agent files не трогай. Затем переходи к следующей версии. Осознанно
-   сохранённый catalog-supported override считается compatible; отложенный
-   engine block — pending. При первом pending останови дальнейшие версии:
-   stamps остаются на последней полностью завершённой версии, а следующий
+   stamps **всех** однозначно сопоставленных qtim role TOML до этой версии:
+   bundled-template roles и qtim-generated custom roles без template, для
+   которых каждый applicable region имеет статус `applied` или `compatible
+   override confirmed`. Foreign agent files не трогай. Затем переходи к
+   следующей версии. Осознанно сохранённый catalog-supported override считается
+   compatible; отложенный engine block или неясная custom-role responsibility —
+   pending. При первом pending останови дальнейшие версии: charter и все qtim
+   role stamps остаются на последней полностью завершённой версии, а следующий
    `$qtim-update` повторит только незавершённый диапазон.
 
 ## Step 4: Verify And Report
 
 - JSON/TOML parse для изменённых файлов (`python3 -m json.tool`, `tomllib` если доступен);
 - `.codex/hooks.json`, если существует: canonical root `hooks`, matcher groups с вложенным `hooks`, qtim handlers только `type: command` с `commandWindows`; нет qtim-owned project-дублей `SessionStart` / `SubagentStop`; qtim `PostToolUse` возвращает JSON `hookSpecificOutput.additionalContext`; пользовательские handlers и их порядок сохранены;
-- model policy каждого сопоставленного qtim role TOML: exact current template pair либо user-approved catalog-supported override; half-pair и `model = "inherit"` невалидны; недоступный slug -> migration pending, не удаляй pair и не угадывай замену; foreign custom-agent policy не нормализуй;
+- model policy каждого сопоставленного qtim role TOML: для bundled role — exact current template pair либо user-approved catalog-supported override; для qtim-generated custom role без template — неизменная полная catalog-supported pair; half-pair и `model = "inherit"` невалидны; недоступный slug -> migration pending, не удаляй pair и не угадывай замену; foreign custom-agent policy не нормализуй;
 - `ultra` и `service_tier = "fast"` не появились в role TOML; charter фиксирует main team-lead `gpt-5.6-sol` + `ultra`, built-in explorer Luna+medium и ADR adversary Sol+xhigh/max;
-- track-маркеры парные; charter и сопоставленные qtim role stamps единообразно указывают на последнюю полностью завершённую версию, а не на partial target; foreign agent TOML не изменены;
+- track-маркеры парные; charter и stamps всех сопоставленных bundled и qtim-generated custom roles единообразно указывают на последнюю полностью завершённую версию, а не на partial target; foreign agent TOML не изменены;
 - для stamp 2.12.0+ `.codex/qtim-runtime/` находится в корневом `.gitignore` ровно
   один раз и runtime registry не tracked;
 - в изменённых файлах нет plugin-internal путей (`../../...`);

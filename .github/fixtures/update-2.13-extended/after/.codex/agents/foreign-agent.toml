@@ -1,0 +1,5 @@
+name = "foreign-agent"
+description = "User-owned adjacent agent"
+model = "gpt-5.6-luna"
+model_reasoning_effort = "medium"
+developer_instructions = "FOREIGN-AGENT-BYTES-MUST-NOT-CHANGE"

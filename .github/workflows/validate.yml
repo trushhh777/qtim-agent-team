@@ -58,6 +58,9 @@ jobs:
           CHECK_MIGRATIONS_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
         run: python3 .github/scripts/check_migrations.py
 
+      - name: Extended/custom-role migration fixture валиден
+        run: python3 .github/scripts/check_update_fixtures.py
+
       - name: Semantic golden project валиден
         run: python3 .github/scripts/check_golden.py
 

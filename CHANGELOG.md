@@ -46,7 +46,13 @@
 - `$qtim-update` получает region-aware migration `2.12.0 -> 2.13.0`.
   Роль сопоставляется только по charter/filename/TOML evidence; ambiguity,
   missing or renamed target остаётся `pending`, без duplicate/whole-file
-  overwrite. Stamps повышаются только после всех applicable steps.
+  overwrite. QTIM-generated Extended/code-writing role без bundled template
+  получает отдельный additive self-contained contract; foreign agents, manual
+  text, track blocks и atomic model override сохраняются. Stamps всех
+  сопоставленных qtim roles повышаются только после всех applicable steps.
+- Repo-local Extended migration fixture фиксирует positive preservation path:
+  custom `qtim-devops`, foreign agent/hook, ручная инструкция, оба track block
+  и user model override.
 - Без project migration новый skill доступен после plugin update и новой задачи
   Codex, но старые generated roles его не вызывают. После `$qtim-update`,
   изменившего role TOML, также требуется новая задача.

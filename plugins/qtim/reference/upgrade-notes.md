@@ -40,8 +40,9 @@
    - testing — существующий `$qtim-debug-loop` для flaky repro;
    - reviewer — `$qtim-minimal-diff`: чистая избыточность в рекомендации,
      protected-zone/invariant/gate violations остаются blockers;
-   - распознанная code-writing роль без bundled template — minimal-diff только в
-     mandatory-practice cell; неизвестную responsibility верни decision owner.
+   - распознанная qtim-generated code-writing роль без bundled template —
+     minimal-diff в mandatory-practice cell и self-contained TOML contract из
+     шага 8; неизвестную responsibility оставь `pending` и верни decision owner.
    Сохрани неизвестные rows/columns, соседний track, optional external skills и
    ручной текст вне этой ячейки byte-for-byte.
 4. В сопоставленном role file с `name = "qtim-architect"` target group:
@@ -65,23 +66,41 @@
    перед `Independent review gate:`. Минимальную breaking check нетривиальной
    логики не считай избыточностью; новый test framework сверх нужного сигнала
    может остаться рекомендацией.
-8. Atomic `model` + `model_reasoning_effort` каждой роли не меняй. Exact current
+8. Для custom role без bundled template сначала докажи qtim ownership всей
+   совокупностью fingerprints: первая строка `# qtim-version: 2.12.0`, ровно
+   одна charter row с тем же custom-agent name, совпадающие filename и TOML
+   `name = "qtim-..."`. Отсутствие любого fingerprint, несколько rows/files или
+   переименование — `pending`; foreign agent не меняй. По charter mission/
+   responsibility и self-contained instructions однозначно классифицируй роль:
+   - code-writing role — в единственный multiline `developer_instructions`
+     additive-вставкой перед его closing delimiter добавь target group:
+     `$qtim-minimal-diff` до нетривиальной реализации; approved scope и
+     protected zones не сокращаются; disputed scope возвращается main thread;
+     нетривиальная логика получает одну минимальную breaking check без новой
+     test infrastructure;
+   - явно read-only auditor/product role — `not applicable`, TOML body не меняй;
+   - неоднозначная responsibility, неединственный multiline block, partial target
+     group или ручной текст внутри предполагаемой вставки — `pending` со scoped
+     diff, без whole-file overwrite.
+   Уже полный target group — `applied`; повторный update его не дублирует.
+9. Atomic `model` + `model_reasoning_effort` каждой роли не меняй. Exact current
    pair и подтверждённый catalog-supported override — `compatible override
-   confirmed`; half-pair, `model = "inherit"` или недоступная pair остаются
-   `pending`. Не угадывай замену.
-9. В `memory/MEMORY.md` добавь одну qtim-managed строку: файл
+   confirmed`. Для qtim-generated custom role без template сохраняй существующую
+   полную pair byte-for-byte. Half-pair, `model = "inherit"` или недоступная pair
+   остаются `pending`. Не угадывай замену.
+10. В `memory/MEMORY.md` добавь одну qtim-managed строку: файл
    `memory/retro-log.md` создаёт `$qtim-team-retro` по мере надобности; только
    доказанно сработавший `minimal-diff:` marker получает follow-up с source,
    trigger evidence, одним owner и проверяемым next action. Сам retro-log не
    создавай, остальные memory entries не меняй.
-10. Обнови charter и stamps всех сопоставленных qtim role TOML до `2.13.0`
-    только когда
-    шаги 1–9 для текущего roster имеют status `applied`, `not applicable` или
+11. Обнови charter и stamps всех сопоставленных qtim role TOML — включая
+    qtim-generated custom roles без bundled template — до `2.13.0` только когда
+    шаги 1–10 для текущего roster имеют status `applied`, `not applicable` или
     `compatible override confirmed`. При первом обязательном `pending` останови
-    range: stamps остаются `2.12.0`, более новые sections не применяются. После
-    изменения agent TOML открой новую задачу Codex; foreign custom agents и их
-    stamps не меняй. Без миграции новый skill доступен после plugin update, но
-    generated roles его не вызывают.
+    range: charter и все qtim role stamps остаются `2.12.0`, более новые sections
+    не применяются. После изменения agent TOML открой новую задачу Codex; foreign
+    custom agents и их stamps не меняй. Без миграции новый skill доступен после
+    plugin update, но generated roles его не вызывают.
 
 Rollback не удаляет роли, memory или `minimal-diff:` comments. Уже применённый
 managed contract корректируется следующей region-aware migration; published
