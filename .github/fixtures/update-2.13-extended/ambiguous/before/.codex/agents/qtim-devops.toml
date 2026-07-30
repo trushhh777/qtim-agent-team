@@ -1,0 +1,9 @@
+# qtim-version: 2.12.0
+name = "qtim-devops"
+description = "Partial custom role target"
+model = "gpt-5.6-terra"
+model_reasoning_effort = "high"
+developer_instructions = """
+MANUAL-PARTIAL-TEXT: preserve pending state.
+The role mentions `$qtim-minimal-diff` but lacks the complete protected contract.
+"""

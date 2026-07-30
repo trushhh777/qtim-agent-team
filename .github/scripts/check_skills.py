@@ -348,7 +348,9 @@ for marker in (
     if marker not in maintainer_rules:
         bad.append(f"AGENTS.md не фиксирует frontier-maintenance rule: {marker}")
 
-claude_skill_call = re.compile(r"(?<![A-Za-z0-9_-])qtim:(debug-loop|prototype|brainstorm|grill)\b")
+claude_skill_call = re.compile(
+    r"(?<![A-Za-z0-9_-])qtim:(debug-loop|prototype|brainstorm|grill|minimal-diff)\b"
+)
 for path in pathlib.Path("plugins/qtim").rglob("*.md"):
     if claude_skill_call.search(path.read_text(encoding="utf-8")):
         bad.append(f"{path}: Claude-вызов qtim:<skill>; в Codex используй `$qtim-<skill>`")

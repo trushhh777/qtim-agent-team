@@ -9,7 +9,8 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 FIXTURE = ROOT / ".github/fixtures/update-2.13-extended"
 BEFORE = FIXTURE / "before/.codex"
 AFTER = FIXTURE / "after/.codex"
-AMBIGUOUS = FIXTURE / "ambiguous/.codex"
+AMBIGUOUS_BEFORE = FIXTURE / "ambiguous/before/.codex"
+AMBIGUOUS_AFTER = FIXTURE / "ambiguous/after/.codex"
 BAD = []
 CUSTOM_BLOCK = (
     "\nПеред нетривиальной реализацией пройди `$qtim-minimal-diff`. "
@@ -91,6 +92,18 @@ def foreign_bytes_preserved(before, after):
     return bool(before) and before == after
 
 
+def tree_snapshot(root):
+    return {
+        str(path.relative_to(root)): path.read_bytes()
+        for path in sorted(root.rglob("*"))
+        if path.is_file()
+    }
+
+
+def pending_bytes_preserved(before, after):
+    return bool(before) and before == after
+
+
 def pending_state_held(charter, roles):
     if not charter.startswith("<!-- qtim-version: 2.12.0 -->"):
         return False
@@ -165,9 +178,15 @@ try:
 except json.JSONDecodeError as err:
     BAD.append(f"after foreign hook fixture is invalid JSON: {err}")
 
-ambiguous_charter = text(AMBIGUOUS / "team-charter.md")
+ambiguous_before_snapshot = tree_snapshot(AMBIGUOUS_BEFORE)
+ambiguous_after_snapshot = tree_snapshot(AMBIGUOUS_AFTER)
+need(
+    pending_bytes_preserved(ambiguous_before_snapshot, ambiguous_after_snapshot),
+    "ambiguous/partial pending state was not preserved byte-for-byte",
+)
+ambiguous_charter = text(AMBIGUOUS_AFTER / "team-charter.md")
 ambiguous_roles = [
-    text(path) for path in sorted((AMBIGUOUS / "agents").glob("qtim-devops*.toml"))
+    text(path) for path in sorted((AMBIGUOUS_AFTER / "agents").glob("qtim-devops*.toml"))
 ]
 need(
     pending_state_held(ambiguous_charter, ambiguous_roles),
@@ -250,11 +269,45 @@ if "--self-test" in sys.argv[1:]:
         not pending_state_held(ambiguous_charter, [advanced_role, *ambiguous_roles[1:]]),
         "negative oracle accepted target role stamp for partial custom region",
     )
+    mutated_pending_role = dict(ambiguous_after_snapshot)
+    pending_role_key = "agents/qtim-devops.toml"
+    mutated_pending_role[pending_role_key] = mutated_pending_role[pending_role_key].replace(
+        b"MANUAL-PARTIAL-TEXT: preserve pending state.",
+        b"MANUAL-PARTIAL-TEXT: silently changed.",
+        1,
+    )
+    need(
+        mutated_pending_role[pending_role_key]
+        != ambiguous_after_snapshot[pending_role_key],
+        "ambiguous role mutation self-test did not alter its control bytes",
+    )
+    need(
+        not pending_bytes_preserved(ambiguous_before_snapshot, mutated_pending_role),
+        "negative oracle accepted ambiguous role manual-byte mutation",
+    )
+    mutated_pending_charter = dict(ambiguous_after_snapshot)
+    pending_charter_key = "team-charter.md"
+    mutated_pending_charter[pending_charter_key] = mutated_pending_charter[
+        pending_charter_key
+    ].replace(
+        b"AMBIGUOUS-DEV-TRACK: no mutation before owner decision",
+        b"AMBIGUOUS-DEV-TRACK: silently changed",
+        1,
+    )
+    need(
+        mutated_pending_charter[pending_charter_key]
+        != ambiguous_after_snapshot[pending_charter_key],
+        "ambiguous charter mutation self-test did not alter its control bytes",
+    )
+    need(
+        not pending_bytes_preserved(ambiguous_before_snapshot, mutated_pending_charter),
+        "negative oracle accepted ambiguous charter manual-byte mutation",
+    )
 
 if BAD:
     print("Extended update fixture validation failed:\n- " + "\n- ".join(BAD))
     sys.exit(1)
 if "--self-test" in sys.argv[1:]:
-    print("OK: update-fixture negative oracles reject manual loss, foreign near-miss mutation, and ambiguous target stamps")
+    print("OK: update-fixture negative oracles reject manual loss, foreign near-miss mutation, and ambiguous stamp/manual-byte drift")
 else:
-    print("OK: 2.12 -> 2.13 Extended custom-role fixture preserves all non-target bytes and holds ambiguous state at 2.12.0")
+    print("OK: 2.12 -> 2.13 Extended custom-role fixture preserves all non-target bytes and holds ambiguous state byte-for-byte at 2.12.0")
