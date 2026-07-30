@@ -20,10 +20,16 @@ METADATA_REQUIRED = {
     "qtim-brainstorm",
     "qtim-debug-loop",
     "qtim-grill",
+    "qtim-minimal-diff",
     "qtim-mission",
     "qtim-prototype",
 }
-THIRD_PARTY_SKILLS = {"qtim-debug-loop", "qtim-grill", "qtim-prototype"}
+THIRD_PARTY_SOURCES = {
+    "qtim-debug-loop": "mattpocock/skills",
+    "qtim-grill": "mattpocock/skills",
+    "qtim-prototype": "mattpocock/skills",
+    "qtim-minimal-diff": "DietrichGebert/ponytail",
+}
 INTERFACE_FIELDS = {"display_name", "short_description", "default_prompt"}
 
 bad = []
@@ -152,10 +158,11 @@ for skill_dir in sorted(pathlib.Path("plugins").glob("*/skills/*")):
     description = data.get("description")
     if not isinstance(description, str) or not description.strip():
         bad.append(f"{path}: `description` должен быть непустой строкой")
-    if skill_dir.name in THIRD_PARTY_SKILLS and (
-        "mattpocock/skills" not in text or "MIT" not in text
-    ):
-        bad.append(f"{path}: нет attribution и MIT marker для adapted discipline")
+    source = THIRD_PARTY_SOURCES.get(skill_dir.name)
+    if source and (source not in text or "MIT" not in text):
+        bad.append(
+            f"{path}: нет attribution `{source}` и MIT marker для adapted discipline"
+        )
     validate_openai_metadata(skill_dir)
 
 feature_brief_consumers = [
@@ -260,6 +267,75 @@ missing = [marker for marker in atomic_migration_markers if marker not in upgrad
 if missing:
     bad.append(f"upgrade notes не защищают atomic 2.9 agent migration: {', '.join(missing)}")
 
+minimal_diff_contracts = {
+    pathlib.Path("plugins/qtim/skills/qtim-minimal-diff/SKILL.md"): (
+        "Пройди семь ступеней",
+        "Сохрани защищённые обязательства",
+        "minimal-diff: <потолок> — <проверяемый триггер и действие>",
+        "Добавь одну минимальную breaking-проверку",
+        "$qtim-brainstorm",
+        "$qtim-prototype",
+    ),
+    pathlib.Path("plugins/qtim/agents/architect.toml"): (
+        "$qtim-minimal-diff",
+        "Новый слой и новая зависимость — архитектурное решение",
+        "Чистая избыточность — рекомендация",
+    ),
+    pathlib.Path("plugins/qtim/agents/database.toml"): (
+        "$qtim-minimal-diff",
+        "constraint, index или trigger",
+        "обязательная минимальная проверка",
+    ),
+    pathlib.Path("plugins/qtim/agents/frontend.toml"): (
+        "$qtim-minimal-diff",
+        "Trust-boundary validation",
+        "одну минимальную проверку",
+    ),
+    pathlib.Path("plugins/qtim/agents/reviewer.toml"): (
+        "Minimal-diff review (recommendations, not automatic blockers)",
+        "$qtim-minimal-diff",
+        "pure excess",
+    ),
+    pathlib.Path("plugins/qtim/skills/qtim-setup/SKILL.md"): (
+        "$qtim-minimal-diff",
+        "Re-run остаётся additive",
+        "не удаляй роли",
+        "code-writing custom role",
+    ),
+    pathlib.Path("plugins/qtim/skills/qtim-update/SKILL.md"): (
+        'TOML `name = "qtim-..."`',
+        "Foreign custom agents",
+        "частично совпавшая target",
+    ),
+    pathlib.Path("plugins/qtim/reference/upgrade-notes.md"): (
+        "## 2.13.0",
+        "Миграция с 2.12.0",
+        "regions независимо",
+        "stamps остаются `2.12.0`",
+    ),
+    pathlib.Path("plugins/qtim/skills/qtim-doctor/SKILL.md"): (
+        "Roster ↔ repository responsibilities",
+        "responsibility gap",
+        "Roster drift всегда `warn`",
+    ),
+    pathlib.Path("plugins/qtim/skills/qtim-team-retro/SKILL.md"): (
+        "triggered",
+        "not triggered",
+        "protected violation",
+        "source + exact marker",
+    ),
+    pathlib.Path("plugins/qtim/skills/qtim-debug-loop/SKILL.md"): (
+        "root seam",
+        "coverage gaps",
+        "$qtim-minimal-diff",
+    ),
+}
+for path, markers in minimal_diff_contracts.items():
+    body = path.read_text(encoding="utf-8") if path.is_file() else ""
+    missing = [marker for marker in markers if marker not in body]
+    if missing:
+        bad.append(f"{path}: incomplete minimal-diff contract: {', '.join(missing)}")
+
 maintainer_rules = pathlib.Path("AGENTS.md").read_text(encoding="utf-8")
 for marker in (
     "Bundled disciplines are role-agnostic practices, not orchestration engines",
@@ -278,6 +354,12 @@ notice_path = pathlib.Path("plugins/qtim/THIRD_PARTY_NOTICES.md")
 notice = notice_path.read_text(encoding="utf-8") if notice_path.is_file() else ""
 if "Copyright (c) 2026 Matt Pocock" not in notice or "Permission is hereby granted" not in notice:
     bad.append(f"{notice_path}: нет полного MIT notice источника bundled disciplines")
+if (
+    "Copyright (c) 2026 DietrichGebert" not in notice
+    or "DietrichGebert/ponytail" not in notice
+    or notice.count("Permission is hereby granted") < 2
+):
+    bad.append(f"{notice_path}: нет полного MIT notice DietrichGebert/ponytail")
 
 if bad:
     print("Skill frontmatter validation failed:")

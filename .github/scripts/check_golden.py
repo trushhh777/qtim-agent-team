@@ -29,6 +29,7 @@ for marker in (
     "memory/decisions.md", "последним completion marker", "Что запускать дальше",
     "$qtim-mission", "recommendation ничего не запускает", "integration target",
     "integrate topologically", "clean-context verifier",
+    "$qtim-minimal-diff", "recommendation-only",
 ):
     need(marker in charter, f"charter missing {marker}")
 for marker in (
@@ -50,6 +51,7 @@ expected = {
     "reviewer.toml": ("qtim-reviewer", "gpt-5.6-sol", "xhigh"),
     "testing.toml": ("qtim-testing", "gpt-5.6-terra", "medium"),
 }
+minimal_diff_agents = {"architect.toml", "database.toml", "frontend.toml", "reviewer.toml"}
 for filename, policy in expected.items():
     path = example / ".codex/agents" / filename
     need(path.is_file(), f"missing {filename}")
@@ -66,6 +68,8 @@ for filename, policy in expected.items():
         (payload.get("name"), payload.get("model"), payload.get("model_reasoning_effort")) == policy,
         f"{filename} model policy mismatch",
     )
+    if filename in minimal_diff_agents:
+        need("$qtim-minimal-diff" in text, f"{filename} has no minimal-diff contract")
     if filename == "reviewer.toml":
         need(payload.get("sandbox_mode") == "read-only", "reviewer is not read-only")
     if filename == "testing.toml":
@@ -84,6 +88,8 @@ need(
     "gitignored `.codex/qtim-runtime/`" in memory_index,
     "memory index does not separate opaque mission runtime",
 )
+for marker in ("memory/retro-log.md", "minimal-diff:", "trigger evidence", "next action"):
+    need(marker in memory_index, f"memory index has no minimal-diff retro marker `{marker}`")
 if bad:
     print("Golden validation failed:\n- " + "\n- ".join(bad))
     sys.exit(1)

@@ -1,6 +1,6 @@
-# qtim-version: 2.12.0
+# qtim-version: 2.13.0
 name = "qtim-frontend"
 description = "Frontend implementation."
 model = "gpt-5.6-sol"
 model_reasoning_effort = "high"
-developer_instructions = "Read AGENTS.md, charter and memory. Leave tester evidence to qtim-testing."
+developer_instructions = "Read AGENTS.md, charter and memory. Apply $qtim-minimal-diff before non-trivial work; never cut accessibility or agreed behavior. Leave tester evidence to qtim-testing."

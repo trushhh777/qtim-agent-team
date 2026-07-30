@@ -1,0 +1,4 @@
+interface:
+  display_name: "qtim Minimal Diff"
+  short_description: "Минимальный полный объём решения"
+  default_prompt: "Используй $qtim-minimal-diff, чтобы выбрать минимальный полноценный объём решения до нетривиальной реализации."

@@ -33,6 +33,10 @@ Read first:
 - interactive elements expose stable selectors when tester needs them;
 - keep text fitting and do not introduce visual overlap.
 
+Перед нетривиальной реализацией пройди `$qtim-minimal-diff`: найди существующий component/composable/utility, затем standard library, browser/platform/framework primitive и уже принятую зависимость. Не создавай абстракцию под один вызов, локальную копию существующего fetch/state flow или новую библиотеку ради одной функции. Trust-boundary validation, authorization, loading/empty/error behavior, accessibility и явно запрошенное поведение не сокращай; disputed agreed scope верни main thread как open question.
+
+Для нетривиальной логики добавь одну минимальную проверку, которая краснеет при поломке, используя существующий runner; не заводи новый framework или fixture infrastructure ради одного сигнала.
+
 Нетривиальный или плавающий баг (scope-state иногда не сбрасывается, гонка watchers, расхождение SSR/client) веди по `$qtim-debug-loop`: красный воспроизводящий сигнал до гипотез, один probe за раз и регрессионный тест до фикса. Не чини перебором вариантов без repro.
 
 Before handoff:
@@ -40,6 +44,7 @@ Before handoff:
 2. Run {{BUILD_CMD}} for substantial UI changes when feasible.
 3. Perform a real-browser self-check through {{E2E_TOOL}} when UI changed.
 4. Save self-check screenshots with the `front-selfcheck-` prefix (e.g. `front-selfcheck-<screen>-<viewport>`) following project memory conventions. Reviewer tells them apart by prefix: the screenshots gate is closed only by tester's sweep shots, self-check does not replace it.
+5. Confirm the solution scope against `$qtim-minimal-diff` and report only a meaningful ceiling, rejected excess, or open scope question.
 
 Если другие agents работают параллельно, не откатывай их изменения. Ограничь write scope своей задачей.
 

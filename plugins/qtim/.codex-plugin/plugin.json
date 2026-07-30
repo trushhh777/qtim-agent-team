@@ -1,7 +1,7 @@
 {
   "name": "qtim",
-  "version": "2.12.0",
-  "description": "Codex-native bootstrap and orchestration kit for project-specific subagent teams and explicit cross-dialog missions. Adds a platform-loaded runtime contract, mechanically read-only review, shape-based PM handoff, App capability detection, isolated writer worktrees, validated DAG receipts, topological commit integration, recovery, migration CI, and semantic generated-state validation.",
+  "version": "2.13.0",
+  "description": "Codex-native bootstrap and orchestration kit for project-specific subagent teams and explicit cross-dialog missions. Adds a minimal-complete solution discipline, platform-loaded runtime contract, mechanically read-only review, shape-based PM handoff, App capability detection, isolated writer worktrees, validated DAG receipts, topological commit integration, recovery, migration CI, and semantic generated-state validation.",
   "author": {
     "name": "Антон Фокин"
   },
@@ -15,6 +15,7 @@
     "multi-agent",
     "cross-dialog",
     "missions",
+    "minimal-diff",
     "bootstrap",
     "orchestration",
     "code-review"
@@ -23,7 +24,7 @@
   "interface": {
     "displayName": "qtim",
     "shortDescription": "Bootstrap Codex teams and cross-dialog missions",
-    "longDescription": "qtim adapts a project into a Codex-native team workflow for developers and PM/analysts. Setup generates a compact automatically loaded AGENTS contract, a track-aware charter, explicit Sol/Terra role profiles and durable memory. Reviewer is mechanically read-only; tester owns the recorded dev-server command and can use an opt-in one-retry browser-evidence gate. PM handoff routes by execution topology. Explicit $qtim-mission coordinates a validated DAG of visible Codex App tasks: read-only analysis, bounded node-local lazy teams, isolated writer worktrees, topological commit integration, clean-context verification, bounded fixes, and fail-visible status/resume/stop.",
+    "longDescription": "qtim adapts a project into a Codex-native team workflow for developers and PM/analysts. Setup generates a compact automatically loaded AGENTS contract, a track-aware charter, explicit Sol/Terra role profiles and durable memory. $qtim-minimal-diff selects the smallest complete design or implementation without cutting protected obligations. Reviewer is mechanically read-only; tester owns the recorded dev-server command and can use an opt-in one-retry browser-evidence gate. PM handoff routes by execution topology. Explicit $qtim-mission coordinates a validated DAG of visible Codex App tasks: read-only analysis, bounded node-local lazy teams, isolated writer worktrees, topological commit integration, clean-context verification, bounded fixes, and fail-visible status/resume/stop.",
     "developerName": "Антон Фокин",
     "category": "Developer Tools",
     "capabilities": [

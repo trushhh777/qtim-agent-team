@@ -10,7 +10,7 @@ qtim подстраивается под стек проекта: анализи
 
 - **Разделение труда** — роли отвечают за свои слои: архитектура, данные, UI, тесты, ревью.
 - **PM-трек без фиксированного налога** — `$qtim-feature` выбирает fast-path `feature-brief.md` для S/M одной фазы без развилок или полный трек; decomposition и estimate утверждаются одним решением, consult зовёт только владельцев затронутых слоёв.
-- **Встроенные дисциплины** — `$qtim-debug-loop` для сложных багов, `$qtim-prototype` для дизайн-развилки, `$qtim-brainstorm` до ADR и `$qtim-grill` для stress-test плана поставляются самим плагином и доступны любой роли.
+- **Встроенные дисциплины** — `$qtim-debug-loop` для сложных багов, `$qtim-prototype` для дизайн-развилки, `$qtim-brainstorm` до ADR, `$qtim-grill` для stress-test плана и `$qtim-minimal-diff` для минимального полноценного объёма решения поставляются самим плагином и доступны любой роли.
 - **Продуктовая память** — `$qtim-product-onboard` собирает из кодовой базы карту разделов, модель акторов, словарь домена и реестр событий аналитики (плюс материалы ПМа из `docs/product-context/`, если есть) — intake и PRD опираются на факты, а не на пересказ.
 - **Codex-native упаковка** — плагин состоит из `.codex-plugin/plugin.json`, `skills/`, custom-agent templates и plugin-bundled Codex hooks; project `PostToolUse` остаётся опциональным.
 - **Подстройка под стек** — setup создаёт `.codex/team-charter.md` и `.codex/agents/*.toml` под проект.
@@ -21,6 +21,12 @@ qtim подстраивается под стек проекта: анализи
   team и isolated writer worktrees сходятся через transactional topological
   integration: affected gate проходит до `--ff-only` promotion, затем отдельный
   clean-context verifier закрывает mission.
+
+`$qtim-minimal-diff` не означает «сделать меньше требований». Brainstorm
+формирует варианты, prototype проверяет развилку одноразовым артефактом, а
+minimal-diff выбирает объём решения, которое останется в проекте. Согласованный
+scope, trust-boundary validation, защита данных, security/access, базовая
+accessibility и документированные инварианты не сокращаются.
 
 ## Требования
 
@@ -40,7 +46,7 @@ overwrite и auto-archive запрещены.
 
 ## Модели и reasoning
 
-В qtim 2.12.0 оркестратор и роли разведены по явным GPT-5.6 профилям:
+В qtim 2.13.0 оркестратор и роли разведены по явным GPT-5.6 профилям:
 
 | Роль | Model / reasoning |
 |---|---|
@@ -84,7 +90,7 @@ codex plugin add qtim@qtim-agent-team              # переустановит�
 
 После переустановки открой новую задачу Codex — только она подхватит обновлённые skills.
 
-Обновить команду в проекте: `$qtim-update` — сверяет версию установленного плагина с версией сгенерированной команды и мигрирует `.codex/team-charter.md`, `.codex/agents/*.toml` и qtim-owned hooks по upgrade notes, сохраняя пользовательские hook groups и остальные правки.
+Обновить команду в проекте: `$qtim-update` — сверяет версию установленного плагина с версией сгенерированной команды и мигрирует `.codex/team-charter.md`, `.codex/agents/*.toml` и qtim-owned hooks по upgrade notes, сохраняя пользовательские hook groups, соседний track, ручной текст и atomic model overrides. Неоднозначный target остаётся `pending`, а stamp повышается только после полного version-step.
 
 Если `$qtim-update` изменил `.codex/agents/*.toml`, после миграции открой ещё одну новую задачу Codex перед `$qtim-team-up`, `$qtim-team-lazy` или `$qtim-feature`: уже открытая задача не перезагружает custom-agent definitions на лету.
 
@@ -117,6 +123,7 @@ codex plugin add qtim@qtim-agent-team              # переустановит�
    $qtim-team-retro       # после эпика: дистиллировать уроки в память
    $qtim-team-down        # закрыть активные agent threads и зафиксировать память
    $qtim-debug-loop       # сложный баг: красный repro -> гипотезы -> тест -> фикс
+   $qtim-minimal-diff     # перед нетривиальным решением: минимальный полноценный объём
    $qtim-brainstorm       # варианты и trade-offs до ADR/design brief
    ```
 
@@ -131,11 +138,12 @@ codex plugin add qtim@qtim-agent-team              # переустановит�
 | `$qtim-team-lazy` | Быстрая или средняя задача без полного прогрева команды |
 | `$qtim-onboard` | После setup на существующей кодовой базе: наполнить dev-память картой, инвариантами и конвенциями с `file:line` |
 | `$qtim-product-onboard` | После setup с PM-дорожкой: собрать продуктовую память из кода — разделы, акторы, словарь домена, события аналитики |
-| `$qtim-team-retro` | После завершённого эпика (до team-down): дистиллировать уроки «триггер -> действие» в память проекта и ролей |
+| `$qtim-team-retro` | После завершённого эпика (до team-down): дистиллировать уроки и классифицировать epic-scoped `minimal-diff:` markers; durable follow-up создаётся только для доказанно сработавшего trigger |
 | `$qtim-team-down` | Завершить активные agent threads и сохранить durable state; незавершённый эпик фиксируется в `memory/epic-state.md` |
-| `$qtim-doctor` | «Что-то не работает» или после обновления: read-only диагностика charter/агентов, hook schema/ownership/output и памяти с таблицей фиксов |
+| `$qtim-doctor` | «Что-то не работает» или после обновления: read-only диагностика charter/агентов, hooks, памяти и advisory roster drift (`repository signal -> responsibility gap -> safe action`) |
 | `$qtim-update` | Проверить версии плагина/команды и мигрировать сгенерированные файлы на текущую версию |
-| `$qtim-debug-loop` | Нетривиальный/плавающий баг или perf-регрессия: воспроизводимый красный сигнал, 3-5 гипотез, regression test до фикса, cleanup |
+| `$qtim-debug-loop` | Нетривиальный/плавающий баг или perf-регрессия: воспроизводимый красный сигнал, 3-5 гипотез, inventory root seam/call sites и coverage gaps до фикса, regression test, cleanup |
+| `$qtim-minimal-diff` | Перед нетривиальным design/implementation или новой абстракцией/зависимостью: семь ступеней до минимального полноценного решения, protected zones и одна минимальная breaking check для нетривиальной логики |
 | `$qtim-prototype` | Разрешить UX/behavior-развилку одноразовым терминальным или UI-прототипом |
 | `$qtim-brainstorm` | До ADR/design brief: интерпретации, факты, 2-3 жизнеспособных варианта, trade-offs и open questions |
 | `$qtim-grill` | Стресс-тестировать нетривиальный план по одному вопросу с рекомендованным ответом или в self-play |
@@ -145,7 +153,7 @@ codex plugin add qtim@qtim-agent-team              # переустановит�
 - `.codex/team-charter.md` — контракт команды с track-блоками под выбранные роли, инварианты и правила работы.
 - `.codex/agents/*.toml` — Codex custom agents под стек проекта (включая `qtim-product` для PM-трека).
 - `.codex/hooks.json` — создаётся только для явно выбранного project `PostToolUse` или сохраняет уже существующие пользовательские hooks; `SessionStart` / `SubagentStop` поставляет плагин.
-- `memory/` — карта проекта, команды, решения, инварианты, баги и review reports; при работе команды сюда добавляются `epic-state.md` (handoff незавершённого эпика между сессиями), `retro-log.md` и `lessons.md` (уроки ретроспектив).
+- `memory/` — карта проекта, команды, решения, инварианты, баги и review reports; при работе команды сюда добавляются `epic-state.md` (handoff незавершённого эпика между сессиями), `retro-log.md` и `lessons.md` (уроки ретроспектив). Retro поднимает только доказанно сработавшие epic-scoped `minimal-diff:` markers в durable follow-up с source, trigger evidence, owner и next action.
 - `memory/missions/<slug>/` — появляется при `$qtim-mission`: portable spec,
   validated/integrated receipts, локальные решения и final verification;
   opaque runtime handles остаются в gitignored `.codex/qtim-runtime/`.

@@ -36,7 +36,19 @@ codex plugin add qtim@qtim-agent-team              # переустановит�
 Только если plugin version новее project version. Если stamp проекта новее плагина — не даунгрейдь: скажи, что устарел сам плагин, дай команды из Step 2 и остановись.
 
 1. Прочитай `../../reference/upgrade-notes.md` и собери шаги всех версий между project version и plugin version. Применяй **oldest -> newest**; секции в notes лежат newest-first, поэтому нужный диапазон читается снизу вверх. Прямой upgrade не начинай с целевой версии.
-2. Сравни сгенерированные `.codex/agents/qtim-*.toml` с текущими templates `../../agents/*.toml` (с поправкой на подставленные плейсхолдеры стека). Прежний template из Git history не считай доступным: engine-managed region распознавай только по fingerprints и соседним anchors конкретной секции upgrade notes. Если region не распознан однозначно, не заменяй весь файл: покажи diff и оставь шаг pending. Текущие templates имеют явные atomic model pairs; best-effort проверь их по локальному catalog. Ручные правки и user overrides не перезаписывай молча.
+2. Просмотри `.codex/agents/*.toml`, но мигрируй только сгенерированные qtim role
+   files, которые однозначно сопоставлены с current templates `../../agents/*.toml`
+   (с поправкой на подставленные плейсхолдеры стека). Foreign custom agents не
+   меняй и не добавляй им qtim stamp. Прежний template из Git history не считай
+   доступным: engine-managed region распознавай только по fingerprints и
+   соседним anchors конкретной секции upgrade notes. Если region не распознан
+   однозначно, не заменяй весь файл: покажи diff и оставь шаг pending. Текущие
+   templates имеют явные atomic model pairs; best-effort проверь их по локальному
+   catalog. Ручные правки и user overrides не перезаписывай молча. Role target
+   сопоставляй только по согласованному evidence из charter roster, filename и
+   TOML `name = "qtim-..."`. Переименованный/отсутствующий target, несколько
+   кандидатов или несовпадающее имя — `pending`, а не догадка, новый дубликат
+   или whole-file overwrite. Роль вне текущего roster считается not applicable.
 3. Если существует `.codex/hooks.json`, выполни hook-миграции из upgrade notes отдельно от agent templates. Распознавай qtim-owned handlers по совокупности fingerprints (guard `.codex/team-charter.md`, `[qtim` / `$qtim-*`, `qtim-version:`, тексты про реальные артефакты или проверку затронутого слоя), а не только по event/matcher. Сохраняй порядок и содержимое неизвестных пользовательских events/groups/handlers; если ownership неоднозначен, покажи entry и спроси.
 4. Managed qtim contract в `AGENTS.md` изменяй только между `qtim:contract:start/end`; пользовательский текст вне markers сохраняй. `.codex/screenshots-gate.json` не создавай без нового explicit opt-in и валидируй как safe repo-relative policy.
 5. Покажи план миграции: какие файлы, handlers и engine-managed блоки меняются (в charter — PM-механика только между её маркерами; roles table/independent-review policy — точечными строками без удаления внешних skills; ручные правки и второй track сохраняются), что остаётся нетронутым. Дождись подтверждения.
@@ -46,17 +58,25 @@ codex plugin add qtim@qtim-agent-team              # переустановит�
    корневого `.gitignore`, явно названные version-section. Сохраняй остальные
    строки byte-for-byte. Для каждой версии собери checklist applicable шагов со
    статусами `applied` / `compatible override confirmed` / `pending`.
+   Независимые regions уже в target-state не дублируй; частично совпавшая target
+   group остаётся `pending`, пока пользователь не разрешит scoped diff.
    Секция «миграция не требуется» считается `applied` без изменения project
    content; после неё обнови только version stamps по общему incremental contract.
-7. Когда у очередной версии не осталось `pending`, атомарно подними charter и все TOML stamps до этой версии, затем переходи к следующей. Осознанно сохранённый catalog-supported override считается compatible; отложенный engine block — pending. При первом pending останови дальнейшие версии: stamps остаются на последней полностью завершённой версии, а следующий `$qtim-update` повторит только незавершённый диапазон.
+7. Когда у очередной версии не осталось `pending`, атомарно подними charter и
+   stamps всех однозначно сопоставленных qtim role TOML до этой версии; foreign
+   agent files не трогай. Затем переходи к следующей версии. Осознанно
+   сохранённый catalog-supported override считается compatible; отложенный
+   engine block — pending. При первом pending останови дальнейшие версии:
+   stamps остаются на последней полностью завершённой версии, а следующий
+   `$qtim-update` повторит только незавершённый диапазон.
 
 ## Step 4: Verify And Report
 
 - JSON/TOML parse для изменённых файлов (`python3 -m json.tool`, `tomllib` если доступен);
 - `.codex/hooks.json`, если существует: canonical root `hooks`, matcher groups с вложенным `hooks`, qtim handlers только `type: command` с `commandWindows`; нет qtim-owned project-дублей `SessionStart` / `SubagentStop`; qtim `PostToolUse` возвращает JSON `hookSpecificOutput.additionalContext`; пользовательские handlers и их порядок сохранены;
-- model policy каждого `.codex/agents/*.toml`: exact current template pair либо user-approved catalog-supported override; half-pair и `model = "inherit"` невалидны; недоступный slug -> migration pending, не удаляй pair и не угадывай замену;
+- model policy каждого сопоставленного qtim role TOML: exact current template pair либо user-approved catalog-supported override; half-pair и `model = "inherit"` невалидны; недоступный slug -> migration pending, не удаляй pair и не угадывай замену; foreign custom-agent policy не нормализуй;
 - `ultra` и `service_tier = "fast"` не появились в role TOML; charter фиксирует main team-lead `gpt-5.6-sol` + `ultra`, built-in explorer Luna+medium и ADR adversary Sol+xhigh/max;
-- track-маркеры парные; все stamps единообразно указывают на последнюю полностью завершённую версию, а не на partial target;
+- track-маркеры парные; charter и сопоставленные qtim role stamps единообразно указывают на последнюю полностью завершённую версию, а не на partial target; foreign agent TOML не изменены;
 - для stamp 2.12.0+ `.codex/qtim-runtime/` находится в корневом `.gitignore` ровно
   один раз и runtime registry не tracked;
 - в изменённых файлах нет plugin-internal путей (`../../...`);

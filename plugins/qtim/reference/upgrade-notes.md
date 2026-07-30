@@ -4,6 +4,89 @@
 
 Правило ведения: при каждом релизе, меняющем сгенерированное состояние, добавляй секцию сверху. Секции хранятся newest-first, но `$qtim-update` всегда применяет попавшие в диапазон шаги oldest -> newest (снизу вверх по файлу). Если релиз не меняет сгенерированное состояние, добавляй секцию с пометкой «миграция не требуется».
 
+## 2.13.0
+
+Что нового в сгенерированном состоянии:
+
+- `$qtim-minimal-diff` стал Layer 0 practice: architect сравнивает объём
+  design-вариантов, database/frontend проходят лестницу до нетривиальной
+  реализации, reviewer относит чистую избыточность к рекомендациям, не ослабляя
+  blockers по scope, protected zones, инвариантам и обязательным gates;
+- roles table charter фиксирует те же mandatory practices; у database/frontend/
+  testing сохраняются прежние `$qtim-debug-loop` practices;
+- generated role TOML содержат role-specific contract, но atomic model pairs,
+  ручные инструкции и optional external skills не меняются;
+- `memory/MEMORY.md` объясняет on-demand ownership `memory/retro-log.md` для
+  доказанно сработавших `minimal-diff:` follow-up.
+
+Миграция с 2.12.0:
+
+1. До записи покажи отдельный plan/diff по charter, каждому role TOML и
+   `memory/MEMORY.md`. Роль сопоставляй только когда charter row, имя файла и
+   `name = "qtim-..."` дают один и тот же supported target. Переименованный
+   файл, несколько кандидатов, roster role без файла или несовпадающий `name`
+   оставляют конкретный шаг `pending`: не создавай дубликат, не переименовывай и
+   не заменяй весь файл. Роль, которой нет в выбранном roster, — not applicable.
+2. Мигрируй перечисленные ниже **regions независимо**. Target markers делают
+   `applied` только свой region, а не всю роль. Частичный target, неуникальный
+   anchor или ручной текст внутри предполагаемой замены — `pending` со scoped
+   diff. Повторный `$qtim-update` распознаёт уже applied regions и не дублирует
+   их.
+3. В общей roles table charter точечно дополни только распознанные qtim-owned
+   mandatory-practice cells:
+   - architect — `$qtim-minimal-diff` при сравнении design-вариантов;
+   - database/frontend — `$qtim-minimal-diff` до нетривиальной реализации и
+     существующий `$qtim-debug-loop` для нетривиального бага;
+   - testing — существующий `$qtim-debug-loop` для flaky repro;
+   - reviewer — `$qtim-minimal-diff`: чистая избыточность в рекомендации,
+     protected-zone/invariant/gate violations остаются blockers;
+   - распознанная code-writing роль без bundled template — minimal-diff только в
+     mandatory-practice cell; неизвестную responsibility верни decision owner.
+   Сохрани неизвестные rows/columns, соседний track, optional external skills и
+   ручной текст вне этой ячейки byte-for-byte.
+4. В сопоставленном role file с `name = "qtim-architect"` target group:
+   `$qtim-minimal-diff`, `Новый слой и новая зависимость — архитектурное решение`
+   и `Чистая избыточность — рекомендация`. Первый region вставь после
+   единственного DESIGN-абзаца с `$qtim-brainstorm`/`$qtim-prototype`, второй —
+   после единственного REVIEW-абзаца с `expand-contract`.
+5. В сопоставленном role file с `name = "qtim-database"` target group:
+   `$qtim-minimal-diff`, `constraint, index или trigger`, `не сокращай и не
+   откладывай`, плюс checklist marker `обязательная минимальная проверка`.
+   Вставляй process/guard region между обязательным процессом и единственным
+   `$qtim-debug-loop` block; checklist line — только в существующий `Checklist:`.
+6. В сопоставленном role file с `name = "qtim-frontend"` target group:
+   `$qtim-minimal-diff`, `Trust-boundary validation`, `одну минимальную проверку`
+   и handoff marker `Confirm the solution scope`. Основной region вставляй перед
+   единственным `$qtim-debug-loop` paragraph, handoff line — в существующий
+   `Before handoff:` list.
+7. В сопоставленном role file с `name = "qtim-reviewer"` target group:
+   `Minimal-diff review (recommendations, not automatic blockers)`,
+   `$qtim-minimal-diff`, `pure excess` и `protected-zone`. Вставляй единый region
+   перед `Independent review gate:`. Минимальную breaking check нетривиальной
+   логики не считай избыточностью; новый test framework сверх нужного сигнала
+   может остаться рекомендацией.
+8. Atomic `model` + `model_reasoning_effort` каждой роли не меняй. Exact current
+   pair и подтверждённый catalog-supported override — `compatible override
+   confirmed`; half-pair, `model = "inherit"` или недоступная pair остаются
+   `pending`. Не угадывай замену.
+9. В `memory/MEMORY.md` добавь одну qtim-managed строку: файл
+   `memory/retro-log.md` создаёт `$qtim-team-retro` по мере надобности; только
+   доказанно сработавший `minimal-diff:` marker получает follow-up с source,
+   trigger evidence, одним owner и проверяемым next action. Сам retro-log не
+   создавай, остальные memory entries не меняй.
+10. Обнови charter и stamps всех сопоставленных qtim role TOML до `2.13.0`
+    только когда
+    шаги 1–9 для текущего roster имеют status `applied`, `not applicable` или
+    `compatible override confirmed`. При первом обязательном `pending` останови
+    range: stamps остаются `2.12.0`, более новые sections не применяются. После
+    изменения agent TOML открой новую задачу Codex; foreign custom agents и их
+    stamps не меняй. Без миграции новый skill доступен после plugin update, но
+    generated roles его не вызывают.
+
+Rollback не удаляет роли, memory или `minimal-diff:` comments. Уже применённый
+managed contract корректируется следующей region-aware migration; published
+semver не переиспользуется.
+
 ## 2.12.0
 
 Что нового в сгенерированном состоянии:

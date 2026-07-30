@@ -2,6 +2,65 @@
 
 Версии соответствуют `version` в `plugins/qtim/.codex-plugin/plugin.json` (semver).
 
+## 2.13.0 — 2026-07-30
+
+Семантический Codex-порт Claude qtim 1.13.0: дисциплина минимального
+полноценного объёма, её generated-state migration и operational feedback loops.
+
+### Добавлено
+
+- `$qtim-minimal-diff` с Codex UI metadata: семиступенчатая лестница
+  `нужно ли вообще -> уже есть в проекте -> standard library -> platform/framework
+  primitive -> установленная dependency -> одна операция -> минимальная
+  реализация`. Skill остаётся role-agnostic practice без fan-out и собственной
+  схемы отчёта.
+- Protected zones нельзя срезать лестницей или marker'ом: trust-boundary
+  validation, обработка ошибок против потери данных, security/access,
+  accessibility, explicit user behavior, approved acceptance criteria и
+  документированные инварианты. Для нетривиальной логики обязательна одна
+  минимальная breaking check на существующем runner или executable assertion.
+- Architect сравнивает объём design-вариантов; database/frontend применяют
+  лестницу до нетривиальной реализации; reviewer отправляет чистую избыточность
+  в рекомендации, но сохраняет blockers по scope, protected zones, инвариантам
+  и gates.
+- `$qtim-doctor` read-only сопоставляет roster с наблюдаемыми CI/data/public/
+  monorepo signals. Drift всегда `warn`: supported role ведёт в отдельный
+  additive `$qtim-setup`, unsupported responsibility — к decision owner.
+- `$qtim-team-retro` классифицирует epic-scoped `minimal-diff:` markers как
+  triggered/not-triggered/unknown/malformed/protected. Только доказанно
+  triggered marker получает durable follow-up в `memory/retro-log.md` с source,
+  evidence, одним owner и next action.
+- `$qtim-debug-loop` до production fix называет root seam, все обнаружимые call
+  sites/adjacent paths и явные dynamic/generated/external coverage gaps.
+- Fail-closed `.github/scripts/check_skill_refs.py`: полный `$qtim-*` token,
+  фиксированные scan surfaces, ненулевой coverage и self-tests для typo,
+  invalid suffix, zero references и missing surface.
+- Полный MIT notice Dietrich Gebert / ponytail и maintainer rule для следующих
+  third-party MIT adaptations.
+
+### Generated state и совместимость
+
+- `$qtim-setup` считает minimal-diff Layer 0 practice, показывает additions до
+  записи и остаётся additive на re-run: роли не удаляются, соседний track,
+  manual regions и atomic model overrides сохраняются.
+- `$qtim-update` получает region-aware migration `2.12.0 -> 2.13.0`.
+  Роль сопоставляется только по charter/filename/TOML evidence; ambiguity,
+  missing or renamed target остаётся `pending`, без duplicate/whole-file
+  overwrite. Stamps повышаются только после всех applicable steps.
+- Без project migration новый skill доступен после plugin update и новой задачи
+  Codex, но старые generated roles его не вызывают. После `$qtim-update`,
+  изменившего role TOML, также требуется новая задача.
+- Rollback не удаляет пользовательские роли, memory или `minimal-diff:`
+  comments; корректировка delivered contract идёт следующим semver и
+  region-aware migration.
+
+### Не перенесено из Claude runtime
+
+- `.claude/*`, slash commands, Agent Teams/`Task*`, agent-memory,
+  Standalone-copy и Claude command namespace. Codex использует `$qtim-*`,
+  `.codex/*`, explicit atomic model pairs, task-scoped threads и общий
+  `memory/`.
+
 ## 2.12.0 — 2026-07-28
 
 Полный Mission Plan Codex: shape-based routing после `$qtim-feature` и App-first

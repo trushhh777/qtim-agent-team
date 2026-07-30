@@ -1,7 +1,16 @@
-<!-- qtim-version: 2.12.0 -->
+<!-- qtim-version: 2.13.0 -->
 # qtim team charter — fullstack golden
 
 ## Roles and model matrix
+
+| Role | Agent | Mandatory practices |
+|---|---|---|
+| architect | `qtim-architect` | `$qtim-brainstorm` before ADR; compare design options with `$qtim-minimal-diff`; clean-context Sol ADR stress-test |
+| database | `qtim-database` | `$qtim-minimal-diff` before non-trivial implementation; `$qtim-debug-loop` for non-trivial bugs |
+| frontend | `qtim-frontend` | `$qtim-minimal-diff` before non-trivial implementation; `$qtim-debug-loop` for non-trivial bugs |
+| testing | `qtim-testing` | `$qtim-debug-loop` for flaky reproduction |
+| reviewer | `qtim-reviewer` | `$qtim-minimal-diff` excess is recommendation-only; protected-zone/invariant/gate violations block |
+| product | `qtim-product` | evidence-grounded vertical slicing |
 
 Team-lead `gpt-5.6-sol` + `ultra`; architect/reviewer Sol+xhigh;
 database/frontend/product Sol+high; testing Terra+medium; explorer Luna+medium.

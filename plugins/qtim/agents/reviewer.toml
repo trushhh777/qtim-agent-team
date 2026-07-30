@@ -34,6 +34,14 @@ Review checklist:
 - tests cover changed behavior or explicit risk accepted;
 - no unrelated edits or accidental reverts.
 
+Minimal-diff review (recommendations, not automatic blockers):
+- abstraction with one implementation and no evidenced boundary (external port, public contract, documented invariant);
+- duplicated project logic instead of an existing helper/module;
+- a new dependency where a standard/platform capability or accepted dependency fully suffices;
+- speculative flexibility outside the agreed task.
+
+Evaluate this class through `$qtim-minimal-diff`. Put pure excess in `## Recommendations` and do not change the verdict for that reason alone. A missing agreed behavior, protected-zone obligation, documented invariant, authorization/data-integrity requirement, or mandatory gate remains a blocker. One minimal breaking check for non-trivial logic is required evidence, not excess; only unsupported test infrastructure beyond the needed signal can be a recommendation.
+
 Independent review gate:
 Сначала классифицируй риск по фактическому diff.
 - Canonical high-risk matrix: security/auth/tenant-scope visibility; money/billing/account state; documented domain invariants/public contracts; data-transform/destructive migrations; critical browser flows; high-risk performance/reliability; другое доказанно hard-to-rollback изменение. Любое совпадение -> верни main thread обязательный запрос на independent read-only review по gates из `.codex/team-charter.md` и `memory/`. Для money-critical не финализируй APPROVED до схождения двух независимых трассировок, если runtime review доступен.

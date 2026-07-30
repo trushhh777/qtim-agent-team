@@ -16,7 +16,7 @@ description: Use when the user wants to install or bootstrap qtim for the curren
 - Role templates: `../../agents/architect.toml`, `../../agents/database.toml`, `../../agents/frontend.toml`, `../../agents/testing.toml`, `../../agents/reviewer.toml`, `../../agents/product.toml`.
 - Model policy: `../../reference/model-profiles.md`.
 - Shared mechanics: `../../reference/intake-protocol.md`, `../../reference/orchestration-patterns.md`, `../../reference/independent-review.md`, `../../reference/feature-pipeline.md`.
-- Bundled disciplines: `../qtim-debug-loop/SKILL.md`, `../qtim-prototype/SKILL.md`, `../qtim-brainstorm/SKILL.md`, `../qtim-grill/SKILL.md`; role templates invoke them directly.
+- Bundled disciplines: `../qtim-debug-loop/SKILL.md`, `../qtim-prototype/SKILL.md`, `../qtim-brainstorm/SKILL.md`, `../qtim-grill/SKILL.md`, `../qtim-minimal-diff/SKILL.md`; role templates invoke them directly.
 - Hooks: `../../hooks/hooks.json` для plugin-bundled событий; `../../reference/project-hooks.json` читай только при выборе project-level `PostToolUse`.
 - Plugin version для stamps: поле `version` из `../../.codex-plugin/plugin.json`.
 
@@ -50,7 +50,17 @@ description: Use when the user wants to install or bootstrap qtim for the curren
 
 ## Phase 1b: Codex Skills, Plugins, MCP Matching
 
-Layer 0 уже поставляется qtim и доступен во всех проектах: `$qtim-debug-loop`, `$qtim-prototype`, `$qtim-brainstorm`, `$qtim-grill`. Не проверяй их как внешние зависимости, не проси установить и не вписывай в колонку optional `skills`: templates ссылаются на них напрямую. В mandatory practices charter зафиксируй: architect — `$qtim-brainstorm` до ADR + обязательный clean-context Sol stress-test каждого созданного ADR; database/frontend — `$qtim-debug-loop` для нетривиального бага; testing — `$qtim-debug-loop` для flaky repro. Prototype/grill остаются условными инструментами architect; `$qtim-grill` — первый pass только при созданном ADR, не замена независимому adversary.
+Layer 0 уже поставляется qtim и доступен во всех проектах: `$qtim-debug-loop`, `$qtim-prototype`, `$qtim-brainstorm`, `$qtim-grill`, `$qtim-minimal-diff`. Не проверяй их как внешние зависимости, не проси установить и не вписывай в колонку optional `skills`: templates ссылаются на них напрямую.
+
+В mandatory practices charter зафиксируй единый contract:
+
+- architect — `$qtim-brainstorm` до ADR, `$qtim-minimal-diff` при сравнении design-вариантов и обязательный clean-context Sol stress-test каждого созданного ADR;
+- database/frontend — `$qtim-minimal-diff` до нетривиальной реализации и `$qtim-debug-loop` для нетривиального бага;
+- testing — `$qtim-debug-loop` для flaky repro;
+- reviewer — ревью результата по `$qtim-minimal-diff`: чистая избыточность идёт в рекомендации, а scope/protected-zone/invariant/gate violations остаются blockers;
+- любая дополнительно сгенерированная роль, которая пишет код (например devops или impl-роль нестандартного стека), — `$qtim-minimal-diff` до нетривиальной реализации; read-only/product/explorer роли эту practice не получают автоматически.
+
+Prototype/grill остаются условными инструментами architect; `$qtim-grill` — первый pass только при созданном ADR, не замена независимому adversary. Minimal-diff не сокращает согласованный scope, protected zones или verification gates и не вводит собственную схему отчёта.
 
 Отдельно подбери уже доступные внешние Codex skills из текущего контекста под стек и роли. Не устанавливай ничего сам.
 
@@ -107,7 +117,8 @@ PM/Analyst-состав команды не спрашивается — он о
 - memory files;
 - plugin-bundled hooks, режим screenshots gate и отдельно optional project `PostToolUse`;
 - selected external skills per role и гарантированные qtim disciplines в mandatory practices;
-- any collisions in existing `.codex/agents` or `memory/`.
+- any collisions in existing `.codex/agents` or `memory/`;
+- при re-run — какие поддерживаемые роли/managed practices будут добавлены или точечно обновлены, какие существующие роли, соседний track, ручной текст и atomic model overrides останутся без изменений.
 
 Ничего не записывай до явного подтверждения пользователя. Если пользователь просит правки, обнови план и переспроси.
 
@@ -121,7 +132,7 @@ PM/Analyst-состав команды не спрашивается — он о
 
 - purpose and project context;
 - fixed stack and commands;
-- roles table: role, Codex custom agent name, mission, triggers, do-not-touch, read-on-start, external skills, mandatory practices; bundled practices из Layer 0 записываются по ролям, но не смешиваются с optional external skills;
+- roles table: role, Codex custom agent name, mission, triggers, do-not-touch, read-on-start, external skills, mandatory practices; bundled practices из Layer 0 записываются по ролям, но не смешиваются с optional external skills. Значения minimal-diff возьми из Phase 1b: design-варианты у architect, решение до реализации у code-writing roles, recommendation-only review у reviewer;
 - model matrix отдельным блоком под roles table: team-lead `gpt-5.6-sol` + `ultra`; architect/reviewer `gpt-5.6-sol` + `xhigh`; database/frontend/product `gpt-5.6-sol` + `high`; testing `gpt-5.6-terra` + `medium`; built-in explorer `gpt-5.6-luna` + `medium`; ADR adversary `gpt-5.6-sol` + `xhigh` (`max` для необратимого решения, затрагивающего документированный инвариант). Для ролей с TOML источником истины служит файл; для explorer и ephemeral adversary — charter;
 - domain invariants;
 - ADR stress-test — отдельный обязательный блок независимо от настройки code review: каждый ADR до approval проходит `$qtim-grill`, затем новый read-only thread без истории на Sol+xhigh; необратимое + документированный инвариант -> Sol+max; итоговая строка `adr-stress-test:` в ADR, технический пропуск записывается как `skipped` и не считается pass;
@@ -143,7 +154,7 @@ Track-блоки — между HTML-маркерами, по выбранным
 
 PM track block начни пометкой: «Производная self-contained сводка; долговечный канон артефактов принадлежит установленному `$qtim-feature` reference, ручные изменения сверять через `$qtim-update`». Затем перенеси суть `../../reference/feature-pipeline.md`: полный трек и fast-path `feature-brief.md`; Intake checkpoint с выбором трека; общий checkpoint decomposition + estimate; selective dev-consult только по реально затронутым слоям; grounded S/M/L/XL; вертикальные work items/фазы с одним DRI и contributing ролями; в полном треке — layer estimates, которые DRI синтезирует в item estimate, в fast-path — main-thread evidence fallback без обязательного fan-out; expand-contract для широкого механического рефактора; статусы Draft -> Approved -> In Development -> Done; обязательный блок `Что запускать дальше` с полями recommendation/why/topology/command/alternative и shape-based выбором direct / `$qtim-team-lazy` / `$qtim-team-up` / `$qtim-mission`; размер не выбирает workflow; recommendation ничего не запускает без нового явного разрешения; полностью Approved mission graph с готовыми base/integration target, scopes, budgets и gates получает команду `запусти`, а unresolved writer/lazy/runtime choice — `preview`; указатель в `memory/decisions.md` — последний atomic completion marker Stage 6, а `Approved` plan/brief без указателя означает resume с Handoff. При PM-only составе — также пометку из Phase 2 о добавлении dev track перед реализацией.
 
-Re-run rule: при повторном setup заменяй содержимое только между маркерами своего track; чужой track block и ручные правки пользователя вне маркеров не трогай. В общей roles table добавляй строки, не удаляя существующие.
+Re-run rule: при повторном setup заменяй содержимое только между маркерами своего track; чужой track block и ручные правки пользователя вне маркеров не трогай. В общей roles table добавляй недостающие поддерживаемые роли и точечно дополняй распознанные qtim-owned mandatory-practice cells; неизвестные строки, дополнительные колонки и ручной текст сохраняй. Роли не удаляй. Неоднозначную строку или локально изменённый managed block покажи как collision/pending в плане, не угадывай и не заменяй весь charter.
 
 ### `.codex/agents/*.toml`
 
@@ -168,6 +179,15 @@ Re-run rule: при повторном setup заменяй содержимое
 - `qtim-product` (PM track).
 
 Состав по трекам: Developer — architect/database/frontend/testing/reviewer по team shape; PM/Analyst — `qtim-product` + `qtim-architect` + профильные dev-роли по стеку (без reviewer); Оба — объединение. Для `explorer` используй встроенного Codex `explorer`, отдельный TOML не нужен; main thread передаёт `gpt-5.6-luna` + `medium` при spawn. Для `devops`, `auditor` создай узкие custom agents только если пользователь выбрал Extended.
+
+В self-contained `developer_instructions` любой code-writing custom role без
+bundled template добавь тот же minimal-diff contract: `$qtim-minimal-diff` до
+нетривиальной реализации, protected zones и approved scope не сокращаются,
+спорный scope возвращается main thread, нетривиальная логика получает одну
+минимальную breaking check без новой test infrastructure. Read-only auditor,
+product и explorer этот implementation block не получают.
+
+При re-run недостающий файл поддерживаемой роли создавай только после показанного plan/approval. Существующий TOML не удаляй и не заменяй целиком: покажи scoped diff, сохрани подтверждённую atomic model pair и ручные инструкции вне распознанного qtim-owned region; при неоднозначности оставь collision/pending. Setup не переименовывает роли и не создаёт дубликат для похожего имени без решения пользователя.
 
 ### `.codex/hooks.json`
 
@@ -226,7 +246,7 @@ Portable `memory/missions/<slug>/` под это правило не попад�
 - `memory/review-report.md`;
 - `memory/bug-log.md`.
 
-Файлы `memory/epic-state.md`, `memory/retro-log.md` и `memory/lessons.md` setup не создаёт — их создают `$qtim-team-down` и `$qtim-team-retro` по мере надобности; упомяни их назначение в `MEMORY.md`. Каталог `memory/missions/<slug>/` setup также не создаёт: его заводит только явно запущенная mission через `$qtim-mission` с глаголом исполнения или недвусмысленную просьбу провести несколько Codex peer tasks как одну mission для portable spec, validated receipts, локальных решений и final verification.
+Файлы `memory/epic-state.md`, `memory/retro-log.md` и `memory/lessons.md` setup не создаёт — их создают `$qtim-team-down` и `$qtim-team-retro` по мере надобности; упомяни их назначение в `MEMORY.md`. Для `memory/retro-log.md` зафиксируй, что retro также пишет туда только доказанно сработавшие `minimal-diff:` follow-up с source, trigger evidence, одним owner и проверяемым next action. Каталог `memory/missions/<slug>/` setup также не создаёт: его заводит только явно запущенная mission через `$qtim-mission` с глаголом исполнения или недвусмысленную просьбу провести несколько Codex peer tasks как одну mission для portable spec, validated receipts, локальных решений и final verification.
 
 При PM track уточни в `MEMORY.md`, что `decisions.md` служит также реестром указателей на утверждённые фичи в `docs/features/<slug>/`. Саму директорию `docs/features/` setup не создаёт — её создаёт `$qtim-feature` per-slug. Продуктовую память (`memory/product-map.md`, `product-actors.md`, `product-glossary.md`, `product-metrics.md`) setup тоже не создаёт — её наполняет `$qtim-product-onboard`; упомяни эти файлы в PM track block charter как read-on-start роли `product` («если созданы»).
 
@@ -297,4 +317,5 @@ role TOML и spawn prompt по-прежнему требуют открыть н
 - qtim subagent workflows require explicit user authorization through the skill or a direct delegation request. Team-lead profile is `gpt-5.6-sol` + `ultra`; it may proactively delegate only inside that authorized scope. Agent threads are task-scoped; verify runtime descendants before reuse, and never imply a hidden persistent team.
 - Generated project files (`.codex/*`, `memory/*`, `AGENTS.md`) must be self-contained: no relative paths into the installed plugin.
 - При повторном запуске обновляй только блок своего track между маркерами `qtim:track:*`; второй track и ручные правки пользователя сохраняются.
+- Re-run остаётся additive: покажи plan/diff, добавляй недостающие поддерживаемые роли и qtim-owned practices, не удаляй роли, не затирай manual regions и сохраняй atomic model overrides; неоднозначность оставляй pending.
 - Preserve existing user files. On collisions, ask before overwrite, skip, or rename.

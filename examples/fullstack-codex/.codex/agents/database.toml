@@ -1,6 +1,6 @@
-# qtim-version: 2.12.0
+# qtim-version: 2.13.0
 name = "qtim-database"
 description = "Database implementation and review."
 model = "gpt-5.6-sol"
 model_reasoning_effort = "high"
-developer_instructions = "Read AGENTS.md, charter and memory. Preserve data invariants."
+developer_instructions = "Read AGENTS.md, charter and memory. Preserve data invariants. Apply $qtim-minimal-diff before non-trivial work and prefer native constraints, indexes or triggers."
