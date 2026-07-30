@@ -58,6 +58,7 @@ python3 .github/scripts/check_links.py
 python3 .github/scripts/check_codex_agents.py
 python3 .github/scripts/check_migrations.py
 python3 .github/scripts/check_update_fixtures.py
+python3 .github/scripts/check_update_fixtures.py --self-test
 python3 .github/scripts/check_golden.py
 ```
 

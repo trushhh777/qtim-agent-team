@@ -52,7 +52,9 @@
   сопоставленных qtim roles повышаются только после всех applicable steps.
 - Repo-local Extended migration fixture фиксирует positive preservation path:
   custom `qtim-devops`, foreign agent/hook, ручная инструкция, оба track block
-  и user model override.
+  и user model override; negative oracles отклоняют потерю любого manual byte,
+  qtim-looking foreign near-miss и преждевременный target stamp при ambiguous/
+  partial custom role.
 - Без project migration новый skill доступен после plugin update и новой задачи
   Codex, но старые generated roles его не вызывают. После `$qtim-update`,
   изменившего role TOML, также требуется новая задача.

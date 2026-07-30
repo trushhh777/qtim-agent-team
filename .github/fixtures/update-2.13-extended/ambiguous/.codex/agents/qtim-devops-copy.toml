@@ -1,0 +1,8 @@
+# qtim-version: 2.12.0
+name = "qtim-devops"
+description = "Second candidate makes ownership ambiguous"
+model = "gpt-5.6-terra"
+model_reasoning_effort = "high"
+developer_instructions = """
+MANUAL-DUPLICATE-TEXT: preserve pending state.
+"""

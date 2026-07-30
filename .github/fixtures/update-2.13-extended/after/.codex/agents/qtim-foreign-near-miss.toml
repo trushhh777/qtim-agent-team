@@ -1,0 +1,5 @@
+name = "qtim-devops-shadow"
+description = "User-owned qtim-looking role without qtim stamp or charter row"
+model = "gpt-5.6-luna"
+model_reasoning_effort = "medium"
+developer_instructions = "FOREIGN-QTIM-LOOKING-BYTES-MUST-NOT-CHANGE"

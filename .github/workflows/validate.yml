@@ -59,7 +59,9 @@ jobs:
         run: python3 .github/scripts/check_migrations.py
 
       - name: Extended/custom-role migration fixture валиден
-        run: python3 .github/scripts/check_update_fixtures.py
+        run: |
+          python3 .github/scripts/check_update_fixtures.py
+          python3 .github/scripts/check_update_fixtures.py --self-test
 
       - name: Semantic golden project валиден
         run: python3 .github/scripts/check_golden.py
