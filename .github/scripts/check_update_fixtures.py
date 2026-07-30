@@ -87,6 +87,10 @@ def charter_preserved(before, after):
     return normalized == before
 
 
+def foreign_bytes_preserved(before, after):
+    return bool(before) and before == after
+
+
 def pending_state_held(charter, roles):
     if not charter.startswith("<!-- qtim-version: 2.12.0 -->"):
         return False
@@ -155,7 +159,7 @@ for marker in CUSTOM_MARKERS:
 for relative in ("agents/foreign-agent.toml", "agents/qtim-foreign-near-miss.toml", "hooks.json"):
     before_bytes = (BEFORE / relative).read_bytes() if (BEFORE / relative).is_file() else b""
     after_bytes = (AFTER / relative).read_bytes() if (AFTER / relative).is_file() else b""
-    need(before_bytes == after_bytes and before_bytes, f"{relative} was not preserved byte-for-byte")
+    need(foreign_bytes_preserved(before_bytes, after_bytes), f"{relative} was not preserved byte-for-byte")
 try:
     json.loads(text(AFTER / "hooks.json"))
 except json.JSONDecodeError as err:
@@ -222,7 +226,10 @@ if "--self-test" in sys.argv[1:]:
     )
     need(before_near_miss == after_near_miss, "near-miss control fixture is not identical")
     need(
-        before_near_miss != mutated_near_miss,
+        not foreign_bytes_preserved(
+            before_near_miss.encode("utf-8"),
+            mutated_near_miss.encode("utf-8"),
+        ),
         "negative oracle accepted mutation of qtim-looking foreign near-miss",
     )
     advanced_charter = ambiguous_charter.replace(
