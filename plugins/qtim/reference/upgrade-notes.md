@@ -4,6 +4,51 @@
 
 Правило ведения: при каждом релизе, меняющем сгенерированное состояние, добавляй секцию сверху. Секции хранятся newest-first, но `$qtim-update` всегда применяет попавшие в диапазон шаги oldest -> newest (снизу вверх по файлу). Если релиз не меняет сгенерированное состояние, добавляй секцию с пометкой «миграция не требуется».
 
+## 2.14.0
+
+Что нового в сгенерированном состоянии:
+
+- каждый qtim custom agent, включая project-specific Extended-роли, получает
+  обязательный `## Language` contract: internal reasoning и сообщения peer agents
+  идут на English, user-facing документы, review findings и всё передаваемое
+  пользователю — на Russian;
+- общий charter и автоматически загружаемый managed block `AGENTS.md` несут тот же
+  contract для team-lead, built-in `explorer`/`worker`, fallback-ролей и mission
+  peers, а orchestration prompts/follow-ups составляются на English.
+
+Миграция с 2.13.0:
+
+1. Классифицируй agent TOML по тому же fail-closed ownership contract, что и в
+   migration 2.13.0: bundled qtim role либо qtim-generated custom role доказывается
+   согласованными charter row, filename, TOML `name = "qtim-..."` и исходным stamp
+   `2.13.0`; foreign/ambiguous file не меняй и оставь шаг pending.
+2. В `developer_instructions` каждой однозначно сопоставленной qtim role точечно
+   добавь следующий блок, не заменяя весь TOML и не меняя model pair, sandbox,
+   project substitutions, minimal-diff regions или остальные ручные инструкции:
+
+   ```markdown
+   ## Language
+
+   Reason internally and message peer agents in **English** — token economy (Cyrillic ≈1.5–2× more tokens per equivalent content). Keep **user-facing output in Russian**: contract documents, review findings, and anything relayed to the client.
+   ```
+
+   Exact block уже есть -> region applied. Если внутри prompt есть другое правило о
+   языке internal/peer или user-facing output, не объявляй его compatible override:
+   покажи точный конфликт и оставь migration pending до подтверждения пользователя.
+   После подтверждения убери только конфликтующие строки и сохрани остальной prompt.
+3. В общей части `.codex/team-charter.md` вне `qtim:track:*` markers добавь один
+   `## Language` с тем же дословным абзацем. Существующий exact block не дублируй;
+   оба track block, roles table и другой текст charter сохрани.
+4. Между `qtim:contract:start/end` project `AGENTS.md` добавь тот же `## Language`
+   и абзац. Текст до/после managed markers сохрани byte-for-byte; существующий exact
+   block не дублируй.
+5. Проверь TOML parse и наличие полного contract во всех сопоставленных qtim agent
+   TOML, charter и managed `AGENTS.md`. Foreign agents, hooks, memory,
+   feature/mission artifacts, `.gitignore` и screenshots config не меняй.
+6. Обнови charter и stamps всех сопоставленных qtim role TOML до `2.14.0` только
+   после шагов 1–5 без `pending`. Так как меняются agent TOML, перед следующим qtim
+   workflow обязательна новая задача Codex.
+
 ## 2.13.0
 
 Что нового в сгенерированном состоянии:

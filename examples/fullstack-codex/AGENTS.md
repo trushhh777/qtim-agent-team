@@ -15,4 +15,9 @@ writers изолированы worktree, commits integrate topologically чер�
 affected gate до locked exact-old ff-only promotion; portable state checkpoint-ится
 отдельно, затем отдельный verifier закрывает общий gate.
 После обновления используй `$qtim-update`, при сбое — `$qtim-doctor`.
+
+## Language
+
+Reason internally and message peer agents in **English** — token economy (Cyrillic ≈1.5–2× more tokens per equivalent content). Keep **user-facing output in Russian**: contract documents, review findings, and anything relayed to the client.
+
 <!-- qtim:contract:end -->

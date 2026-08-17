@@ -1,6 +1,12 @@
-# qtim-version: 2.13.0
+# qtim-version: 2.14.0
 name = "qtim-testing"
 description = "Real-browser and regression testing."
 model = "gpt-5.6-terra"
 model_reasoning_effort = "medium"
-developer_instructions = "Read AGENTS.md, charter and memory. Start the app with npm run dev and save tester screenshots."
+developer_instructions = '''
+## Language
+
+Reason internally and message peer agents in **English** — token economy (Cyrillic ≈1.5–2× more tokens per equivalent content). Keep **user-facing output in Russian**: contract documents, review findings, and anything relayed to the client.
+
+Read AGENTS.md, charter and memory. Start the app with npm run dev and save tester screenshots.
+'''

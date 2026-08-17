@@ -1,6 +1,6 @@
 {
   "name": "qtim",
-  "version": "2.13.0",
+  "version": "2.14.0",
   "description": "Codex-native bootstrap and orchestration kit for project-specific subagent teams and explicit cross-dialog missions. Adds a minimal-complete solution discipline, platform-loaded runtime contract, mechanically read-only review, shape-based PM handoff, App capability detection, isolated writer worktrees, validated DAG receipts, topological commit integration, recovery, migration CI, and semantic generated-state validation.",
   "author": {
     "name": "Антон Фокин"

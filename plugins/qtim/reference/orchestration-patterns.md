@@ -4,6 +4,8 @@
 
 qtim subagent workflow запускается по явному вызову skill или прямой просьбе пользователя. Team-lead profile — `gpt-5.6-sol` + `Ultra`: пользователь выбирает его при старте task, а qtim не меняет уже открытую сессию скрыто. `Ultra` может proactively делегировать внутри разрешённого scope, но не расширяет задачу.
 
+Все prompts, follow-ups и иные сообщения peer agents пиши на English. Внутреннее рассуждение ролей также ведётся на English; user-facing документы, findings и всё, что передаётся пользователю, остаётся на Russian. Это обязательный language contract из project `AGENTS.md`/charter, а не настройка отдельного workflow.
+
 ## Execution Depth
 
 | Mode | Когда | Codex-механика |

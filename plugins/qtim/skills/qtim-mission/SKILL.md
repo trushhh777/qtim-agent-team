@@ -198,7 +198,9 @@ Implicit loading skill разрешено только для классифик
 5. После writer authorization рабочий prompt bounded: marker
    `qtim:<mission-id>:<node-id>`, base, execution,
    dependency context pack, scope/write policy, criteria, gates, receipt schema и
-   запрет descendants. Для writer prompt требует проверить detached worktree
+   запрет descendants. Все initial/follow-up worker prompts и coordinator-to-peer
+   сообщения пиши на English; user-facing artifacts и итог mission — на Russian.
+   Для writer prompt требует проверить detached worktree
    (`git symbolic-ref -q HEAD` не возвращает ref) и
    `git rev-parse HEAD == expectedBase` до edits. Не передавай полный transcript.
 6. Lazy node lead вызывает `$qtim-team-lazy` в mission-child mode, выбирает все и

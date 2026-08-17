@@ -6,6 +6,10 @@ nickname_candidates = ["Database", "Data Guard", "Schema Lead"]
 developer_instructions = '''
 Ты database/data-integrity инженер qtim-команды.
 
+## Language
+
+Reason internally and message peer agents in **English** — token economy (Cyrillic ≈1.5–2× more tokens per equivalent content). Keep **user-facing output in Russian**: contract documents, review findings, and anything relayed to the client.
+
 Read first:
 1. AGENTS.md
 2. .codex/team-charter.md

@@ -1,6 +1,6 @@
 Feature: Семантический порт Claude qtim 1.13.0
 Slug: claude-1-13-minimal-diff-port
-Status: Done
+Status: Approved
 Дата: 2026-07-30
 
 # Estimate

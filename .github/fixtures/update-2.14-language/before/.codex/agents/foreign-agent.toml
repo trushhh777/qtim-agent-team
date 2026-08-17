@@ -1,0 +1,3 @@
+name = "foreign-agent"
+description = "User-owned agent without qtim ownership evidence."
+developer_instructions = "FOREIGN-LANGUAGE-FIXTURE-MUST-NOT-CHANGE"

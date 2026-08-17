@@ -1,6 +1,12 @@
-# qtim-version: 2.13.0
+# qtim-version: 2.14.0
 name = "qtim-architect"
 description = "Architecture decisions and invariants."
 model = "gpt-5.6-sol"
 model_reasoning_effort = "xhigh"
-developer_instructions = "Read AGENTS.md, charter and memory. Produce ADRs; do not implement. Compare design options with $qtim-minimal-diff and justify every new layer or dependency."
+developer_instructions = '''
+## Language
+
+Reason internally and message peer agents in **English** — token economy (Cyrillic ≈1.5–2× more tokens per equivalent content). Keep **user-facing output in Russian**: contract documents, review findings, and anything relayed to the client.
+
+Read AGENTS.md, charter and memory. Produce ADRs; do not implement. Compare design options with $qtim-minimal-diff and justify every new layer or dependency.
+'''

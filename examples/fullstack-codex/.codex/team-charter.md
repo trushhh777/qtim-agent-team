@@ -1,4 +1,4 @@
-<!-- qtim-version: 2.13.0 -->
+<!-- qtim-version: 2.14.0 -->
 # qtim team charter — fullstack golden
 
 ## Roles and model matrix
@@ -14,6 +14,10 @@
 
 Team-lead `gpt-5.6-sol` + `ultra`; architect/reviewer Sol+xhigh;
 database/frontend/product Sol+high; testing Terra+medium; explorer Luna+medium.
+
+## Language
+
+Reason internally and message peer agents in **English** — token economy (Cyrillic ≈1.5–2× more tokens per equivalent content). Keep **user-facing output in Russian**: contract documents, review findings, and anything relayed to the client.
 
 ## Working rules
 

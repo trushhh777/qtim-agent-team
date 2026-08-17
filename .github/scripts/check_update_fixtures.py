@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate the 2.12 -> 2.13 Extended/custom-role migration contract."""
+"""Validate the 2.13 Extended-role and 2.14 language migrations."""
 import json
 import pathlib
 import re
@@ -11,6 +11,9 @@ BEFORE = FIXTURE / "before/.codex"
 AFTER = FIXTURE / "after/.codex"
 AMBIGUOUS_BEFORE = FIXTURE / "ambiguous/before/.codex"
 AMBIGUOUS_AFTER = FIXTURE / "ambiguous/after/.codex"
+LANGUAGE_FIXTURE = ROOT / ".github/fixtures/update-2.14-language"
+LANGUAGE_BEFORE = LANGUAGE_FIXTURE / "before"
+LANGUAGE_AFTER = LANGUAGE_FIXTURE / "after"
 BAD = []
 CUSTOM_BLOCK = (
     "\nПеред нетривиальной реализацией пройди `$qtim-minimal-diff`. "
@@ -33,6 +36,13 @@ CUSTOM_MARKERS = (
     "disputed scope",
     "одну минимальную breaking check",
     "без новой test infrastructure",
+)
+LANGUAGE_CONTRACT = (
+    "## Language\n\n"
+    "Reason internally and message peer agents in **English** — token economy "
+    "(Cyrillic ≈1.5–2× more tokens per equivalent content). Keep **user-facing "
+    "output in Russian**: contract documents, review findings, and anything relayed "
+    "to the client."
 )
 
 
@@ -193,6 +203,48 @@ need(
     "ambiguous/partial custom-role fixture did not hold charter and all qtim stamps at 2.12.0",
 )
 
+language_before_role = text(LANGUAGE_BEFORE / ".codex/agents/qtim-devops.toml")
+language_after_role = text(LANGUAGE_AFTER / ".codex/agents/qtim-devops.toml")
+need(language_before_role.startswith("# qtim-version: 2.13.0"), "2.14 before role stamp mismatch")
+need(language_after_role.startswith("# qtim-version: 2.14.0"), "2.14 after role stamp mismatch")
+need(language_after_role.count(LANGUAGE_CONTRACT) == 1, "2.14 custom role language block missing or duplicated")
+normalized_language_role = language_after_role.replace(
+    "# qtim-version: 2.14.0", "# qtim-version: 2.13.0", 1
+).replace(f"\n\n{LANGUAGE_CONTRACT}\n", "", 1)
+need(
+    normalized_language_role == language_before_role,
+    "2.14 custom role changed outside stamp and exact additive language block",
+)
+
+language_before_charter = text(LANGUAGE_BEFORE / ".codex/team-charter.md")
+language_after_charter = text(LANGUAGE_AFTER / ".codex/team-charter.md")
+need(language_after_charter.count(LANGUAGE_CONTRACT) == 1, "2.14 charter language block missing or duplicated")
+normalized_language_charter = language_after_charter.replace(
+    "<!-- qtim-version: 2.14.0 -->", "<!-- qtim-version: 2.13.0 -->", 1
+).replace(f"\n{LANGUAGE_CONTRACT}\n", "", 1)
+need(
+    normalized_language_charter == language_before_charter,
+    "2.14 charter changed outside stamp and exact additive language block",
+)
+need(
+    track_block(language_before_charter, "dev") == track_block(language_after_charter, "dev"),
+    "2.14 language migration changed dev track",
+)
+
+language_before_agents = text(LANGUAGE_BEFORE / "AGENTS.md")
+language_after_agents = text(LANGUAGE_AFTER / "AGENTS.md")
+need(language_after_agents.count(LANGUAGE_CONTRACT) == 1, "2.14 AGENTS language block missing or duplicated")
+need(
+    language_after_agents.replace(f"\n\n{LANGUAGE_CONTRACT}\n", "\n", 1)
+    == language_before_agents,
+    "2.14 AGENTS migration changed bytes outside the managed language insertion",
+)
+need(
+    text(LANGUAGE_BEFORE / ".codex/agents/foreign-agent.toml")
+    == text(LANGUAGE_AFTER / ".codex/agents/foreign-agent.toml"),
+    "2.14 migration changed foreign agent bytes",
+)
+
 contract_markers = {
     ROOT / "plugins/qtim/skills/qtim-update/SKILL.md": (
         "qtim-generated custom role без bundled template",
@@ -210,6 +262,16 @@ contract_markers = {
         "PM-only roster без reviewer/testing не является drift",
         "qtim-generated custom role без bundled template",
         "не считай foreign agent qtim-owned",
+    ),
+    ROOT / "plugins/qtim/skills/qtim-setup/SKILL.md": (
+        "Каждая custom role без bundled template независимо от responsibility получает",
+        "дословный `## Language` contract",
+    ),
+    ROOT / "plugins/qtim/reference/upgrade-notes.md": (
+        "## 2.14.0",
+        "Миграция с 2.13.0",
+        "foreign/ambiguous file не меняй",
+        "stamps всех сопоставленных qtim role TOML до `2.14.0`",
     ),
 }
 for path, markers in contract_markers.items():
@@ -303,11 +365,32 @@ if "--self-test" in sys.argv[1:]:
         not pending_bytes_preserved(ambiguous_before_snapshot, mutated_pending_charter),
         "negative oracle accepted ambiguous charter manual-byte mutation",
     )
+    mutated_language_role = language_after_role.replace(
+        "MANUAL-LANGUAGE-FIXTURE: preserve byte-for-byte.",
+        "MANUAL-LANGUAGE-FIXTURE: silently changed.",
+        1,
+    )
+    normalized_mutated_language_role = mutated_language_role.replace(
+        "# qtim-version: 2.14.0", "# qtim-version: 2.13.0", 1
+    ).replace(f"\n\n{LANGUAGE_CONTRACT}\n", "", 1)
+    need(
+        normalized_mutated_language_role != language_before_role,
+        "negative oracle accepted 2.14 custom-role manual-byte mutation",
+    )
+    partial_language_role = language_after_role.replace(
+        "Keep **user-facing output in Russian**",
+        "Keep user-facing output in Russian",
+        1,
+    )
+    need(
+        partial_language_role.count(LANGUAGE_CONTRACT) == 0,
+        "negative oracle accepted partial 2.14 language contract",
+    )
 
 if BAD:
     print("Extended update fixture validation failed:\n- " + "\n- ".join(BAD))
     sys.exit(1)
 if "--self-test" in sys.argv[1:]:
-    print("OK: update-fixture negative oracles reject manual loss, foreign near-miss mutation, and ambiguous stamp/manual-byte drift")
+    print("OK: update-fixture negative oracles reject 2.13/2.14 manual loss, foreign mutation, partial language, and ambiguous stamp drift")
 else:
-    print("OK: 2.12 -> 2.13 Extended custom-role fixture preserves all non-target bytes and holds ambiguous state byte-for-byte at 2.12.0")
+    print("OK: 2.13 Extended and 2.14 language fixtures preserve all non-target and foreign bytes")

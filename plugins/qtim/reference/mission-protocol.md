@@ -187,6 +187,7 @@ feedback loop возвращается как `ESCALATION_REQUEST`.
 Mission / Node / Marker / Attempt:
 Coordinator owns peer tasks, graph, integration and final verdict.
 Never create peer tasks, another mission, or descendant qtim teams.
+Reason internally and communicate with peer agents in English. Write user-facing artifacts and anything intended for the user in Russian.
 
 Execution: direct | lazy
 Lazy authorization: exact approved profile, roles, responsibilities and scopes.

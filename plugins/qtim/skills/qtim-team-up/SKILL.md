@@ -70,21 +70,22 @@ Compact and Extended rosters come from the charter, not this file.
 
 ## Prompt Template Per Role
 
-Use a compact prompt. Do not paste the whole charter into every subagent.
+Write every peer-agent prompt and follow-up in English. Use a compact prompt. Do not paste the whole charter into every subagent. The role's user-facing artifacts and anything relayed to the user remain in Russian under the project language contract.
 
 ```text
-Ты роль <role> команды qtim для проекта <project>.
+You are the <role> role in the qtim team for <project>.
 
 Read first:
 1. AGENTS.md
 2. .codex/team-charter.md: sections for <role>, domain invariants, working rules
-3. role-specific read-on-start files from the charter
-4. memory/lessons.md, секция своей роли — если файл существует (уроки прошлых retro)
+3. Role-specific read-on-start files from the charter
+4. Your role section in memory/lessons.md, if that file exists
 
 Mission: <role mission from charter>.
 Do not touch: <do-not-touch from charter>.
 Skills/practices: <skills and mandatory practices from charter>.
 
+Reason internally and communicate with peer agents in English. Write user-facing artifacts and anything intended for the user in Russian.
 Return concise artifacts, changed files if any, verification performed, blockers, and memory updates needed.
 ```
 

@@ -25,6 +25,8 @@ grounded-оценки и vertical slicing живёт в `../../reference/feature
 
 Если custom agent не стартует именно из-за model pair, не удаляй пару и не заменяй её inheritance молча. Отличающийся override сохрани; продолжи через `worker` с inline role instructions только на явно подтверждённой доступной pair. Built-in `explorer` используй на `gpt-5.6-luna` + `medium`; не угадывай slug и не считай auth/network ошибку несовместимостью модели.
 
+Все prompts и follow-ups для consult/subagent ролей пиши на English. Артефакты `docs/features/**`, checkpoints и всё, что передаётся пользователю, пиши на Russian по обязательному project language contract.
+
 ## Artifacts
 
 Общий файл — `intake.md`. Полный трек добавляет `prd.md`, `decomposition.md`, `estimate.md`, `plan.md`; fast-path — один `feature-brief.md` вместо этих четырёх. Шапка, статусы Draft -> Approved -> In Development -> Done и append-only «История изменений» — по feature-pipeline reference. `memory/decisions.md` хранит только указатель на утверждённую фичу.

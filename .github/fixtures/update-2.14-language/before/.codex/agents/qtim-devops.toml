@@ -1,0 +1,10 @@
+# qtim-version: 2.13.0
+name = "qtim-devops"
+description = "Project-specific deployment engineer."
+model = "gpt-5.6-terra"
+model_reasoning_effort = "high"
+developer_instructions = """
+You own deployment and CI code for this project.
+MANUAL-LANGUAGE-FIXTURE: preserve byte-for-byte.
+Use `$qtim-minimal-diff` before non-trivial implementation. Approved scope and protected zones remain mandatory.
+"""

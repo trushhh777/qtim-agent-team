@@ -23,6 +23,14 @@ need(agents_md.count("<!-- qtim:contract:start -->") == 1, "one AGENTS start mar
 need(agents_md.count("<!-- qtim:contract:end -->") == 1, "one AGENTS end marker required")
 charter = (example / ".codex/team-charter.md").read_text(encoding="utf-8")
 need(charter.startswith(f"<!-- qtim-version: {version} -->"), "charter stamp mismatch")
+language_markers = (
+    "## Language",
+    "Reason internally and message peer agents in **English**",
+    "Keep **user-facing output in Russian**",
+)
+for marker in language_markers:
+    need(marker in agents_md, f"AGENTS missing language marker {marker}")
+    need(marker in charter, f"charter missing language marker {marker}")
 for marker in (
     "qtim:track:dev:start", "qtim:track:dev:end", "qtim:track:pm:start",
     "qtim:track:pm:end", "Производная self-contained сводка",
@@ -60,6 +68,8 @@ for filename, policy in expected.items():
     text = path.read_text(encoding="utf-8")
     need(text.startswith(f"# qtim-version: {version}"), f"{filename} stamp mismatch")
     need("{{" not in text, f"{filename} has unresolved placeholder")
+    for marker in language_markers:
+        need(marker in text, f"{filename} missing language marker {marker}")
     payload = {
         match.group(1): match.group(2)
         for match in re.finditer(r'^([A-Za-z0-9_]+)\s*=\s*"([^"]*)"', text, re.MULTILINE)

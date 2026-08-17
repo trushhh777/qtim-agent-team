@@ -59,6 +59,12 @@ EXPECTED_MARKERS = {
     ],
     "testing.toml": ["$qtim-debug-loop", "{{DEV_CMD}}", "dev server command/status"],
 }
+LANGUAGE_CONTRACT = (
+    "Reason internally and message peer agents in **English** — token economy "
+    "(Cyrillic ≈1.5–2× more tokens per equivalent content). Keep **user-facing "
+    "output in Russian**: contract documents, review findings, and anything relayed "
+    "to the client."
+)
 REASONING_EFFORTS = {"none", "minimal", "low", "medium", "high", "xhigh", "max", "ultra"}
 MODEL_REASONING_EFFORTS = {
     "gpt-5.6-sol": {"low", "medium", "high", "xhigh", "max", "ultra"},
@@ -170,6 +176,9 @@ for path in paths:
         if marker not in text:
             bad.append(f"{path}: missing current qtim discipline marker `{marker}`")
 
+    if "## Language" not in text or LANGUAGE_CONTRACT not in text:
+        bad.append(f"{path}: missing exact mandatory qtim language contract")
+
 if not paths:
     bad.append(f"{root}: no Codex custom agent templates found")
 
@@ -204,6 +213,47 @@ for contract_path, markers in CONTRACT_MARKERS.items():
     for marker in markers:
         if marker not in contract_text:
             bad.append(f"{contract_path}: missing contract marker `{marker}`")
+
+LANGUAGE_SURFACES = {
+    pathlib.Path("plugins/qtim/skills/qtim-setup/SKILL.md"): (
+        LANGUAGE_CONTRACT,
+        "Language contract копируй из template дословно",
+    ),
+    pathlib.Path("plugins/qtim/skills/qtim-update/SKILL.md"): (
+        "для stamp 2.14.0+ каждый сопоставленный qtim agent TOML",
+        "peer messages — English",
+        "user-facing output — Russian",
+    ),
+    pathlib.Path("plugins/qtim/skills/qtim-doctor/SKILL.md"): (
+        "Для stamp 2.14.0+",
+        "English для internal/peer",
+        "Russian для user-facing output",
+    ),
+    pathlib.Path("plugins/qtim/reference/upgrade-notes.md"): (
+        "## 2.14.0",
+        LANGUAGE_CONTRACT,
+    ),
+    pathlib.Path("plugins/qtim/reference/orchestration-patterns.md"): (
+        "prompts, follow-ups и иные сообщения peer agents пиши на English",
+        "остаётся на Russian",
+    ),
+    pathlib.Path("plugins/qtim/skills/qtim-team-up/SKILL.md"): (
+        "Write every peer-agent prompt and follow-up in English",
+        "user-facing artifacts and anything intended for the user in Russian",
+    ),
+    pathlib.Path("plugins/qtim/skills/qtim-mission/SKILL.md"): (
+        "coordinator-to-peer",
+        "user-facing artifacts и итог mission — на Russian",
+    ),
+}
+for contract_path, markers in LANGUAGE_SURFACES.items():
+    if not contract_path.exists():
+        bad.append(f"{contract_path}: missing qtim language surface")
+        continue
+    contract_text = contract_path.read_text(encoding="utf-8")
+    for marker in markers:
+        if marker not in contract_text:
+            bad.append(f"{contract_path}: missing language marker `{marker}`")
 
 if bad:
     print("Codex agent template validation failed:")

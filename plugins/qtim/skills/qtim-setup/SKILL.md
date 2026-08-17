@@ -113,6 +113,7 @@ PM/Analyst-состав команды не спрашивается — он о
 - selected tracks (dev / pm / оба) и что будет добавлено или обновлено между track-маркерами charter, а что останется нетронутым;
 - files to create or update;
 - selected roles and custom agent filenames;
+- обязательный language contract: internal reasoning и сообщения peer agents — на English, любой user-facing output — на Russian;
 - main-thread prerequisite `gpt-5.6-sol` + `ultra`, model/reasoning pair каждой роли и clean-context ADR adversary (Sol+xhigh; max для необратимого + инвариант), плюс план при недоступной pair;
 - memory files;
 - plugin-bundled hooks, режим screenshots gate и отдельно optional project `PostToolUse`;
@@ -134,6 +135,7 @@ PM/Analyst-состав команды не спрашивается — он о
 - fixed stack and commands;
 - roles table: role, Codex custom agent name, mission, triggers, do-not-touch, read-on-start, external skills, mandatory practices; bundled practices из Layer 0 записываются по ролям, но не смешиваются с optional external skills. Значения minimal-diff возьми из Phase 1b: design-варианты у architect, решение до реализации у code-writing roles, recommendation-only review у reviewer;
 - model matrix отдельным блоком под roles table: team-lead `gpt-5.6-sol` + `ultra`; architect/reviewer `gpt-5.6-sol` + `xhigh`; database/frontend/product `gpt-5.6-sol` + `high`; testing `gpt-5.6-terra` + `medium`; built-in explorer `gpt-5.6-luna` + `medium`; ADR adversary `gpt-5.6-sol` + `xhigh` (`max` для необратимого решения, затрагивающего документированный инвариант). Для ролей с TOML источником истины служит файл; для explorer и ephemeral adversary — charter;
+- отдельный общий блок `## Language` вне track markers с дословным обязательным правилом: `Reason internally and message peer agents in **English** — token economy (Cyrillic ≈1.5–2× more tokens per equivalent content). Keep **user-facing output in Russian**: contract documents, review findings, and anything relayed to the client.`;
 - domain invariants;
 - ADR stress-test — отдельный обязательный блок независимо от настройки code review: каждый ADR до approval проходит `$qtim-grill`, затем новый read-only thread без истории на Sol+xhigh; необратимое + документированный инвариант -> Sol+max; итоговая строка `adr-stress-test:` в ADR, технический пропуск записывается как `skipped` и не считается pass;
 - independent code-review gates — при включённом гейте перенеси в charter без сокращений canonical high-risk matrix из `../../reference/independent-review.md`: security/auth/tenant-scope visibility; money/billing/account state; documented domain invariants/public contracts; data-transform/destructive migrations; critical browser flows; high-risk performance/reliability; другое доказанно hard-to-rollback изменение. Добавь discretionary low-risk с явным `skipped`, prompt shape и integration. При выключенном — секция из одной строки-заглушки «independent review кода выключен (выбор setup); включить — повторный `$qtim-setup`». Рядом явно напиши, что ADR stress-test остаётся включён;
@@ -167,6 +169,8 @@ Re-run rule: при повторном setup заменяй содержимое
 
 **Model policy копируй из template дословно, не подставляй значения из собственных знаний.** Все постоянные роли имеют явную atomic pair. Переопределяй только по явному выбору пользователя; override всегда задаёт оба поля. Если catalog не подтверждает template pair, не угадывай замену и не удаляй pair молча: покажи проблему и предложи обновить Codex либо подтвердить catalog-supported override/fallback. Одинокий model/reasoning, `model = "inherit"`, догаданный alias вроде `gpt-5`, `ultra` в role TOML или `service_tier = "fast"` без явного выбора запрещены.
 
+**Language contract копируй из template дословно.** Блок `## Language` не stack-conditional и не gate-conditional: не вырезай его при compact/PM-only setup, отключённом independent review или пользовательском model override.
+
 **Gate-условные блоки шаблонов:** требования risk-based independent code review у reviewer/architect/database (блок «Independent review gate», пункты чеклистов про canonical high-risk matrix, секция отчёта «Independent review») переноси только при включённом гейте; при выключенном вырезай эти code-review строки, как стек-условные. Блок architect про обязательный clean-context stress-test каждого ADR **никогда не вырезай** — это отдельная invariant practice, не setup-toggle.
 
 Имена по умолчанию:
@@ -186,6 +190,9 @@ bundled template добавь тот же minimal-diff contract: `$qtim-minimal-
 спорный scope возвращается main thread, нетривиальная логика получает одну
 минимальную breaking check без новой test infrastructure. Read-only auditor,
 product и explorer этот implementation block не получают.
+Каждая custom role без bundled template независимо от responsibility получает
+дословный `## Language` contract; это правило не `not applicable` для read-only,
+product или auditor роли.
 
 При re-run недостающий файл поддерживаемой роли создавай только после показанного plan/approval. Существующий TOML не удаляй и не заменяй целиком: покажи scoped diff, сохрани подтверждённую atomic model pair и ручные инструкции вне распознанного qtim-owned region; при неоднозначности оставь collision/pending. Setup не переименовывает роли и не создаёт дубликат для похожего имени без решения пользователя.
 
@@ -274,6 +281,11 @@ qtim-owned contract держи строго между маркерами:
 - qtim workflow запускается из новой задачи Codex на `gpt-5.6-sol` + `ultra`;
   каждый созданный ADR проходит clean-context Sol stress-test до approval.
 - `$qtim-update` мигрирует generated state; `$qtim-doctor` диагностирует drift.
+
+## Language
+
+Reason internally and message peer agents in **English** — token economy (Cyrillic ≈1.5–2× more tokens per equivalent content). Keep **user-facing output in Russian**: contract documents, review findings, and anything relayed to the client.
+
 <!-- qtim:contract:end -->
 ```
 
@@ -298,6 +310,7 @@ role TOML и spawn prompt по-прежнему требуют открыть н
 - TOML custom agents parse using Python `tomllib` if available;
 - `qtim-reviewer` содержит `sandbox_mode = "read-only"`; testing role получила подставленный dev command и не содержит `{{DEV_CMD}}`;
 - model policy каждого TOML совпадает с exact template pair или является подтверждённым catalog-supported override; half-pair, `model = "inherit"` и догаданный alias — ошибка; charter содержит team-lead Sol+Ultra, explorer Luna+medium и ADR adversary Sol+xhigh/max;
+- каждый TOML, общий `## Language` charter и managed block `AGENTS.md` содержат полный обязательный language contract: internal/peer — English, user-facing — Russian;
 - generated files contain no unresolved qtim placeholders;
 - generated files do not reference plugin-internal paths (`../../reference/...`, `../../agents/...`) — вся нужная механика должна быть в charter или `memory/`;
 - track-маркеры `qtim:track:*` в charter парные; при re-run оба track block целы, PM block содержит fast/full tracks, общий checkpoint, selective consult, vertical slicing с DRI/contributing roles и topology-based блок «Что запускать дальше» для direct/team-lazy/team-up/mission без auto-start;

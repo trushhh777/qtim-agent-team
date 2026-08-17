@@ -2,6 +2,25 @@
 
 Версии соответствуют `version` в `plugins/qtim/.codex-plugin/plugin.json` (semver).
 
+## 2.14.0 — 2026-08-17
+
+Обязательный language contract для всей qtim-команды: internal reasoning и
+peer-agent communication на English, user-facing результаты на Russian.
+
+### Изменено
+
+- Все шесть канонических agent TOML получили дословный `## Language` block;
+  `$qtim-setup` переносит его также в project-specific Extended-роли, общий charter
+  и managed qtim contract в `AGENTS.md`.
+- `$qtim-update` мигрирует существующие qtim TOML/charter/`AGENTS.md` без замены
+  целых prompts и оставляет конфликтующее пользовательское language rule pending
+  до явного подтверждения.
+- Team-up, lazy, feature/onboard и mission fan-out теперь явно составляют prompts
+  и follow-ups на English; документы, findings и клиентский handoff остаются на
+  Russian.
+- `$qtim-doctor` и repository validation проверяют contract во всех слоях
+  generated state.
+
 ## 2.13.0 — 2026-07-30
 
 Семантический Codex-порт Claude qtim 1.13.0: дисциплина минимального

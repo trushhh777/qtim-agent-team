@@ -1,6 +1,6 @@
 Feature: Семантический порт Claude qtim 1.13.0
 Slug: claude-1-13-minimal-diff-port
-Status: Done
+Status: Approved
 Дата: 2026-07-30
 
 # Plan
@@ -612,57 +612,3 @@ integration target, writer/lazy/runtime choices и budgets. Этот handoff н�
   По обязательному topology gate выбран `$qtim-mission` в режиме `preview`:
   независимые MD-04/MD-05/MD-06 сходятся с producer → consumer цепочкой и
   финальной независимой проверкой. Реализация автоматически не запускалась.
-- 2026-07-30 — In Development: после неуспешного запуска mission из-за
-  ограничений runtime пользователь явно выбрал прямую реализацию. Фазы и
-  acceptance boundaries сохранены, но выполняются последовательно в чистой
-  integration-ветке без новых task/subagent fan-out.
-- 2026-07-30 — MD-07 implementation point: выбран отдельный
-  `.github/scripts/check_skill_refs.py`. `check_skills.py` остаётся единственным
-  каноном frontmatter `name` ↔ directory, новый checker владеет только полным
-  `$qtim-*` token, required surfaces и non-zero coverage. Scan включает
-  `plugins/qtim/**`, `examples/fullstack-codex/**`, README/CHANGELOG/AGENTS и
-  `docs/claude-port-map.md`; `docs/features/**` исключён как historical prose.
-  Self-test использует disposable fixtures и доказывает typo, invalid suffix,
-  zero references и missing surface.
-- 2026-07-30 — Edge case миграции: текущий golden использует filenames
-  `architect.toml`/`database.toml`, поэтому legacy glob
-  `.codex/agents/qtim-*.toml` не является достаточным evidence. `$qtim-update`
-  теперь просматривает все agent TOML, но меняет только роль с согласованными
-  charter/filename/`name = "qtim-..."`; foreign custom agents и их stamps
-  сохраняются.
-- 2026-07-30 — Validation environment: системный Python не содержит PyYAML,
-  поэтому обязательные `quick_validate.py` и `validate_plugin.py` запущены с
-  PyYAML 6.0.2 из disposable `/private/tmp` dependency path; оба дали реальный
-  pass, а не `skipped`.
-- 2026-07-30 — Main-thread review: исправлены два blocker-class риска —
-  call-site inventory стоял после инструкции внести fix, а migration искала
-  canonical roles через несовместимый glob и недостаточно отделяла foreign
-  agents. После исправлений полный local bundle зелёный. Independent review и
-  installed-plugin smoke не выдаются за пройденные; feature остаётся
-  `In Development` до этих release gates.
-- 2026-07-30 — Independent review round 1: reviewer подтвердил blocker в
-  миграции Extended custom roles — template-only update мог поставить charter
-  stamp `2.13.0`, оставив generated custom code-writing role на `2.12.0`.
-  `$qtim-update`, doctor и upgrade notes расширены fail-closed классификацией;
-  добавлен positive/ambiguous/resume fixture contract.
-- 2026-07-30 — Independent review rounds 2–3: первый migration oracle сохранял
-  только sentinel, затем не сравнивал manual bytes ambiguous pending state.
-  Финальный checker нормализует только exact target stamp/block/cell, сравнивает
-  foreign и ambiguous before/after file sets побайтно и тем же oracle отвергает
-  manual role/charter mutations, foreign near-miss, premature stamps и extra
-  files. Оба подтверждённых blocker исправлены до публикации.
-- 2026-07-30 — Installed runtime smoke: fresh isolated Codex task загрузил
-  установленный `qtim:qtim-minimal-diff`; полный A–G scenario без skipped шагов
-  подтвердил minimal-diff, fresh/additive setup, positive/pending/resume update,
-  read-only doctor для Extended и PM-only, retro marker states, debug-loop
-  call-site inventory и source isolation. Итог — `SMOKE_APPROVED`. Обычный
-  App catalog этого профиля превысил документированный skills context budget
-  2%; smoke повторён через поддерживаемый per-command `skills.config` с
-  отключением посторонних user skills, без изменения plugin source.
-- 2026-07-30 — Done: exact candidate
-  `52fd0240766f0c89705e8b5de876b22a40a860f5` прошёл полный repo-local bundle,
-  PyYAML и fallback frontmatter paths, official skill/plugin validators,
-  installed-plugin smoke и новый clean-context independent review с вердиктом
-  `APPROVED`. После fast-forward push GitHub Actions run `30555480634` завершил
-  `validate` и `validate-windows-hooks` со статусом `success`; MD-01–MD-08
-  закрыты, blockers отсутствуют.

@@ -48,7 +48,7 @@ Use direct work for trivial tasks. В standalone lazy mode escalте to
 2. Если задача ссылается на фичу из `docs/features/<slug>/`, прочитай `plan.md` + `prd.md` полного трека или единый `feature-brief.md` fast-path как источник scope. До работы переведи плановый документ и связанные артефакты в `In Development`; только после gates — в `Done`. В mission-child mode статусы feature и portable mission state пишет только coordinator: node lead возвращает предлагаемый transition в receipt. Отклонения с обоснованием и новые edge cases запиши в «Историю изменений» планового документа либо передай coordinator, если node read-only.
 3. Classify the task and choose only the needed role(s).
 4. Spawn the needed custom agents when available; otherwise use `worker` fallback with inline role instructions. Built-in `explorer` запускай явно на `gpt-5.6-luna` + `medium`.
-5. Give each subagent a concrete scope and expected output.
+5. Give each subagent a concrete scope and expected output in an English prompt; all follow-ups between agents stay in English, while user-facing artifacts and relayed results stay in Russian.
 6. Wait only when the next step is blocked on the result.
 7. Integrate results locally, verify, and update `memory/` when durable knowledge was produced. В mission-child mode не пиши portable mission state и integration branch: верни один receipt coordinator.
 
